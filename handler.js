@@ -539,14 +539,16 @@ global.dfail = (type, m, conn) => {
     botAdmin: `《✧》Para ejecutar el comando debo ser administrador del grupo.`,
     unreg: `《✧》El comando solo puede ser usado por los usuarios registrado, registrate usando:\n> » #reg nombre.edad`,
     restrict: `《✧》Esta caracteristica está desactivada.`
-  }[type]
-  
-  if (msg) return m.reply(msg)
-}
+ }[type];
+if (msg) return m.reply(msg).then(_ => m.react('✖️'))}
 
-const file = global.__filename(import.meta.url, true)
+let file = global.__filename(import.meta.url, true)
 watchFile(file, async () => {
-  unwatchFile(file)
-  console.log(chalk.magenta("✅  Se actualizo 'handler.js'"))
-  if (global.reloadHandler) console.log(await global.reloadHandler())
-})
+unwatchFile(file)
+console.log(chalk.magenta("Se actualizo 'handler.js'"))
+
+if (global.conns && global.conns.length > 0 ) {
+const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])];
+for (const userr of users) {
+userr.subreloadHandler(false)
+}}});
