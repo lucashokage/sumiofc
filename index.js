@@ -98,7 +98,7 @@ async function start(file) {
     console.log(chalk.cyan(`Nombre: ${packageJsonObj.name}`));
     console.log(chalk.cyan(`Versión: ${packageJsonObj.version}`));
     console.log(chalk.cyan(`Descripción: ${packageJsonObj.description}`));
-    console.log(chalk.cyan(`Autor: leonel}`));
+    console.log(chalk.cyan(`Autor: leonel`));
   } catch (err) {
     console.error(chalk.red(`❌ No se pudo leer el archivo package.json: ${err}`));
   }
