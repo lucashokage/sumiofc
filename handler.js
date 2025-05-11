@@ -531,16 +531,16 @@ export async function groupsUpdate(groupsUpdate) {
 
 global.dfail = (type, m, conn) => {
   const msg = {
-    rowner: `=͟͟͞❀ 👑 ${mssg.rownerH} ⏤͟͟͞͞★`,
-    owner: `=͟͟͞❀ 🔱 ${mssg.ownerH} ⏤͟͟͞͞★`,
-    mods: `=͟͟͞❀ 🔰 ${mssg.modsH} ⏤͟͟͞͞★`,
-    premium: `=͟͟͞❀ 💠 ${mssg.premH} ⏤͟͟͞͞★`,
-    group: `=͟͟͞❀ ⚙️ ${mssg.groupH} ⏤͟͟͞͞★`,
-    private: `=͟͟͞❀ 📮 ${mssg.privateH} ⏤͟͟͞͞★`,
-    admin: `=͟͟͞❀ 🛡️ ${mssg.adminH} ⏤͟͟͞͞★`,
-    botAdmin: `=͟͟͞❀ 💥 ${mssg.botAdmin} ⏤͟͟͞͞★`,
-    unreg: `=͟͟͞❀ 📇 ${mssg.unregH} ⏤͟͟͞͞★`,
-    restrict: "=͟͟͞❀ 🔐 𝙀𝙨𝙩𝙖 𝙘𝙖𝙧𝙖𝙘𝙩𝙚𝙧í𝙨𝙩𝙞𝙘𝙖 𝙚𝙨𝙩á *𝙙𝙚𝙨𝙝𝙖𝙗𝙞𝙡𝙞𝙩𝙖𝙙𝙖* ⏤͟͟͞͞★",
+   rowner: `《✧》El comando *${comando}* solo puede ser usado por los creadores del bot.`, 
+owner: `《✧》El comando *${comando}* solo puede ser usado por los desarrolladores del bot.`, 
+mods: `《✧》El comando *${comando}* solo puede ser usado por los moderadores del bot.`, 
+premium: `《✧》El comando *${comando}* solo puede ser usado por los usuarios premium.`, 
+group: `《✧》El comando *${comando}* solo puede ser usado en grupos.`,
+private: `《✧》El comando *${comando}* solo puede ser usado al chat privado del bot.`,
+admin: `《✧》El comando *${comando}* solo puede ser usado por los administradores del grupo.`, 
+botAdmin: `《✧》Para ejecutar el comando *${comando}* debo ser administrador del grupo.`,
+unreg: `《✧》El comando *${comando}* solo puede ser usado por los usuarios registrado, registrate usando:\n> » #${verifyaleatorio} ${user2}.${edadaleatoria}`,
+restrict: `《✧》Esta caracteristica está desactivada.`
   }[type]
   if (msg) return m.reply(msg)
 }
