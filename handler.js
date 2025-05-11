@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import path, { join } from "path";
 import { unwatchFile, watchFile } from "fs";
 import chalk from "chalk";
+import ws from 'ws';
 
 const { proto } = (await import("@whiskeysockets/baileys")).default;
 const isNumber = (x) => typeof x === "number" && !isNaN(x);
@@ -14,6 +15,10 @@ global.conn = global.conn || {};
 global.loadDatabase = global.loadDatabase || (() => {});
 global.API = global.API || (() => {});
 global.mssg = global.mssg || {};
+
+const opts = global.opts;
+const conn = global.conn;
+const loadDatabase = global.loadDatabase;
 
 export async function handler(chatUpdate) {
   this.msgqueque = this.msgqueque || [];
@@ -302,7 +307,7 @@ export async function handler(chatUpdate) {
         else m.exp += xp;
         
         if (!isPrems && plugin.diamond && global.db.data.users[m.sender].diamond < plugin.diamond * 1) {
-          this.reply(m.chat, `=͟͟͞❀ 💎 𝙏𝙪𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 �𝙚 𝙖𝙜𝙤𝙩𝙖𝙧𝙤𝙣 ⏤͟͟͞͞★\n𝙐𝙨𝙖 𝙚𝙡 𝙨𝙞𝙜𝙪𝙞𝙚𝙣𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 𝙥𝙖𝙧𝙖 𝙘𝙤𝙢𝙥𝙧𝙖𝙧 𝙢á𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨\n\n*${usedPrefix}buy*`, m);
+          this.reply(m.chat, `=͟͟͞❀ 💎 𝙏𝙪𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 𝙚 𝙖𝙜𝙤𝙩𝙖𝙧𝙤𝙣 ⏤͟͟͞͞★\n𝙐𝙨𝙖 𝙚𝙡 𝙨𝙞𝙜𝙪𝙞𝙚𝙣𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 𝙥𝙖𝙧𝙖 𝙘𝙤𝙢𝙥𝙧𝙖𝙧 𝙢á𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨\n\n*${usedPrefix}buy*`, m);
           continue;
         }
         
