@@ -18,6 +18,7 @@ import * as ws from 'ws';
 const { CONNECTING } = ws
 import { Boom } from '@hapi/boom'
 import { makeWASocket } from '../lib/simple.js';
+import { resetSubbot } from '../resetbots.js';
 
 if (global.conns instanceof Array) console.log()
 else global.conns = []
@@ -26,8 +27,19 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
 
   let parent = args[0] && args[0] == 'plz' ? _conn : await global.conn
   if (!((args[0] && args[0] == 'plz') || (await global.conn).user.jid == _conn.user.jid)) {
-	throw `📌 No puedes usar este bot como sub-bot\n\n wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix}.code`
-}
+	throw `📌 No puedes usar este bot como sub-bot\n\n wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix}${command}`
+  }
+  
+  if (args[0] === 'reset' && args[1]) {
+    const targetJid = args[1].includes('@') ? args[1] : args[1] + '@s.whatsapp.net';
+    const success = await resetSubbot(targetJid);
+    
+    if (success) {
+      return m.reply(`✅ Subbot ${args[1]} reiniciado exitosamente`);
+    } else {
+      return m.reply(`❌ No se pudo reiniciar el subbot ${args[1]}`);
+    }
+  }
 
   async function bbts() {
 
@@ -36,7 +48,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     if (!fs.existsSync("./sumibots/"+ authFolderB)){
         fs.mkdirSync("./sumibots/"+ authFolderB, { recursive: true });
     }
-    args[0] ? fs.writeFileSync("./sumibots/" + authFolderB + "/creds.json", JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
+    args[0] && args[0] !== 'reset' ? fs.writeFileSync("./sumibots/" + authFolderB + "/creds.json", JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
     
 const {state, saveState, saveCreds} = await useMultiFileAuthState(`./sumibots/${authFolderB}`)
 const msgRetryCounterMap = (MessageRetryMap) => { };
@@ -74,6 +86,7 @@ const connectionOptions = {
   }
 
 let conn = makeWASocket(connectionOptions)
+conn.startTime = Date.now()
 
 if (methodCode && !conn.authState.creds.registered) {
     if (!phoneNumber) {
@@ -113,6 +126,15 @@ async function connectionUpdate(update) {
 
      if (code !== DisconnectReason.connectionClosed){ 
         parent.sendMessage(conn.user.jid, {text : `⚠️ Conexión perdida, intentando reconectar...`}, { quoted: m })
+        
+        setTimeout(async () => {
+          try {
+            await creloadHandler(true)
+            parent.sendMessage(m.chat, {text : `✅ Reconexión exitosa`}, { quoted: m })
+          } catch (err) {
+            parent.sendMessage(m.chat, {text : `❌ Error al reconectar: ${err.message}`}, { quoted: m })
+          }
+        }, 5000)
     } else {
         parent.sendMessage(m.chat, {text : `⛔ La sesión ha sido cerrada, deberás conectarte nuevamente`}, { quoted: m })
     }
@@ -121,14 +143,15 @@ async function connectionUpdate(update) {
 
     if (connection == 'open') {
     conn.isInit = true
+    conn.startTime = Date.now()
     global.conns.push(conn)
-    await parent.sendMessage(m.chat, {text : args[0] ? `✅ Conectado exitosamente al bot!` : `(๑˃̵　ᴗ　˂̵)و Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`}, { quoted: m })
+    await parent.sendMessage(m.chat, {text : args[0] && args[0] !== 'reset' ? `✅ Conectado exitosamente al bot!` : `(๑˃̵　ᴗ　˂̵)و Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`}, { quoted: m })
     await sleep(5000)
-    if (args[0]) return
+    if (args[0] && args[0] !== 'reset') return
     
     await parent.sendMessage(conn.user.jid, {text : `*（｡>‿‿<｡ ） ¡Conectado exitosamente! Ahora eres un sub-bot. Usa los comandos normalmente.*`}, { quoted: m })
     
-    const codeText = usedPrefix + command + " " + Buffer.from(fs.readFileSync("./bebots/" + authFolderB + "/creds.json"), "utf-8").toString("base64")
+    const codeText = usedPrefix + command + " " + Buffer.from(fs.readFileSync("./sumibots/" + authFolderB + "/creds.json"), "utf-8").toString("base64")
     await parent.sendMessage(conn.user.jid, {text : codeText}, { quoted: m })
 	  }
   }
@@ -143,11 +166,11 @@ async function connectionUpdate(update) {
       global.conns.splice(i, 1)
     }}, 60000)
     
-let handler = await import('../handler.js')
+let handlerImport = await import('../handler.js')
 let creloadHandler = async function (restatConn) {
 try {
 const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
-if (Object.keys(Handler || {}).length) handler = Handler
+if (Object.keys(Handler || {}).length) handlerImport = Handler
 } catch (e) {
 console.error(e)
 }
@@ -155,6 +178,7 @@ if (restatConn) {
 try { conn.ws.close() } catch { }
 conn.ev.removeAllListeners()
 conn = makeWASocket(connectionOptions)
+conn.startTime = Date.now()
 isInit = true
 }
 
@@ -172,9 +196,9 @@ conn.bye = global.conn.bye + ''
 conn.spromote = global.conn.spromote + ''
 conn.sdemote = global.conn.sdemote + ''
 
-conn.handler = handler.handler.bind(conn)
-conn.participantsUpdate = handler.participantsUpdate.bind(conn)
-conn.groupsUpdate = handler.groupsUpdate.bind(conn)
+conn.handler = handlerImport.handler.bind(conn)
+conn.participantsUpdate = handlerImport.participantsUpdate.bind(conn)
+conn.groupsUpdate = handlerImport.groupsUpdate.bind(conn)
 conn.connectionUpdate = connectionUpdate.bind(conn)
 conn.credsUpdate = saveCreds.bind(conn, true)
 
@@ -187,6 +211,22 @@ isInit = false
 return true
 }
 creloadHandler(false)
+
+let store
+async function loadStore() {
+  if (store) return
+  const { Stores } = await import('@whiskeysockets/baileys')
+  store = Stores.baileys
+}
+loadStore()
+
+let loadDatabase = async () => {
+  if (global.db.data) return
+  const { Low } = await import('lowdb')
+  const { JSONFile } = await import('lowdb/lib/adapters/JSONFile.js')
+  global.db = new Low(new JSONFile(global.opts['db'] || 'database.json'))
+  global.db.chain = _.chain(global.db.data)
+  await global.db.read()
 }
 bbts()
 
