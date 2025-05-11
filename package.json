@@ -13,11 +13,12 @@
     "plugins": "plugins"
   },
   "scripts": {
-    "start": "node index.js",
+    "preinstall": "npm install -g npm@latest && npm install -g yarn",
+    "start": "node --max-old-space-size=4096 --trace-warnings index.js",
+    "dev": "nodemon --max-old-space-size=4096 index.js",
     "test": "node test.js",
-    "test2": "nodemon index.js",
-    "prepare": "npm run fix-deps",
-    "fix-deps": "rm -rf node_modules package-lock.json && npm install"
+    "fix-deps": "rm -rf node_modules package-lock.json && npm install --omit=optional --no-audit --fund=false",
+    "clean-install": "npm cache clean --force && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "github:ds6/bails",
