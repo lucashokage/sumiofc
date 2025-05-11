@@ -30,6 +30,7 @@
     "@vitalets/google-translate-api": "^9.2.0",
     "@whiskeysockets/baileys": "github:ds6/bails",
     "@xct007/frieren-scraper": "^0.0.2",
+     "@StarlightsTeam/Scraper": "github:StarlightsTeam/StarlightsTeam-Scraper",
     "acrcloud": "^1.4.0",
     "api-dylux": "^1.7.2",
     "aptoide-scraper": "^1.0.1",
