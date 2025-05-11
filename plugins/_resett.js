@@ -1,14 +1,14 @@
-const fs = require('fs');
-const path = require('path');
-const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
-const qrcode = require('qrcode');
-const NodeCache = require('node-cache');
-const pino = require('pino');
-const util = require('util');
-const WebSocket = require('ws');
-const { spawn, exec } = require('child_process');
-const chalk = require('chalk');
-const { makeWASocket } = require('../lib/simple.js');
+import fs from 'fs';
+import path from 'path';
+import { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import qrcode from 'qrcode';
+import NodeCache from 'node-cache';
+import pino from 'pino';
+import util from 'util';
+import WebSocket from 'ws';
+import { spawn, exec } from 'child_process';
+import chalk from 'chalk';
+import { makeWASocket } from '../lib/simple.js';
 
 // Initialize global connections array if it doesn't exist
 global.conns = global.conns instanceof Array ? global.conns : [];
@@ -114,10 +114,11 @@ async function loadSubbots() {
                     }
                 }
 
-                let handler = await require('../handler');
+                // Dynamic import for handler
+                let handler = await import('../handler.js');
                 let reloadHandler = async (restartConnection) => {
                     try {
-                        const newHandler = await require(`../handler.js?update=${Date.now()}`);
+                        const newHandler = await import(`../handler.js?update=${Date.now()}`);
                         if (Object.keys(newHandler).length) {
                             handler = newHandler;
                         }
