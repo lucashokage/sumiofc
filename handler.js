@@ -16,7 +16,6 @@ const delay = (ms) =>
     }, ms),
   )
 
-// Declarations for missing variables
 global.opts = global.opts || {}
 global.conn = global.conn || {}
 global.loadDatabase = global.loadDatabase || (() => {})
@@ -153,8 +152,8 @@ export async function handler(chatUpdate) {
     } catch (e) {
       console.error(e)
     }
-    if (opts["nyimak"]) return
-    if (!m.fromMe && opts["self"]) return
+    if (global.opts["nyimak"]) return
+    if (!m.fromMe && global.opts["self"]) return
     if (global.db.data.settings[this.user.jid].solopv && m.chat.endsWith("g.us")) return
     if (
       global.db.data.settings[this.user.jid].sologp &&
@@ -163,12 +162,12 @@ export async function handler(chatUpdate) {
     )
       return
 
-    if (opts["swonly"] && m.chat !== "status@broadcast") return
+    if (global.opts["swonly"] && m.chat !== "status@broadcast") return
     if (typeof m.text !== "string") m.text = ""
 
     const _user = global.db.data && global.db.data.users && global.db.data.users[m.sender]
 
-    const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)]
+    const isROwner = [global.conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)]
       .map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
       .includes(m.sender)
     const isOwner = isROwner || m.fromMe
@@ -178,7 +177,7 @@ export async function handler(chatUpdate) {
       global.prems.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender) ||
       _user.prem == true
 
-    if (opts["queque"] && m.text && !(isMods || isPrems)) {
+    if (global.opts["queque"] && m.text && !(isMods || isPrems)) {
       const queque = this.msgqueque,
         time = 1000 * 5
       const previousID = queque[queque.length - 1]
@@ -195,11 +194,11 @@ export async function handler(chatUpdate) {
     let usedPrefix
 
     const groupMetadata =
-      (m.isGroup ? (conn.chats[m.chat] || {}).metadata || (await this.groupMetadata(m.chat).catch((_) => null)) : {}) ||
+      (m.isGroup ? (global.conn.chats[m.chat] || {}).metadata || (await this.groupMetadata(m.chat).catch((_) => null)) : {}) ||
       {}
     const participants = (m.isGroup ? groupMetadata.participants : []) || []
-    const user = (m.isGroup ? participants.find((u) => conn.decodeJid(u.id) === m.sender) : {}) || {}
-    const bot = (m.isGroup ? participants.find((u) => conn.decodeJid(u.id) == this.user.jid) : {}) || {}
+    const user = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) === m.sender) : {}) || {}
+    const bot = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) == this.user.jid) : {}) || {}
     const isRAdmin = user?.admin == "superadmin" || false
     const isAdmin = isRAdmin || user?.admin == "admin" || false
     const isBotAdmin = bot?.admin || false
@@ -221,12 +220,12 @@ export async function handler(chatUpdate) {
           console.error(e)
         }
       }
-      if (!opts["restrict"])
+      if (!global.opts["restrict"])
         if (plugin.tags && plugin.tags.includes("admin")) {
           continue
         }
       const str2Regex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
-      const _prefix = plugin.customPrefix ? plugin.customPrefix : conn.prefix ? conn.prefix : global.prefix
+      const _prefix = plugin.customPrefix ? plugin.customPrefix : global.conn.prefix ? global.conn.prefix : global.prefix
       const match = (
         _prefix instanceof RegExp
           ? [[_prefix.exec(m.text), _prefix]]
@@ -395,7 +394,7 @@ export async function handler(chatUpdate) {
   } catch (e) {
     console.error(e)
   } finally {
-    if (opts["queque"] && m.text) {
+    if (global.opts["queque"] && m.text) {
       const quequeIndex = this.msgqueque.indexOf(m.id || m.key.id)
       if (quequeIndex !== -1) this.msgqueque.splice(quequeIndex, 1)
     }
@@ -433,28 +432,26 @@ export async function handler(chatUpdate) {
     }
 
     try {
-      if (!opts["noprint"]) await (await import(`./lib/print.js`)).default(m, this)
+      if (!global.opts["noprint"]) await (await import(`./lib/print.js`)).default(m, this)
     } catch (e) {
       console.log(m, m.quoted, e)
     }
-    if (opts["autoread"])
+    if (global.opts["autoread"])
       await this.chatRead(m.chat, m.isGroup ? m.sender : undefined, m.id || m.key.id).catch(() => {})
   }
 }
 
 export async function participantsUpdate({ id, participants, action }) {
-  if (opts["self"]) return
-  if (global.db.data == null) await loadDatabase()
+  if (global.opts["self"]) return
+  if (global.db.data == null) await global.loadDatabase()
   const chat = global.db.data.chats[id] || {}
   
   if (chat.welcome) {
-    const groupMetadata = (await this.groupMetadata(id)) || (conn.chats[id] || {}).metadata
+    const groupMetadata = (await this.groupMetadata(id)) || (global.conn.chats[id] || {}).metadata
     
     for (const user of participants) {
-      // Only use the welcome plugin for add/remove actions
       if (action === "add" || action === "remove") {
         try {
-          // Import and use only the welcome plugin
           const welcomePlugin = await import("./plugins/_welcome.js")
           if (welcomePlugin && typeof welcomePlugin.before === "function") {
             await welcomePlugin.before.call(
@@ -479,13 +476,12 @@ export async function participantsUpdate({ id, participants, action }) {
     }
   }
   
-  // Handle promote/demote actions
   if (action === "promote" || action === "demote") {
     let text = ""
     if (action === "promote") {
-      text = chat.sPromote || this.spromote || conn.spromote || "=͟͟͞❀ @user 𝙖𝙝𝙤𝙧𝙖 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
+      text = chat.sPromote || this.spromote || global.conn.spromote || "=͟͟͞❀ @user 𝙖𝙝𝙤𝙧𝙖 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
     } else {
-      text = chat.sDemote || this.sdemote || conn.sdemote || "=͟͟͞❀ @user 𝙮𝙖 𝙣𝙤 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
+      text = chat.sDemote || this.sdemote || global.conn.sdemote || "=͟͟͞❀ @user 𝙮𝙖 𝙣𝙤 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
     }
     
     const pp = await this.profilePictureUrl(participants[0], "image").catch((_) => "./media/avatar.jpg")
@@ -495,7 +491,7 @@ export async function participantsUpdate({ id, participants, action }) {
 }
 
 export async function groupsUpdate(groupsUpdate) {
-  if (opts["self"]) return
+  if (global.opts["self"]) return
   for (const groupUpdate of groupsUpdate) {
     const id = groupUpdate.id
     if (!id) continue
@@ -503,7 +499,7 @@ export async function groupsUpdate(groupsUpdate) {
       text = ""
     if (!chats?.detect) continue
     if (groupUpdate.desc)
-      text = (chats.sDesc || this.sDesc || conn.sDesc || "=͟͟͞❀ 𝘿𝙚𝙨𝙘𝙧𝙞𝙥𝙘𝙞ó𝙣 𝙘𝙖𝙢𝙗𝙞𝙖𝙙𝙖 𝙖 \n@desc ⏤͟͟͞͞★").replace(
+      text = (chats.sDesc || this.sDesc || global.conn.sDesc || "=͟͟͞❀ 𝘿𝙚𝙨𝙘𝙧𝙞𝙥𝙘𝙞ó𝙣 𝙘𝙖𝙢𝙗𝙞𝙖𝙙𝙖 𝙖 \n@desc ⏤͟͟͞͞★").replace(
         "@desc",
         groupUpdate.desc,
       )
@@ -511,16 +507,16 @@ export async function groupsUpdate(groupsUpdate) {
       text = (
         chats.sSubject ||
         this.sSubject ||
-        conn.sSubject ||
+        global.conn.sSubject ||
         "=͟͟͞❀ 𝙀𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖 \n@group ⏤͟͟͞͞★"
       ).replace("@group", groupUpdate.subject)
     if (groupUpdate.icon)
-      text = (chats.sIcon || this.sIcon || conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
+      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
         "@icon",
         groupUpdate.icon,
       )
     if (groupUpdate.revoke)
-      text = (chats.sRevoke || this.sRevoke || conn.sRevoke || "=͟͟͞❀ 𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖\n@revoke ⏤͟͟͞͞★").replace(
+      text = (chats.sRevoke || this.sRevoke || global.conn.sRevoke || "=͟͟͞❀ 𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖\n@revoke ⏤͟͟͞͞★").replace(
         "@revoke",
         groupUpdate.revoke,
       )
@@ -530,18 +526,21 @@ export async function groupsUpdate(groupsUpdate) {
 }
 
 global.dfail = (type, m, conn) => {
+  const comando = m.plugin || 'desconocido';
+  
   const msg = {
-    rowner: `=͟͟͞❀ 👑 ${mssg.rownerH} ⏤͟͟͞͞★`,
-    owner: `=͟͟͞❀ 🔱 ${mssg.ownerH} ⏤͟͟͞͞★`,
-    mods: `=͟͟͞❀ 🔰 ${mssg.modsH} ⏤͟͟͞͞★`,
-    premium: `=͟͟͞❀ 💠 ${mssg.premH} ⏤͟͟͞͞★`,
-    group: `=͟͟͞❀ ⚙️ ${mssg.groupH} ⏤͟͟͞͞★`,
-    private: `=͟͟͞❀ 📮 ${mssg.privateH} ⏤͟͟͞͞★`,
-    admin: `=͟͟͞❀ 🛡️ ${mssg.adminH} ⏤͟͟͞͞★`,
-    botAdmin: `=͟͟͞❀ 💥 ${mssg.botAdmin} ⏤͟͟͞͞★`,
-    unreg: `=͟͟͞❀ 📇 ${mssg.unregH} ⏤͟͟͞͞★`,
-    restrict: "=͟͟͞❀ 🔐 𝙀𝙨𝙩𝙖 𝙘𝙖𝙧𝙖𝙘𝙩𝙚𝙧í𝙨𝙩𝙞𝙘𝙖 𝙚𝙨𝙩á *𝙙𝙚𝙨𝙝𝙖𝙗𝙞𝙡𝙞𝙩𝙖𝙙𝙖* ⏤͟͟͞͞★",
+    rowner: `《✧》El comando *${comando}* solo puede ser usado por los creadores del bot.`, 
+    owner: `《✧》El comando *${comando}* solo puede ser usado por los desarrolladores del bot.`, 
+    mods: `《✧》El comando *${comando}* solo puede ser usado por los moderadores del bot.`, 
+    premium: `《✧》El comando *${comando}* solo puede ser usado por los usuarios premium.`, 
+    group: `《✧》El comando *${comando}* solo puede ser usado en grupos.`,
+    private: `《✧》El comando *${comando}* solo puede ser usado al chat privado del bot.`,
+    admin: `《✧》El comando *${comando}* solo puede ser usado por los administradores del grupo.`, 
+    botAdmin: `《✧》Para ejecutar el comando *${comando}* debo ser administrador del grupo.`,
+    unreg: `《✧》El comando *${comando}* solo puede ser usado por los usuarios registrado, registrate usando:\n> » #reg nombre.edad`,
+    restrict: `《✧》Esta caracteristica está desactivada.`
   }[type]
+  
   if (msg) return m.reply(msg)
 }
 
