@@ -16,7 +16,6 @@ const delay = (ms) =>
     }, ms),
   )
 
-// Declarations for missing variables
 global.opts = global.opts || {}
 global.conn = global.conn || {}
 global.loadDatabase = global.loadDatabase || (() => {})
@@ -340,7 +339,7 @@ export async function handler(chatUpdate) {
         if (plugin.level > _user.level) {
           this.reply(
             m.chat,
-            `=͟͟͞❀ ⚠️ 𝙉𝙞𝙫𝙚𝙡 𝙧𝙚𝙦𝙪𝙚𝙧𝙞𝙙𝙤 ${plugin.level} 𝙥𝙖𝙧𝙖 𝙪𝙨𝙖𝙧 𝙚𝙨𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 ⏤͟͟͞͞★\n𝙏𝙪 𝙣𝙞𝙫𝙚𝙡 𝙖𝙘𝙩𝙪𝙖𝙡: ${_user.level}`,
+            `=͟͟͞❀ ⚠️ 𝙉𝙞𝙫𝙚𝙡 �𝙚𝙦𝙪𝙚𝙧𝙞𝙙𝙤 ${plugin.level} 𝙥𝙖𝙧𝙖 𝙪𝙨𝙖𝙧 𝙚𝙨𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 ⏤͟͟͞͞★\n𝙏𝙪 𝙣𝙞𝙫𝙚𝙡 𝙖𝙘𝙩𝙪𝙖𝙡: ${_user.level}`,
             m,
           )
           continue
@@ -451,10 +450,8 @@ export async function participantsUpdate({ id, participants, action }) {
     const groupMetadata = (await this.groupMetadata(id)) || (conn.chats[id] || {}).metadata
     
     for (const user of participants) {
-      // Only use the welcome plugin for add/remove actions
       if (action === "add" || action === "remove") {
         try {
-          // Import and use only the welcome plugin
           const welcomePlugin = await import("./plugins/_welcome.js")
           if (welcomePlugin && typeof welcomePlugin.before === "function") {
             await welcomePlugin.before.call(
@@ -479,7 +476,6 @@ export async function participantsUpdate({ id, participants, action }) {
     }
   }
   
-  // Handle promote/demote actions
   if (action === "promote" || action === "demote") {
     let text = ""
     if (action === "promote") {
@@ -503,7 +499,7 @@ export async function groupsUpdate(groupsUpdate) {
       text = ""
     if (!chats?.detect) continue
     if (groupUpdate.desc)
-      text = (chats.sDesc || this.sDesc || conn.sDesc || "=͟͟͞❀ 𝘿𝙚𝙨𝙘𝙧𝙞𝙥𝙘𝙞ó𝙣 𝙘𝙖𝙢𝙗𝙞𝙖𝙙𝙖 𝙖 \n@desc ⏤͟͟͞͞★").replace(
+      text = (chats.sDesc || this.sDesc || conn.sDesc || "=͟͟͞❀ �𝙚𝙨𝙘𝙧𝙞𝙥𝙘𝙞ó𝙣 𝙘𝙖𝙢𝙗𝙞𝙖𝙙𝙖 𝙖 \n@desc ⏤͟͟͞͞★").replace(
         "@desc",
         groupUpdate.desc,
       )
@@ -530,22 +526,20 @@ export async function groupsUpdate(groupsUpdate) {
 }
 
 global.dfail = (type, m, conn) => {
-  const comando = m.text.split(' ')[0].slice(1).toLowerCase() || 'comando';
-  
+  const comando = m.text.split(' ')[0].slice(1).toLowerCase() || 'comando'
   const msg = {
-    rowner: `《✧》El comando *${comando}* solo puede ser usado por los creadores del bot.`, 
-    owner: `《✧》El comando *${comando}* solo puede ser usado por los desarrolladores del bot.`, 
-    mods: `《✧》El comando *${comando}* solo puede ser usado por los moderadores del bot.`, 
-    premium: `《✧》El comando *${comando}* solo puede ser usado por los usuarios premium.`, 
-    group: `《✧》El comando *${comando}* solo puede ser usado en grupos.`,
-    private: `《✧》El comando *${comando}* solo puede ser usado al chat privado del bot.`,
-    admin: `《✧》El comando *${comando}* solo puede ser usado por los administradores del grupo.`, 
-    botAdmin: `《✧》Para ejecutar el comando *${comando}* debo ser administrador del grupo.`,
-    unreg: `《✧》El comando *${comando}* solo puede ser usado por los usuarios registrado, registrate usando:\n> » #reg`,
-    restrict: `《✧》Esta caracteristica está desactivada.`
-  }[type];
-  
-  if (msg) return m.reply(msg).then(_ => m.react('✖️'))
+rowner: `《✧》El comando *${comando}* solo puede ser usado por los creadores del bot.`, 
+owner: `《✧》El comando *${comando}* solo puede ser usado por los desarrolladores del bot.`, 
+mods: `《✧》El comando *${comando}* solo puede ser usado por los moderadores del bot.`, 
+premium: `《✧》El comando *${comando}* solo puede ser usado por los usuarios premium.`, 
+group: `《✧》El comando *${comando}* solo puede ser usado en grupos.`,
+private: `《✧》El comando *${comando}* solo puede ser usado al chat privado del bot.`,
+admin: `《✧》El comando *${comando}* solo puede ser usado por los administradores del grupo.`, 
+botAdmin: `《✧》Para ejecutar el comando *${comando}* debo ser administrador del grupo.`,
+unreg: `《✧》El comando *${comando}* solo puede ser usado por los usuarios registrado, registrate usando:\n> » #reg`,
+restrict: `《✧》Esta caracteristica está desactivada.`
+ }[type];
+if (msg) return m.reply(msg).then(_ => m.react('✖️'))}
 
 let file = global.__filename(import.meta.url, true)
 watchFile(file, async () => {
@@ -553,7 +547,7 @@ unwatchFile(file)
 console.log(chalk.magenta("Se actualizo 'handler.js'"))
 
 if (global.conns && global.conns.length > 0 ) {
-const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])];
+const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])]
 for (const userr of users) {
 userr.subreloadHandler(false)
-}}});
+}}}
