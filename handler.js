@@ -6,7 +6,6 @@ import { unwatchFile, watchFile } from "fs"
 import chalk from "chalk"
 import ws from "ws"
 
-// Fix the syntax error by removing the semicolon after the destructuring assignment
 const { proto } = await import("@whiskeysockets/baileys").default
 const isNumber = (x) => typeof x === "number" && !isNaN(x)
 const delay = (ms) => isNumber(ms) && new Promise((resolve) => setTimeout(resolve, ms))
