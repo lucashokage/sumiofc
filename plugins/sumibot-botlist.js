@@ -1,4 +1,5 @@
 import ws from 'ws';
+import { getCommandCount } from '../sumibot-subbots.js';
 
 async function handler(m, { usedPrefix, args }) {
   const activeConns = global.conns.filter(conn => 
@@ -7,6 +8,7 @@ async function handler(m, { usedPrefix, args }) {
     conn.ws.socket.readyState !== ws.CLOSED
   );
   const totalSubBots = activeConns.length;
+  const totalCommands = getCommandCount();
 
   if (args[0] === 'info') {
     const formatTime = (ms) => {
@@ -40,7 +42,7 @@ async function handler(m, { usedPrefix, args }) {
 
 ${infoList}
 
-❒ Total de comandos: 303
+❒ Total de comandos: ${totalCommands}
     `.trim();
 
     return m.reply(infoMessage);
@@ -52,7 +54,7 @@ ${infoList}
 ❀ Para ser un subbot usa el comando *#serbot*
 
 ✧ *Sub-Bots conectados:* ${totalSubBots}
-❒ *Total de comandos:* 303
+❒ *Total de comandos:* ${totalCommands}
 
 Envía *${usedPrefix}bots info* para ver la lista detallada
   `.trim();
