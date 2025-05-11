@@ -5,6 +5,9 @@ import path, { join } from "path"
 import { unwatchFile, watchFile } from "fs"
 import chalk from "chalk"
 
+import { WebSocket } from "ws"
+const ws = WebSocket
+
 const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = (x) => typeof x === "number" && !isNaN(x)
 const delay = (ms) =>
@@ -194,8 +197,9 @@ export async function handler(chatUpdate) {
     let usedPrefix
 
     const groupMetadata =
-      (m.isGroup ? (global.conn.chats[m.chat] || {}).metadata || (await this.groupMetadata(m.chat).catch((_) => null)) : {}) ||
-      {}
+      (m.isGroup
+        ? (global.conn.chats[m.chat] || {}).metadata || (await this.groupMetadata(m.chat).catch((_) => null))
+        : {}) || {}
     const participants = (m.isGroup ? groupMetadata.participants : []) || []
     const user = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) === m.sender) : {}) || {}
     const bot = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) == this.user.jid) : {}) || {}
@@ -225,7 +229,11 @@ export async function handler(chatUpdate) {
           continue
         }
       const str2Regex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
-      const _prefix = plugin.customPrefix ? plugin.customPrefix : global.conn.prefix ? global.conn.prefix : global.prefix
+      const _prefix = plugin.customPrefix
+        ? plugin.customPrefix
+        : global.conn.prefix
+          ? global.conn.prefix
+          : global.prefix
       const match = (
         _prefix instanceof RegExp
           ? [[_prefix.exec(m.text), _prefix]]
@@ -445,10 +453,10 @@ export async function participantsUpdate({ id, participants, action }) {
   if (global.opts["self"]) return
   if (global.db.data == null) await global.loadDatabase()
   const chat = global.db.data.chats[id] || {}
-  
+
   if (chat.welcome) {
     const groupMetadata = (await this.groupMetadata(id)) || (global.conn.chats[id] || {}).metadata
-    
+
     for (const user of participants) {
       if (action === "add" || action === "remove") {
         try {
@@ -475,7 +483,7 @@ export async function participantsUpdate({ id, participants, action }) {
       }
     }
   }
-  
+
   if (action === "promote" || action === "demote") {
     let text = ""
     if (action === "promote") {
@@ -483,7 +491,7 @@ export async function participantsUpdate({ id, participants, action }) {
     } else {
       text = chat.sDemote || this.sdemote || global.conn.sdemote || "=͟͟͞❀ @user 𝙮𝙖 𝙣𝙤 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
     }
-    
+
     const pp = await this.profilePictureUrl(participants[0], "image").catch((_) => "./media/avatar.jpg")
     text = text.replace("@user", "@" + participants[0].split("@")[0])
     if (chat.detect) this.sendFile(id, pp, "pp.jpg", text, null, false, { mentions: this.parseMention(text) })
@@ -516,39 +524,50 @@ export async function groupsUpdate(groupsUpdate) {
         groupUpdate.icon,
       )
     if (groupUpdate.revoke)
-      text = (chats.sRevoke || this.sRevoke || global.conn.sRevoke || "=͟͟͞❀ 𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖\n@revoke ⏤͟͟͞͞★").replace(
-        "@revoke",
-        groupUpdate.revoke,
-      )
+      text = (
+        chats.sRevoke ||
+        this.sRevoke ||
+        global.conn.sRevoke ||
+        "=͟͟͞❀ 𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖\n@revoke ⏤͟͟͞͞★"
+      ).replace("@revoke", groupUpdate.revoke)
     if (!text) continue
     await this.sendMessage(id, { text, mentions: this.parseMention(text) })
   }
 }
 
 global.dfail = (type, m, conn) => {
-  const comando = m.plugin || 'desconocido';
-  
+  const comando = m.plugin || "desconocido"
+
   const msg = {
-    rowner: `《✧》El comando solo puede ser usado por los creadores del bot.`, 
-    owner: `《✧》El comando solo puede ser usado por los desarrolladores del bot.`, 
-    mods: `《✧》El comando solo puede ser usado por los moderadores del bot.`, 
-    premium: `《✧》El comando solo puede ser usado por los usuarios premium.`, 
+    rowner: `《✧》El comando solo puede ser usado por los creadores del bot.`,
+    owner: `《✧》El comando solo puede ser usado por los desarrolladores del bot.`,
+    mods: `《✧》El comando solo puede ser usado por los moderadores del bot.`,
+    premium: `《✧》El comando solo puede ser usado por los usuarios premium.`,
     group: `《✧》El comando solo puede ser usado en grupos.`,
     private: `《✧》El comando solo puede ser usado al chat privado del bot.`,
-    admin: `《✧》El comando solo puede ser usado por los administradores del grupo.`, 
+    admin: `《✧》El comando solo puede ser usado por los administradores del grupo.`,
     botAdmin: `《✧》Para ejecutar el comando debo ser administrador del grupo.`,
     unreg: `《✧》El comando solo puede ser usado por los usuarios registrado, registrate usando:\n> » #reg nombre.edad`,
-    restrict: `《✧》Esta caracteristica está desactivada.`
- }[type];
-if (msg) return m.reply(msg).then(_ => m.react('✖️'))}
+    restrict: `《✧》Esta caracteristica está desactivada.`,
+  }[type]
+  if (msg) return m.reply(msg).then((_) => m.react("✖️"))
+}
 
-let file = global.__filename(import.meta.url, true)
+const file = global.__filename(import.meta.url, true)
 watchFile(file, async () => {
-unwatchFile(file)
-console.log(chalk.magenta("Se actualizo 'handler.js'"))
+  unwatchFile(file)
+  console.log(chalk.magenta("Se actualizo 'handler.js'"))
 
-if (global.conns && global.conns.length > 0 ) {
-const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])];
-for (const userr of users) {
-userr.subreloadHandler(false)
-}}});
+  if (global.conns && global.conns.length > 0) {
+    const users = [
+      ...new Set([
+        ...global.conns
+          .filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED)
+          .map((conn) => conn),
+      ]),
+    ]
+    for (const userr of users) {
+      userr.subreloadHandler(false)
+    }
+  }
+})
