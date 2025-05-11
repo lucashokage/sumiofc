@@ -1,1 +1,168 @@
-const _0x4e11c5=_0x27ae;(function(_0x5c9290,_0x3a1e77){const _0x2a5241=_0x27ae,_0x211769=_0x5c9290();while(!![]){try{const _0x559cef=-parseInt(_0x2a5241(0x126))/(0x1367+0x8eb+-0x1c51)+parseInt(_0x2a5241(0x173))/(-0x10*-0x14f+-0x1941*-0x1+-0x3*0xf65)*(parseInt(_0x2a5241(0x152))/(0x75*0x28+-0x264f+-0x23a*-0x9))+-parseInt(_0x2a5241(0x11d))/(0x2525+-0x190+-0x2391)+parseInt(_0x2a5241(0x16a))/(-0xb65+-0x879*0x1+-0x1*-0x13e3)*(parseInt(_0x2a5241(0x172))/(0x19*-0x25+0xb10+-0x76d*0x1))+parseInt(_0x2a5241(0x134))/(0xf6*-0x7+0xcae*-0x3+0x2ccb*0x1)*(-parseInt(_0x2a5241(0x132))/(0x2328+0xf2f+0x1*-0x324f))+parseInt(_0x2a5241(0x177))/(0x1c54+-0x267b+0xa30)+parseInt(_0x2a5241(0x10b))/(-0xe*0x2a+-0xa1e+0xc74);if(_0x559cef===_0x3a1e77)break;else _0x211769['push'](_0x211769['shift']());}catch(_0x1fc465){_0x211769['push'](_0x211769['shift']());}}}(_0x4d1f,-0x113d9e+0x3c16a+0x1be18c));const {useMultiFileAuthState,DisconnectReason,makeCacheableSignalKeyStore,fetchLatestBaileysVersion}=await import(_0x4e11c5(0x121)+_0x4e11c5(0x14f)+_0x4e11c5(0x108));import _0x4e7835 from'qrcode';import _0x7fb32d from'node-cache';import _0x389e18 from'fs';import _0x360be1 from'path';import _0x57de81 from'pino';import _0x552717 from'util';import*as _0x23033e from'ws';const {child,spawn,exec}=await import(_0x4e11c5(0x15e)+_0x4e11c5(0x10f)),{CONNECTING}=_0x23033e;import _0x788ff3 from'chalk';import{makeWASocket}from'../lib/simple.js';global[_0x4e11c5(0x168)]instanceof Array?console[_0x4e11c5(0x176)]():global[_0x4e11c5(0x168)]=[];const MAX_SUBBOTS=0x1*-0x388+0x1305+0x1*-0xf19,users=[...new Set([...global[_0x4e11c5(0x168)][_0x4e11c5(0x131)](_0x5d9bbe=>_0x5d9bbe[_0x4e11c5(0x128)]&&_0x5d9bbe['ws'][_0x4e11c5(0x144)]&&_0x5d9bbe['ws'][_0x4e11c5(0x144)][_0x4e11c5(0x119)]!==_0x23033e[_0x4e11c5(0x111)])[_0x4e11c5(0x109)](_0x4d198f=>_0x4d198f)])];function _0x27ae(_0x2410f5,_0x1cb38d){const _0xc733ce=_0x4d1f();return _0x27ae=function(_0xea7742,_0x3fed50){_0xea7742=_0xea7742-(-0x8*0x341+0x108d+-0x1*-0xa7f);let _0x34211=_0xc733ce[_0xea7742];return _0x34211;},_0x27ae(_0x2410f5,_0x1cb38d);}async function loadSubbots(){const _0x45df9a=_0x4e11c5,_0x424507={'xdbjT':_0x45df9a(0x118)+_0x45df9a(0x107),'yMUqh':function(_0x53df45,_0x2a647d){return _0x53df45(_0x2a647d);},'gXLDi':_0x45df9a(0x12e)+_0x45df9a(0x136),'HdfsX':_0x45df9a(0x153)+_0x45df9a(0x13f),'GEKQZ':_0x45df9a(0x169)+'te','IzIHm':_0x45df9a(0x148)+_0x45df9a(0x127)+_0x45df9a(0x13b),'Qqfjd':function(_0x2f0e42,_0x29e295){return _0x2f0e42!==_0x29e295;},'JfcuU':function(_0x2a3643,_0x280dd4){return _0x2a3643==_0x280dd4;},'TOVWv':function(_0x171aaa,_0x3d651e){return _0x171aaa<_0x3d651e;},'rcisw':function(_0x292a7d,_0x300389){return _0x292a7d==_0x300389;},'VhuwD':_0x45df9a(0x135),'IwRan':function(_0x222b1e,_0x2ddb0c){return _0x222b1e===_0x2ddb0c;},'iIZYQ':_0x45df9a(0x15f),'SXeZn':function(_0x2cddff,_0x597669){return _0x2cddff===_0x597669;},'mAXMw':_0x45df9a(0x122),'AyhPz':function(_0x3fc1eb,_0x42151c){return _0x3fc1eb>_0x42151c;},'CbOgI':function(_0x33c664,_0x54a030){return _0x33c664>_0x54a030;},'fhMzc':function(_0x51d2a8,_0x1dcaef,_0x341c8a){return _0x51d2a8(_0x1dcaef,_0x341c8a);},'Iwhzc':function(_0x35e257,_0x2ac7c6){return _0x35e257||_0x2ac7c6;},'AimWW':function(_0x3a1dfa,_0x22afc8){return _0x3a1dfa(_0x22afc8);},'AynSy':function(_0x41939d,_0x5c246d){return _0x41939d+_0x5c246d;},'usAHc':function(_0x92dd60,_0x1b811b){return _0x92dd60>=_0x1b811b;},'FqKih':function(_0x385b15){return _0x385b15();},'axedT':_0x45df9a(0x12d),'QWvMj':_0x45df9a(0x15a),'OpnzU':_0x45df9a(0x10e),'nFJka':function(_0x15e2ba,_0x411cbe){return _0x15e2ba(_0x411cbe);},'NrUPK':_0x45df9a(0x139)+_0x45df9a(0x171),'QViyV':function(_0x465011,_0x27b1ff){return _0x465011(_0x27b1ff);}},_0x4b3c6a=_0x389e18[_0x45df9a(0x156)+'c'](_0x424507[_0x45df9a(0x117)]('./',jadi));for(const _0x3f7507 of _0x4b3c6a){if(_0x424507[_0x45df9a(0x157)](users[_0x45df9a(0x164)],MAX_SUBBOTS)){console[_0x45df9a(0x176)](_0x788ff3[_0x45df9a(0x113)](_0x45df9a(0x10c)+'e\x20'+MAX_SUBBOTS+(_0x45df9a(0x141)+_0x45df9a(0x11c))));break;}const _0x24cd2f='./'+jadi+'/'+_0x3f7507;if(_0x389e18[_0x45df9a(0x16d)](_0x24cd2f)[_0x45df9a(0x12a)+'y']()){const {state:_0x3ecf9f,saveCreds:_0x15b63e}=await _0x424507[_0x45df9a(0x167)](useMultiFileAuthState,_0x24cd2f),{version:_0x10da85}=await _0x424507[_0x45df9a(0x161)](fetchLatestBaileysVersion),_0x5458f2={'version':_0x10da85,'keepAliveIntervalMs':0x7530,'printQRInTerminal':![],'logger':_0x424507[_0x45df9a(0x15c)](_0x57de81,{'level':_0x424507[_0x45df9a(0x13e)]}),'auth':_0x3ecf9f,'browser':[_0x45df9a(0x12f),_0x424507[_0x45df9a(0x14d)],_0x424507[_0x45df9a(0x11f)]]};let _0x30331e=_0x424507[_0x45df9a(0x140)](makeWASocket,_0x5458f2);_0x30331e[_0x45df9a(0x14e)]=![];let _0x48f10a=!![],_0x2b7f43=0x1*0x66d+-0x865+0x18*0x15;async function _0x4a6530(_0x55b7ab){const _0xce0b32=_0x45df9a,_0xeeea70={'YSIXW':_0x424507[_0xce0b32(0x13c)],'QMCwl':function(_0x2482d5,_0x5856ac){const _0x64ed52=_0xce0b32;return _0x424507[_0x64ed52(0x15c)](_0x2482d5,_0x5856ac);},'ejPED':_0x424507[_0xce0b32(0x123)],'pTPJS':_0x424507[_0xce0b32(0x178)],'mxIWc':_0x424507[_0xce0b32(0x147)],'CMmML':_0x424507[_0xce0b32(0x142)]},{connection:_0x29ffd8,lastDisconnect:_0x12a560,isNewLogin:_0x3f9032}=_0x55b7ab;_0x3f9032&&(_0x30331e[_0xce0b32(0x14e)]=!![]);const _0x33afb8=_0x12a560?.[_0xce0b32(0x122)]?.[_0xce0b32(0x11a)]?.[_0xce0b32(0x165)]||_0x12a560?.[_0xce0b32(0x122)]?.[_0xce0b32(0x11a)]?.[_0xce0b32(0x151)]?.[_0xce0b32(0x165)];if(_0x33afb8&&_0x424507[_0xce0b32(0x104)](_0x33afb8,DisconnectReason[_0xce0b32(0x179)])&&_0x424507[_0xce0b32(0x115)](_0x30331e?.['ws'][_0xce0b32(0x144)],null)){let _0xfa9e37=global[_0xce0b32(0x168)][_0xce0b32(0x16e)](_0x30331e);if(_0x424507[_0xce0b32(0x162)](_0xfa9e37,0x1e6d*-0x1+0x7*-0x57+0x20ce))return;delete global[_0xce0b32(0x168)][_0xfa9e37],global[_0xce0b32(0x168)][_0xce0b32(0x110)](_0xfa9e37,0x262*-0x2+-0x1*0x2263+0x2728);}_0x424507[_0xce0b32(0x120)](_0x29ffd8,_0x424507[_0xce0b32(0x133)])&&(_0x30331e[_0xce0b32(0x11b)]=new Date(),_0x30331e[_0xce0b32(0x14e)]=!![],global[_0xce0b32(0x168)][_0xce0b32(0x149)](_0x30331e));if(_0x424507[_0xce0b32(0x163)](_0x29ffd8,_0x424507[_0xce0b32(0x125)])||_0x424507[_0xce0b32(0x11e)](_0x29ffd8,_0x424507[_0xce0b32(0x13a)])){_0x2b7f43++;let _0x1c5827=0x12cd*0x1+-0x1*0x1ec1+0xfdc;if(_0x424507[_0xce0b32(0x14c)](_0x2b7f43,0x939*-0x2+0x6*0x220+-0x2db*-0x2))_0x1c5827=-0x1c73*-0x1+-0x4*0x155+0xff1;else{if(_0x424507[_0xce0b32(0x14c)](_0x2b7f43,-0x390+-0x12cf+0xa*0x23d))_0x1c5827=-0x542*0x1+-0x1166+0x2a30;else{if(_0x424507[_0xce0b32(0x158)](_0x2b7f43,-0x1250+-0x1018+0x226a))_0x1c5827=0x9f7*0x1+-0x1162+0x1323;else{if(_0x424507[_0xce0b32(0x158)](_0x2b7f43,-0x7*-0x7+-0x1b55+0x1*0x1b25))_0x1c5827=0x385*-0x4+0x19a6+-0x3c2;}}}_0x424507[_0xce0b32(0x160)](setTimeout,async()=>{const _0x5e6626=_0xce0b32;try{const _0x1e45ad=_0xeeea70[_0x5e6626(0x15b)][_0x5e6626(0x155)]('|');let _0x6d7e46=0x1*-0x188c+-0x11d3+0x2a5f;while(!![]){switch(_0x1e45ad[_0x6d7e46++]){case'0':_0x30331e[_0x5e6626(0x12e)+_0x5e6626(0x13d)]=_0x4a6530[_0x5e6626(0x154)](_0x30331e);continue;case'1':_0x30331e=_0xeeea70[_0x5e6626(0x16c)](makeWASocket,_0x5458f2);continue;case'2':_0x30331e['ev']['on'](_0xeeea70[_0x5e6626(0x138)],_0x30331e[_0x5e6626(0x12e)+_0x5e6626(0x13d)]);continue;case'3':_0x30331e['ev'][_0x5e6626(0x15d)+_0x5e6626(0x114)]();continue;case'4':_0x30331e[_0x5e6626(0x146)]=_0x47432f[_0x5e6626(0x146)][_0x5e6626(0x154)](_0x30331e);continue;case'5':_0x30331e['ws'][_0x5e6626(0x15f)]();continue;case'6':_0x30331e[_0x5e6626(0x175)+'e']=_0x15b63e[_0x5e6626(0x154)](_0x30331e,!![]);continue;case'7':_0x30331e['ev']['on'](_0xeeea70[_0x5e6626(0x12b)],_0x30331e[_0x5e6626(0x146)]);continue;case'8':await _0xeeea70[_0x5e6626(0x16c)](_0x1e2a36,![]);continue;case'9':_0x30331e['ev']['on'](_0xeeea70[_0x5e6626(0x170)],_0x30331e[_0x5e6626(0x175)+'e']);continue;}break;}}catch(_0x5d4dd6){console[_0x5e6626(0x176)](_0x788ff3[_0x5e6626(0x150)](_0xeeea70[_0x5e6626(0x166)],_0x5d4dd6));}},_0x1c5827);}_0x424507[_0xce0b32(0x11e)](_0x33afb8,DisconnectReason[_0xce0b32(0x179)])&&(_0x389e18[_0xce0b32(0x10a)](_0x24cd2f)&&(_0x389e18[_0xce0b32(0x14a)](_0x24cd2f,{'recursive':!![]}),console[_0xce0b32(0x176)](_0x788ff3[_0xce0b32(0x143)](_0xce0b32(0x12c)+_0xce0b32(0x106)+_0xce0b32(0x105)+_0xce0b32(0x16b)+_0xce0b32(0x137)+_0x3f7507+'.'))));}let _0x47432f=await import(_0x424507[_0x45df9a(0x112)]),_0x1e2a36=async function(_0x177649){const _0x1c0a17=_0x45df9a;try{const _0x324213=await import(_0x1c0a17(0x139)+_0x1c0a17(0x16f)+'='+Date[_0x1c0a17(0x129)]())[_0x1c0a17(0x10d)](console[_0x1c0a17(0x122)]);if(Object[_0x1c0a17(0x124)](_0x424507[_0x1c0a17(0x130)](_0x324213,{}))[_0x1c0a17(0x164)])_0x47432f=_0x324213;}catch(_0x1f9905){console[_0x1c0a17(0x122)](_0x1f9905);}if(_0x177649){try{_0x30331e['ws'][_0x1c0a17(0x15f)]();}catch{}_0x30331e['ev'][_0x1c0a17(0x15d)+_0x1c0a17(0x114)](),_0x30331e=_0x424507[_0x1c0a17(0x167)](makeWASocket,_0x5458f2),_0x48f10a=!![];}return!_0x48f10a&&(_0x30331e['ev'][_0x1c0a17(0x14b)](_0x424507[_0x1c0a17(0x178)],_0x30331e[_0x1c0a17(0x146)]),_0x30331e['ev'][_0x1c0a17(0x14b)](_0x424507[_0x1c0a17(0x123)],_0x30331e[_0x1c0a17(0x12e)+_0x1c0a17(0x13d)]),_0x30331e['ev'][_0x1c0a17(0x14b)](_0x424507[_0x1c0a17(0x147)],_0x30331e[_0x1c0a17(0x175)+'e'])),_0x30331e[_0x1c0a17(0x146)]=_0x47432f[_0x1c0a17(0x146)][_0x1c0a17(0x154)](_0x30331e),_0x30331e[_0x1c0a17(0x12e)+_0x1c0a17(0x13d)]=_0x4a6530[_0x1c0a17(0x154)](_0x30331e),_0x30331e[_0x1c0a17(0x175)+'e']=_0x15b63e[_0x1c0a17(0x154)](_0x30331e,!![]),_0x30331e['ev']['on'](_0x424507[_0x1c0a17(0x178)],_0x30331e[_0x1c0a17(0x146)]),_0x30331e['ev']['on'](_0x424507[_0x1c0a17(0x123)],_0x30331e[_0x1c0a17(0x12e)+_0x1c0a17(0x13d)]),_0x30331e['ev']['on'](_0x424507[_0x1c0a17(0x147)],_0x30331e[_0x1c0a17(0x175)+'e']),_0x48f10a=![],!![];};_0x424507[_0x45df9a(0x145)](_0x1e2a36,![]);}}console[_0x45df9a(0x176)](_0x788ff3[_0x45df9a(0x143)](_0x45df9a(0x116)+_0x45df9a(0x174)+global[_0x45df9a(0x168)][_0x45df9a(0x164)]+_0x45df9a(0x159)));}function _0x4d1f(){const _0xf978cb=['2583848TckADv','SXeZn','OpnzU','rcisw','@whiskeyso','error','gXLDi','keys','iIZYQ','1193567xCDthU','nte\x20la\x20rec','user','now','isDirector','pTPJS','Carpeta\x20de','fatal','connection','Sylph','Iwhzc','filter','8rmffNP','VhuwD','10517647outfYh','open','.update','l\x20subbot\x20','ejPED','../handler','mAXMw','onexión\x20:\x20','xdbjT','Update','axedT','psert','nFJka','\x20subbots\x20a','IzIHm','yellow','socket','QViyV','handler','GEKQZ','Error\x20dura','push','rmdirSync','off','AyhPz','QWvMj','isInit','ckets/bail','red','payload','2980059LDSxiG','messages.u','bind','split','readdirSyn','usAHc','CbOgI','\x20subbots','IOS','YSIXW','yMUqh','removeAllL','child_proc','close','fhMzc','FqKih','TOVWv','IwRan','length','statusCode','CMmML','AimWW','conns','creds.upda','34935aIUsTL','ada\x20para\x20e','QMCwl','statSync','indexOf','.js?update','mxIWc','.js','474fApGKn','2syvMiE','ectaron\x20','credsUpdat','log','8493579zOQFLW','HdfsX','loggedOut','Qqfjd','les\x20elimin','\x20credencia','6|7|2|9|8','eys','map','existsSync','17964410omFuao','☕\x20Límite\x20d','catch','4.1.0','ess','splice','CLOSED','NrUPK','cyan','isteners','JfcuU','🌿\x20Se\x20recon','AynSy','5|3|1|4|0|','readyState','output','uptime','lcanzado.'];_0x4d1f=function(){return _0xf978cb;};return _0x4d1f();}await loadSubbots()[_0x4e11c5(0x10d)](console[_0x4e11c5(0x122)]);
+const fs = require('fs');
+const path = require('path');
+const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const qrcode = require('qrcode');
+const NodeCache = require('node-cache');
+const pino = require('pino');
+const util = require('util');
+const WebSocket = require('ws');
+const { spawn, exec } = require('child_process');
+const chalk = require('chalk');
+const { makeWASocket } = require('../lib/simple.js');
+
+// Initialize global connections array if it doesn't exist
+global.conns = global.conns instanceof Array ? global.conns : [];
+
+const MAX_SUBBOTS = 10;
+const users = [...new Set([...global.conns
+    .filter(conn => conn.user && conn.ws.readyState && conn.ws.readyState !== WebSocket.CONNECTING)
+    .map(conn => conn)
+])];
+
+async function loadSubbots() {
+    const subbotFolders = fs.readdirSync('./sumibots');
+    
+    for (const folder of subbotFolders) {
+        if (users.length >= MAX_SUBBOTS) {
+            console.log(chalk.red(`☕ Maximum limit of ${MAX_SUBBOTS} subbots reached. No more will be loaded.`));
+            break;
+        }
+
+        const folderPath = './sumibots/' + folder;
+        
+        if (fs.statSync(folderPath).isDirectory()) {
+            try {
+                const { state, saveCreds } = await useMultiFileAuthState(folderPath);
+                const { version } = await fetchLatestBaileysVersion();
+                
+                const socketConfig = {
+                    version,
+                    keepAliveIntervalMs: 30000,
+                    printQRInTerminal: false,
+                    logger: pino({ level: 'fatal' }),
+                    auth: state,
+                    browser: ['Ubuntu', 'Chrome', '4.1.0']
+                };
+
+                let sock = makeWASocket(socketConfig);
+                sock.isInit = false;
+                
+                let isConnected = true;
+                let reconnectAttempts = 0;
+
+                async function connectionUpdate(update) {
+                    const { connection, lastDisconnect, isNewLogin } = update;
+                    
+                    if (isNewLogin) {
+                        sock.isInit = true;
+                    }
+
+                    const statusCode = lastDisconnect?.error?.output?.statusCode || 
+                                     lastDisconnect?.error?.output?.payload?.statusCode;
+
+                    if (statusCode && statusCode === DisconnectReason.loggedOut && sock?.ws.readyState !== null) {
+                        let connIndex = global.conns.indexOf(sock);
+                        if (connIndex < 0) return;
+                        
+                        delete global.conns[connIndex];
+                        global.conns.splice(connIndex, 1);
+                    }
+
+                    if (connection === 'open') {
+                        sock.uptime = new Date();
+                        sock.isInit = true;
+                        global.conns.push(sock);
+                    }
+
+                    if (connection === 'close' || connection === 'connecting') {
+                        reconnectAttempts++;
+                        let delay = 5000;
+                        
+                        if (reconnectAttempts < 5) {
+                            delay = 10000;
+                        } else if (reconnectAttempts < 10) {
+                            delay = 15000;
+                        } else if (reconnectAttempts < 15) {
+                            delay = 30000;
+                        } else if (reconnectAttempts < 20) {
+                            delay = 60000;
+                        }
+
+                        setTimeout(async () => {
+                            try {
+                                sock.ev.off('messages.upsert', sock.handler);
+                                sock.ev.off('connection.update', sock.connectionUpdate);
+                                sock.ev.off('creds.update', sock.credsUpdate);
+                                
+                                if (sock.ws.readyState !== WebSocket.CLOSED) {
+                                    sock.ws.close();
+                                }
+                                
+                                sock = makeWASocket(socketConfig);
+                                await reloadHandler(false);
+                            } catch (err) {
+                                console.log(chalk.red('Error during reconnection:', err));
+                            }
+                        }, delay);
+                    }
+
+                    if (statusCode === DisconnectReason.loggedOut) {
+                        if (fs.existsSync(folderPath)) {
+                            fs.rmdirSync(folderPath, { recursive: true });
+                            console.log(chalk.cyan(`🌿 Credentials deleted for subbot ${folder}.`));
+                        }
+                    }
+                }
+
+                let handler = await require('../handler');
+                let reloadHandler = async (restartConnection) => {
+                    try {
+                        const newHandler = await require(`../handler.js?update=${Date.now()}`);
+                        if (Object.keys(newHandler).length) {
+                            handler = newHandler;
+                        }
+                    } catch (err) {
+                        console.log(err);
+                    }
+
+                    if (restartConnection) {
+                        try {
+                            if (sock.ws.readyState !== WebSocket.CLOSED) {
+                                sock.ws.close();
+                            }
+                        } catch {}
+                        
+                        sock.ev.removeAllListeners();
+                        sock = makeWASocket(socketConfig);
+                        isConnected = true;
+                    }
+
+                    if (!isConnected) {
+                        sock.ev.on('messages.upsert', sock.handler);
+                        sock.ev.on('connection.update', sock.connectionUpdate);
+                        sock.ev.on('creds.update', sock.credsUpdate);
+                    }
+
+                    sock.handler = handler.handler.bind(sock);
+                    sock.connectionUpdate = connectionUpdate.bind(sock);
+                    sock.credsUpdate = saveCreds.bind(sock, true);
+                    
+                    sock.ev.on('messages.upsert', sock.handler);
+                    sock.ev.on('connection.update', sock.connectionUpdate);
+                    sock.ev.on('creds.update', sock.credsUpdate);
+                    
+                    isConnected = false;
+                    return true;
+                };
+
+                await reloadHandler(false);
+            } catch (err) {
+                console.error(chalk.red(`Error loading subbot ${folder}:`, err));
+            }
+        }
+    }
+
+    console.log(chalk.green(`🌿 Successfully connected ${global.conns.length} subbots`));
+}
+
+await loadSubbots().catch(console.error);
