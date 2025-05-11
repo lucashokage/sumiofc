@@ -88,7 +88,7 @@ async function start(file) {
   console.log(chalk.yellow(`💾 Total RAM: ${ramInGB.toFixed(2)} GB`));
   const freeRamInGB = os.freemem() / (1024 * 1024 * 1024);
   console.log(chalk.yellow(`💽 Free RAM: ${freeRamInGB.toFixed(2)} GB`));
-  console.log(chalk.yellow(`📃 Script by FG98`));
+  console.log(chalk.yellow(`📃 Script by lucas`));
 
   const packageJsonPath = path.join(path.dirname(currentFilePath), './package.json');
     try {
@@ -98,7 +98,7 @@ async function start(file) {
     console.log(chalk.cyan(`Nombre: ${packageJsonObj.name}`));
     console.log(chalk.cyan(`Versión: ${packageJsonObj.version}`));
     console.log(chalk.cyan(`Descripción: ${packageJsonObj.description}`));
-    console.log(chalk.cyan(`Autor: ${packageJsonObj.author.name}`));
+    console.log(chalk.cyan(`Autor: leonel}`));
   } catch (err) {
     console.error(chalk.red(`❌ No se pudo leer el archivo package.json: ${err}`));
   }
