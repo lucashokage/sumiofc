@@ -1,169 +1,28 @@
-import fs from 'fs';
-import path from 'path';
-import { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
-import qrcode from 'qrcode';
-import NodeCache from 'node-cache';
-import pino from 'pino';
-import util from 'util';
-import WebSocket from 'ws';
-import { spawn, exec } from 'child_process';
-import chalk from 'chalk';
-import { makeWASocket } from '../lib/simple.js';
+import { resetSubbot } from "../sumibot-subbots.js"
 
-// Initialize global connections array if it doesn't exist
-global.conns = global.conns instanceof Array ? global.conns : [];
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!args[0]) {
+    return m.reply(`⚠️ Debes especificar el número del subbot a reiniciar\n\nEjemplo: ${usedPrefix}${command} 123456789`)
+  }
 
-const MAX_SUBBOTS = 10;
-const users = [...new Set([...global.conns
-    .filter(conn => conn.user && conn.ws.readyState && conn.ws.readyState !== WebSocket.CONNECTING)
-    .map(conn => conn)
-])];
+  const targetJid = args[0].includes("@") ? args[0] : args[0] + "@s.whatsapp.net"
 
-async function loadSubbots() {
-    const subbotFolders = fs.readdirSync('./sumibots');
-    
-    for (const folder of subbotFolders) {
-        if (users.length >= MAX_SUBBOTS) {
-            console.log(chalk.red(`☕ Maximum limit of ${MAX_SUBBOTS} subbots reached. No more will be loaded.`));
-            break;
-        }
+  m.reply("🔄 Reiniciando subbot, por favor espere...")
 
-        const folderPath = './sumibots/' + folder;
-        
-        if (fs.statSync(folderPath).isDirectory()) {
-            try {
-                const { state, saveCreds } = await useMultiFileAuthState(folderPath);
-                const { version } = await fetchLatestBaileysVersion();
-                
-                const socketConfig = {
-                    version,
-                    keepAliveIntervalMs: 30000,
-                    printQRInTerminal: false,
-                    logger: pino({ level: 'fatal' }),
-                    auth: state,
-                    browser: ['Ubuntu', 'Chrome', '4.1.0']
-                };
+  const success = await resetSubbot(targetJid)
 
-                let sock = makeWASocket(socketConfig);
-                sock.isInit = false;
-                
-                let isConnected = true;
-                let reconnectAttempts = 0;
-
-                async function connectionUpdate(update) {
-                    const { connection, lastDisconnect, isNewLogin } = update;
-                    
-                    if (isNewLogin) {
-                        sock.isInit = true;
-                    }
-
-                    const statusCode = lastDisconnect?.error?.output?.statusCode || 
-                                     lastDisconnect?.error?.output?.payload?.statusCode;
-
-                    if (statusCode && statusCode === DisconnectReason.loggedOut && sock?.ws.readyState !== null) {
-                        let connIndex = global.conns.indexOf(sock);
-                        if (connIndex < 0) return;
-                        
-                        delete global.conns[connIndex];
-                        global.conns.splice(connIndex, 1);
-                    }
-
-                    if (connection === 'open') {
-                        sock.uptime = new Date();
-                        sock.isInit = true;
-                        global.conns.push(sock);
-                    }
-
-                    if (connection === 'close' || connection === 'connecting') {
-                        reconnectAttempts++;
-                        let delay = 5000;
-                        
-                        if (reconnectAttempts < 5) {
-                            delay = 10000;
-                        } else if (reconnectAttempts < 10) {
-                            delay = 15000;
-                        } else if (reconnectAttempts < 15) {
-                            delay = 30000;
-                        } else if (reconnectAttempts < 20) {
-                            delay = 60000;
-                        }
-
-                        setTimeout(async () => {
-                            try {
-                                sock.ev.off('messages.upsert', sock.handler);
-                                sock.ev.off('connection.update', sock.connectionUpdate);
-                                sock.ev.off('creds.update', sock.credsUpdate);
-                                
-                                if (sock.ws.readyState !== WebSocket.CLOSED) {
-                                    sock.ws.close();
-                                }
-                                
-                                sock = makeWASocket(socketConfig);
-                                await reloadHandler(false);
-                            } catch (err) {
-                                console.log(chalk.red('Error during reconnection:', err));
-                            }
-                        }, delay);
-                    }
-
-                    if (statusCode === DisconnectReason.loggedOut) {
-                        if (fs.existsSync(folderPath)) {
-                            fs.rmdirSync(folderPath, { recursive: true });
-                            console.log(chalk.cyan(`🌿 Credentials deleted for subbot ${folder}.`));
-                        }
-                    }
-                }
-
-                // Dynamic import for handler
-                let handler = await import('../handler.js');
-                let reloadHandler = async (restartConnection) => {
-                    try {
-                        const newHandler = await import(`../handler.js?update=${Date.now()}`);
-                        if (Object.keys(newHandler).length) {
-                            handler = newHandler;
-                        }
-                    } catch (err) {
-                        console.log(err);
-                    }
-
-                    if (restartConnection) {
-                        try {
-                            if (sock.ws.readyState !== WebSocket.CLOSED) {
-                                sock.ws.close();
-                            }
-                        } catch {}
-                        
-                        sock.ev.removeAllListeners();
-                        sock = makeWASocket(socketConfig);
-                        isConnected = true;
-                    }
-
-                    if (!isConnected) {
-                        sock.ev.on('messages.upsert', sock.handler);
-                        sock.ev.on('connection.update', sock.connectionUpdate);
-                        sock.ev.on('creds.update', sock.credsUpdate);
-                    }
-
-                    sock.handler = handler.handler.bind(sock);
-                    sock.connectionUpdate = connectionUpdate.bind(sock);
-                    sock.credsUpdate = saveCreds.bind(sock, true);
-                    
-                    sock.ev.on('messages.upsert', sock.handler);
-                    sock.ev.on('connection.update', sock.connectionUpdate);
-                    sock.ev.on('creds.update', sock.credsUpdate);
-                    
-                    isConnected = false;
-                    return true;
-                };
-
-                await reloadHandler(false);
-            } catch (err) {
-                console.error(chalk.red(`Error loading subbot ${folder}:`, err));
-            }
-        }
-    }
-
-    console.log(chalk.green(`🌿 Successfully connected ${global.conns.length} subbots`));
+  if (success) {
+    m.reply(`✅ Subbot ${args[0]} reiniciado exitosamente`)
+  } else {
+    m.reply(
+      `❌ No se pudo reiniciar el subbot ${args[0]}. Verifica que el número sea correcto y que el subbot esté conectado.`,
+    )
+  }
 }
 
-await loadSubbots().catch(console.error);
+handler.help = ["resetbot"]
+handler.tags = ["owner"]
+handler.command = ["resetbot", "resetsub", "reiniciarbot"]
+handler.rowner = true
+
+export default handler
