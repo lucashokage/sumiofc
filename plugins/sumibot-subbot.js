@@ -85,7 +85,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       msgRetryCounterMap,
       defaultQueryTimeoutMs: 60000,
       version,
-      retryRequestDelayMs: 1000,
+      retryRequestDelayMs: 800000,
       connectTimeoutMs: 60000,
       keepAliveIntervalMs: 25000,
     }
