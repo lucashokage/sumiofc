@@ -6,6 +6,8 @@ import { promisify } from "util"
 const readdir = promisify(fs.readdir)
 
 async function handler(m, { usedPrefix, args }) {
+  if (!global.conns) global.conns = []
+
   global.conns.forEach((conn) => {
     if (!conn.startTime) conn.startTime = Date.now()
   })
