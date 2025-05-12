@@ -114,7 +114,6 @@ export async function handler(chatUpdate) {
         if (!isNumber(chat.expired)) chat.expired = 0
         if (!("rules" in chat)) chat.rules = ""
         if (!("antiLag" in chat)) chat.antiLag = true
-        if (!("per" in chat)) chat.per = []
       } else
         global.db.data.chats[m.chat] = {
           isBanned: false,
@@ -134,7 +133,6 @@ export async function handler(chatUpdate) {
           expired: 0,
           rules: "",
           antiLag: true,
-          per: [],
         }
 
       if (!global.db) global.db = {}
@@ -165,10 +163,10 @@ export async function handler(chatUpdate) {
     const mainBot = global.conn.user.jid
     const chat = global.db.data.chats[m.chat] || {}
     const isAntiLag = chat.antiLag === true
-    const allowedBots = chat.per || []
-    if (!allowedBots.includes(mainBot)) allowedBots.push(mainBot)
-    const isAllowed = allowedBots.includes(this.user.jid)
-    if (isAntiLag && !isAllowed) return
+    const groupMetadata = m.isGroup ? await this.groupMetadata(m.chat).catch(() => null) : null
+    const botIsInGroup = groupMetadata?.participants.some((p) => p.id === mainBot)
+
+    if (isAntiLag && botIsInGroup && this.user.jid !== mainBot) return
 
     if (global.opts["nyimak"]) return
     if (!m.fromMe && global.opts["self"]) return
@@ -211,10 +209,6 @@ export async function handler(chatUpdate) {
 
     let usedPrefix
 
-    const groupMetadata =
-      (m.isGroup
-        ? (global.conn.chats[m.chat] || {}).metadata || (await this.groupMetadata(m.chat).catch((_) => null))
-        : {}) || {}
     const participants = (m.isGroup ? groupMetadata.participants : []) || []
     const user = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) === m.sender) : {}) || {}
     const bot = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) == this.user.jid) : {}) || {}
@@ -534,7 +528,7 @@ export async function groupsUpdate(groupsUpdate) {
         "=͟͟͞❀ 𝙀𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖 \n@group ⏤͟͟͞͞★"
       ).replace("@group", groupUpdate.subject)
     if (groupUpdate.icon)
-      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 �𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
+      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
         "@icon",
         groupUpdate.icon,
       )
