@@ -2,16 +2,39 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   if (!text) return m.reply(`❀ Ingresa un texto para buscar en YouTube.\n> *Ejemplo:* ${usedPrefix + command} Shakira`);
 
   try {
-    // Buscar en YouTube
-    const searchApi = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${text}`;
-    const searchResponse = await fetch(searchApi);
-    const searchData = await searchResponse.json();
+    const searchApis = [
+      async () => {
+        const url = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.data?.length > 0) return data.data[0];
+      },
+      async () => {
+        const url = `https://api.siputzx.my.id/api/s/youtube?query=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.result?.length > 0) return {
+          title: data.result[0].title,
+          author: { name: data.result[0].channel },
+          duration: data.result[0].duration,
+          views: data.result[0].views,
+          publishedAt: data.result[0].uploaded,
+          url: data.result[0].url,
+          image: data.result[0].thumbnail
+        };
+      }
+    ];
 
-    if (!searchData?.data || searchData.data.length === 0) {
-      return m.reply(`⚠️ No se encontraron resultados para "${text}".`);
+    let video;
+    for (const api of searchApis) {
+      try {
+        video = await api();
+        if (video) break;
+      } catch (e) {}
     }
 
-    const video = searchData.data[0];
+    if (!video) return m.reply(`⚠️ No se encontraron resultados para "${text}".`);
+
     const videoDetails = ` *「✦」 ${video.title}*
 
 > ✦ *Canal:* » ${video.author.name}
@@ -26,59 +49,49 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
       caption: videoDetails.trim()
     }, { quoted: m });
 
-    // Opción 1: API vreden.my.id
-    const downloadFromVreden = async () => {
-      const apiUrl = `https://api.vreden.my.id/api/ytmp3?url=${video.url}`;
-      try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        if (data?.result?.download?.url) {
-          return {
-            url: data.result.download.url,
-            source: 'vreden.my.id'
-          };
-        }
-      } catch (e) {
-        console.log('Error con vreden API:', e.message);
-        return null;
+    const downloadApis = [
+      async () => {
+        const url = `https://api.vreden.my.id/api/ytmp3?url=${video.url}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.result?.download?.url) return data.result.download.url;
+      },
+      async () => {
+        const url = `https://api.siputzx.my.id/api/d/ytmp3?url=${video.url}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.result?.url) return data.result.url;
+      },
+      async () => {
+        const url = `https://api.siputzx.my.id/api/dl/youtube/mp3?url=${video.url}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.url) return data.url;
+      },
+      async () => {
+        const url = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${video.url}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.result?.url) return data.result.url;
       }
-    };
+    ];
 
-    // Opción 2: API alternativa (delirius)
-    const downloadFromDelirius = async () => {
-      const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${video.url}`;
+    let audioUrl;
+    for (const api of downloadApis) {
       try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        if (data?.result?.url) {
-          return {
-            url: data.result.url,
-            source: 'delirius'
-          };
-        }
-      } catch (e) {
-        console.log('Error con delirius API:', e.message);
-        return null;
-      }
-    };
-
-    // Intentar con ambas APIs
-    let audioData = await downloadFromVreden();
-    if (!audioData) {
-      audioData = await downloadFromDelirius();
+        audioUrl = await api();
+        if (audioUrl) break;
+      } catch (e) {}
     }
 
-    if (!audioData) {
-      return m.reply("❌ No se pudo obtener el audio del video. Ambas APIs fallaron.");
-    }
+    if (!audioUrl) return m.reply("❌ No se pudo obtener el audio del video.");
 
     await conn.sendMessage(m.chat, {
-      audio: { url: audioData.url },
+      audio: { url: audioUrl },
       mimetype: 'audio/mpeg',
-      fileName: `${video.title}.mp3`
+      fileName: `${video.title.replace(/[^\w\s]/gi, '')}.mp3`
     }, { quoted: m });
 
-    await m.reply(`✅ Audio descargado usando API: ${audioData.source}`);
     await m.react("✅");
   } catch (error) {
     console.error(error);
@@ -87,7 +100,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   }
 };
 
-handler.command = ['playaudio', 'play'];
+handler.command = ['playaudio', 'playadmp3'];
 handler.help = ['play <texto>', 'playaudio <texto>'];
 handler.tags = ['media'];
 
