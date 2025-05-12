@@ -2,39 +2,16 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   if (!text) return m.reply(`❀ Ingresa un texto para buscar en YouTube.\n> *Ejemplo:* ${usedPrefix + command} Shakira`);
 
   try {
-    const searchApis = [
-      async () => {
-        const url = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${encodeURIComponent(text)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.data?.length > 0) return data.data[0];
-      },
-      async () => {
-        const url = `https://api.siputzx.my.id/api/s/youtube?query=${encodeURIComponent(text)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.result?.length > 0) return {
-          title: data.result[0].title,
-          author: { name: data.result[0].channel },
-          duration: data.result[0].duration,
-          views: data.result[0].views,
-          publishedAt: data.result[0].uploaded,
-          url: data.result[0].url,
-          image: data.result[0].thumbnail
-        };
-      }
-    ];
+    // Búsqueda (manteniendo tu API original)
+    const searchApi = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${encodeURIComponent(text)}`;
+    const searchResponse = await fetch(searchApi);
+    const searchData = await searchResponse.json();
 
-    let video;
-    for (const api of searchApis) {
-      try {
-        video = await api();
-        if (video) break;
-      } catch (e) {}
+    if (!searchData?.data || searchData.data.length === 0) {
+      return m.reply(`⚠️ No se encontraron resultados para "${text}".`);
     }
 
-    if (!video) return m.reply(`⚠️ No se encontraron resultados para "${text}".`);
-
+    const video = searchData.data[0];
     const videoDetails = ` *「✦」 ${video.title}*
 
 > ✦ *Canal:* » ${video.author.name}
@@ -49,42 +26,45 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
       caption: videoDetails.trim()
     }, { quoted: m });
 
-    const downloadApis = [
-      async () => {
-        const url = `https://api.vreden.my.id/api/ytmp3?url=${video.url}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.result?.download?.url) return data.result.download.url;
-      },
-      async () => {
-        const url = `https://api.siputzx.my.id/api/d/ytmp3?url=${video.url}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.result?.url) return data.result.url;
-      },
-      async () => {
-        const url = `https://api.siputzx.my.id/api/dl/youtube/mp3?url=${video.url}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.url) return data.url;
-      },
-      async () => {
-        const url = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${video.url}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.result?.url) return data.result.url;
+    // Función mejorada para descargar audio con múltiples APIs de respaldo
+    const getAudioUrl = async (videoUrl) => {
+      const apis = [
+        {
+          url: `https://api.vreden.my.id/api/ytmp3?url=${videoUrl}`,
+          extract: data => data?.result?.download?.url
+        },
+        {
+          url: `https://api.siputzx.my.id/api/d/ytmp3?url=${videoUrl}`,
+          extract: data => data?.result?.url
+        },
+        {
+          url: `https://api.siputzx.my.id/api/dl/youtube/mp3?url=${videoUrl}`,
+          extract: data => data?.url
+        },
+        {
+          url: `https://delirius-apiofc.vercel.app/download/ytmp3?url=${videoUrl}`,
+          extract: data => data?.result?.url
+        }
+      ];
+
+      for (const api of apis) {
+        try {
+          const response = await fetch(api.url);
+          const data = await response.json();
+          const audioUrl = api.extract(data);
+          if (audioUrl) return audioUrl;
+        } catch (e) {
+          console.log(`Error con API ${api.url}:`, e.message);
+        }
       }
-    ];
+      return null;
+    };
 
-    let audioUrl;
-    for (const api of downloadApis) {
-      try {
-        audioUrl = await api();
-        if (audioUrl) break;
-      } catch (e) {}
+    const audioUrl = await getAudioUrl(video.url);
+
+    if (!audioUrl) {
+      return m.reply("❌ No se pudo obtener el audio del video.");
     }
-
-    if (!audioUrl) return m.reply("❌ No se pudo obtener el audio del video.");
 
     await conn.sendMessage(m.chat, {
       audio: { url: audioUrl },
@@ -100,7 +80,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   }
 };
 
-handler.command = ['playaudio', 'playadmp3'];
+handler.command = ['playaudio', 'play'];
 handler.help = ['play <texto>', 'playaudio <texto>'];
 handler.tags = ['media'];
 
