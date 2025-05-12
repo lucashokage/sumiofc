@@ -27,7 +27,7 @@ if (global.conns instanceof Array) console.log()
 else global.conns = []
 
 const MAX_RECONNECT_ATTEMPTS = 3
-const INITIAL_RECONNECT_DELAY = 10000
+const INITIAL_RECONNECT_DELAY = 800000
 const MAX_SUBBOTS = 120
 
 
