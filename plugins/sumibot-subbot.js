@@ -30,6 +30,9 @@ const MAX_RECONNECT_ATTEMPTS = 15
 const INITIAL_RECONNECT_DELAY = 5000
 const MAX_SUBBOTS = 120
 
+// Objeto para rastrear las conexiones iniciales
+const initialConnections = new Map()
+
 let store
 let loadDatabase
 
@@ -150,10 +153,9 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
           
           console.log(chalk.yellow(`Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en ${reconnectDelay/1000} segundos...`));
           
+          // Solo mostrar en consola, no enviar al grupo
           if (code !== DisconnectReason.connectionClosed) { 
-            parent.sendMessage(conn.user?.jid || m.chat, {
-              text: `⚠️ Conexión perdida, intentando reconectar... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`
-            }, { quoted: m }).catch(console.error);
+            console.log(chalk.yellow(`⚠️ Conexión perdida, intentando reconectar... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`));
           }
           
           setTimeout(async () => {
@@ -181,6 +183,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
           delete global.conns[i]
           global.conns.splice(i, 1)
           
+          // Este mensaje sí se envía al grupo porque es el final de los intentos
           parent.sendMessage(m.chat, {
             text: `⛔ La sesión ha sido cerrada después de ${MAX_RECONNECT_ATTEMPTS} intentos fallidos. Deberás conectarte nuevamente.`
           }, { quoted: m }).catch(console.error);
@@ -204,6 +207,8 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       if (connection == 'open') {
         conn.isInit = true
         global.conns.push(conn)
+        
+        // Siempre enviar el primer mensaje de conexión al grupo
         await parent.sendMessage(m.chat, {
           text: args[0] ? `✅ Conectado exitosamente al bot!` : `(๑˃̵　ᴗ　˂̵)و Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`
         }, { quoted: m })
@@ -272,7 +277,19 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       conn.sdemote = global.conn.sdemote + ''
 
       conn.handler = handler.handler.bind(conn)
-      conn.participantsUpdate = handler.participantsUpdate.bind(conn)
+      
+      // FIX: Wrap participantsUpdate in a safe function with null checks
+      conn.participantsUpdate = async function(...args) {
+        try {
+          // Add null check before accessing participants
+          if (args[0] && args[0].participants) {
+            return await handler.participantsUpdate.apply(this, args);
+          }
+        } catch (error) {
+          console.error('Error in participantsUpdate:', error);
+        }
+      }
+      
       conn.groupsUpdate = handler.groupsUpdate.bind(conn)
       conn.connectionUpdate = connectionUpdate.bind(conn)
       conn.credsUpdate = saveCreds.bind(conn, true)
@@ -354,6 +371,9 @@ async function loadSubbots() {
         
         let reconnectAttempts = 0;
         let reconnectDelay = INITIAL_RECONNECT_DELAY;
+        
+        // Marcar como conexión inicial
+        initialConnections.set(folder, true);
 
         async function connectionUpdate(update) {
           const { connection, lastDisconnect, isNewLogin } = update;
@@ -369,7 +389,10 @@ async function loadSubbots() {
             sock.uptime = new Date();
             sock.isInit = true;
             global.conns.push(sock);
+            
+            // Solo mostrar en consola para conexiones existentes
             console.log(chalk.green(`🌿 Subbot ${folder} conectado exitosamente`));
+            
             reconnectAttempts = 0;
             reconnectDelay = INITIAL_RECONNECT_DELAY;
           }
@@ -386,6 +409,7 @@ async function loadSubbots() {
                 reconnectDelay = 30000;
               }
               
+              // Solo mostrar en consola
               console.log(chalk.yellow(`Subbot ${folder}: Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en ${reconnectDelay/1000} segundos...`));
               
               setTimeout(async () => {
@@ -446,6 +470,19 @@ async function loadSubbots() {
           }
 
           sock.handler = handler.handler.bind(sock);
+          
+          // FIX: Wrap participantsUpdate in a safe function with null checks
+          sock.participantsUpdate = async function(...args) {
+            try {
+              // Add null check before accessing participants
+              if (args[0] && args[0].participants) {
+                return await handler.participantsUpdate.apply(this, args);
+              }
+            } catch (error) {
+              console.error('Error in participantsUpdate:', error);
+            }
+          }
+          
           sock.connectionUpdate = connectionUpdate.bind(sock);
           sock.credsUpdate = saveCreds.bind(sock, true);
           
@@ -460,6 +497,7 @@ async function loadSubbots() {
           };
           
           sock.ev.on('messages.upsert', safeEventHandler(sock.handler));
+          sock.ev.on('group-participants.update', safeEventHandler(sock.participantsUpdate));
           sock.ev.on('connection.update', safeEventHandler(sock.connectionUpdate));
           sock.ev.on('creds.update', safeEventHandler(sock.credsUpdate));
           
