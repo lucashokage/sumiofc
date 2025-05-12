@@ -14,7 +14,7 @@ const handler = async (m, { conn, text, command }) => {
     const mensaje = `
 ╭━━━━━━━━━⬣
 ┃ ❀ *PLAY DESDE 0* ❀
-┃ *Autor:* Barboza
+┃ *Autor:* leonel
 ┃━━━━━━━━━⬣
 ┃ ✦ *Título:* ${video.title}
 ┃ ✦ *Autor:* ${video.author.name}
@@ -42,5 +42,5 @@ const handler = async (m, { conn, text, command }) => {
 
 handler.help = ["play", "playvid"]
 handler.tags = ["multimedia"]
-handler.command = ["play", "playvid"]
+handler.command = ["playv2", "playvid"]
 export default handler
