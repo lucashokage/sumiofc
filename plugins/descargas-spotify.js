@@ -1,32 +1,55 @@
 import fetch from 'node-fetch';
+import { fileTypeFromBuffer } from 'file-type';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
     try {
-        if (!text) throw new Error(`❀ Por favor, ingresa el nombre de una canción de Spotify.\nEjemplo: *${usedPrefix + command}* Believer`);
-        
+        if (!text) {
+            await m.react('❌');
+            return m.reply(`✖ Debes ingresar un nombre de canción\n\nEjemplo: *${usedPrefix + command}* Flowers`);
+        }
+
         await m.react('🕒');
         
+        // Obtener datos de la canción
         const apiUrl = `https://api.nekorinn.my.id/downloader/spotifyplay?q=${encodeURIComponent(text)}`;
-        const response = await fetch(apiUrl);
+        const songResponse = await fetch(apiUrl);
         
-        if (!response.ok) throw new Error(`❀ Error en la API: ${response.status} ${response.statusText}`);
+        if (!songResponse.ok) {
+            await m.react('❌');
+            return m.reply(`✖ Error al buscar la canción (${songResponse.status})`);
+        }
         
-        const data = await response.json();
+        const songData = await songResponse.json();
         
-        if (!data?.result?.downloadUrl) throw new Error('❀ No se encontró la canción o no está disponible para descarga.');
+        if (!songData?.result?.downloadUrl) {
+            await m.react('❌');
+            return m.reply(`✖ No se encontró "${text}" en Spotify`);
+        }
+
+        // Descargar el audio
+        const audioResponse = await fetch(songData.result.downloadUrl);
+        const audioBuffer = await audioResponse.arrayBuffer();
+        const buffer = Buffer.from(audioBuffer);
         
+        // Detectar tipo de archivo
+        const fileType = await fileTypeFromBuffer(buffer);
+        if (!fileType || !fileType.mime.startsWith('audio/')) {
+            await m.react('❌');
+            return m.reply('✖ El archivo no es un audio válido');
+        }
+
+        // Enviar el audio
         await conn.sendMessage(
             m.chat, 
             { 
-                audio: { 
-                    url: data.result.downloadUrl 
-                }, 
-                mimetype: 'audio/mpeg',
+                audio: buffer,
+                mimetype: fileType.mime,
+                fileName: `${text.substring(0, 64)}.${fileType.ext}`,
                 contextInfo: {
                     externalAdReply: {
-                        title: `🎵 ${text}`,
-                        body: 'Descargado usando Spotify Downloader',
-                        thumbnail: (data.result.thumbnail || 'https://i.imgur.com/7eR7NiM.jpeg')
+                        title: text.substring(0, 32),
+                        body: 'Descargado desde Spotify',
+                        thumbnailUrl: songData.result.thumbnail || null
                     }
                 }
             }, 
@@ -36,16 +59,15 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         await m.react('✅');
         
     } catch (error) {
-        console.error('Error en el comando spotify:', error);
+        console.error('Error:', error);
         await m.react('❌');
-        await m.reply(`❀ Por favor, ingresa el nombre de una canción de Spotify.\nEjemplo: *${usedPrefix + command}* Believer`);
+        return m.reply('✖ Ocurrió un error. Intenta nuevamente');
     }
 };
 
-handler.help = ['spotify <nombre de la canción>'];
-handler.tags = ['descargas', 'audio'];
-handler.command = /^(spotify|music)$/i;
+handler.help = ['spotify <canción>'];
+handler.tags = ['descargas'];
+handler.command = /^(spotify|sp)$/i;
 handler.limit = true;
-handler.register = true;
 
 export default handler;
