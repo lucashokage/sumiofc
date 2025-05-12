@@ -5,7 +5,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     try {
         if (!text) {
             await m.react('❌');
-            return m.reply(`✖ Debes ingresar un nombre de canción\n\nEjemplo: *${usedPrefix + command}* Believer`);
+            return m.reply(`✖ Debes ingresar un nombre de canción\n\nEjemplo: *${usedPrefix + command}* Flowers`);
         }
 
         await m.react('🕒');
@@ -30,37 +30,17 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             songData.result.thumbnail ? fetch(songData.result.thumbnail) : Promise.resolve(null)
         ]);
 
-        if (!audioResponse.ok) {
-            await m.react('❌');
-            return m.reply('✖ Error al descargar el audio');
-        }
-
         const audioBuffer = await audioResponse.arrayBuffer();
         const buffer = Buffer.from(audioBuffer);
         
-        // Handle thumbnail properly
-        let thumbnailData = null;
+        let thumbnailBuffer = null;
         if (imageResponse && imageResponse.ok) {
             try {
                 const imageBuffer = await imageResponse.arrayBuffer();
-                const imageType = await fileTypeFromBuffer(imageBuffer);
-                
-                thumbnailData = {
-                    buffer: Buffer.from(imageBuffer),
-                    mimetype: imageType?.mime || 'image/jpeg'
-                };
+                thumbnailBuffer = Buffer.from(imageBuffer);
             } catch (e) {
                 console.error('Error al procesar imagen:', e);
-                thumbnailData = {
-                    url: 'https://i.imgur.com/7eR7NiM.jpeg',
-                    mimetype: 'image/jpeg'
-                };
             }
-        } else {
-            thumbnailData = {
-                url: 'https://i.imgur.com/7eR7NiM.jpeg',
-                mimetype: 'image/jpeg'
-            };
         }
 
         const fileType = await fileTypeFromBuffer(buffer);
@@ -69,26 +49,25 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             return m.reply('✖ El archivo no es un audio válido');
         }
 
-        // Send image message first
-        await conn.sendMessage(m.chat, {
-            image: thumbnailData,
-            caption: `🎵 *${songData.result.title || text}*\n👤 Artista: ${songData.result.artist || 'Desconocido'}\n\n🔍 Búsqueda: ${text}`,
-            footer: 'Powered by Spotify Downloader',
-            templateButtons: [{
-                urlButton: {
-                    displayText: '🔗 Ver en Spotify',
-                    url: songData.result.url || ''
+        await conn.sendMessage(
+            m.chat, 
+            { 
+                audio: buffer,
+                mimetype: fileType.mime,
+                fileName: `${text.substring(0, 64)}.${fileType.ext}`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: songData.result.title || text.substring(0, 32),
+                        body: songData.result.artist || 'Artista desconocido',
+                        thumbnail: thumbnailBuffer,
+                        mediaType: 1,
+                        mediaUrl: '',
+                        sourceUrl: songData.result.url || ''
+                    }
                 }
-            }]
-        }, { quoted: m });
-
-        // Send audio message
-        await conn.sendMessage(m.chat, { 
-            audio: buffer,
-            mimetype: fileType.mime,
-            fileName: `${(songData.result.title || text).substring(0, 64)}.${fileType.ext}`,
-            ptt: false
-        }, { quoted: m });
+            }, 
+            { quoted: m }
+        );
         
         await m.react('✅');
         
