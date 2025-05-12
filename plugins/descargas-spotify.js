@@ -5,7 +5,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     try {
         if (!text) {
             await m.react('❌');
-            return m.reply(`✖ Debes ingresar un nombre de canción\n\nEjemplo: *${usedPrefix + command}* Flowers`);
+            return m.reply(`✖ Debes ingresar un nombre de canción\n\nEjemplo: *${usedPrefix + command}* Believer`);
         }
 
         await m.react('🕒');
@@ -27,21 +27,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
         const [audioResponse, imageResponse] = await Promise.all([
             fetch(songData.result.downloadUrl),
-            songData.result.thumbnail ? fetch(songData.result.thumbnail) : Promise.resolve(null)
+            fetch(songData.result.thumbnail)
         ]);
 
         const audioBuffer = await audioResponse.arrayBuffer();
         const buffer = Buffer.from(audioBuffer);
-        
-        let thumbnailBuffer = null;
-        if (imageResponse && imageResponse.ok) {
-            try {
-                const imageBuffer = await imageResponse.arrayBuffer();
-                thumbnailBuffer = Buffer.from(imageBuffer);
-            } catch (e) {
-                console.error('Error al procesar imagen:', e);
-            }
-        }
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const thumbnail = Buffer.from(imageBuffer);
 
         const fileType = await fileTypeFromBuffer(buffer);
         if (!fileType || !fileType.mime.startsWith('audio/')) {
@@ -49,30 +41,28 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             return m.reply('✖ El archivo no es un audio válido');
         }
 
-        await conn.sendMessage(
-            m.chat, 
-            { 
-                audio: buffer,
-                mimetype: fileType.mime,
-                fileName: `${text.substring(0, 64)}.${fileType.ext}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: songData.result.title || text.substring(0, 32),
-                        body: songData.result.artist || 'Artista desconocido',
-                        thumbnail: thumbnailBuffer,
-                        mediaType: 1,
-                        mediaUrl: '',
-                        sourceUrl: songData.result.url || ''
-                    }
+        await conn.sendMessage(m.chat, {
+            image: thumbnail,
+            caption: `🎵 ${songData.result.title || text}\n👤 ${songData.result.artist || 'Artista desconocido'}`,
+            footer: 'Powered by sumi sakurasawa',
+            templateButtons: [{
+                urlButton: {
+                    displayText: '🔗 Ver en Spotify',
+                    url: songData.result.url
                 }
-            }, 
-            { quoted: m }
-        );
+            }]
+        }, { quoted: m });
+
+        await conn.sendMessage(m.chat, { 
+            audio: buffer,
+            mimetype: fileType.mime,
+            fileName: `${(songData.result.title || text).substring(0, 64)}.${fileType.ext}`
+        }, { quoted: m });
         
         await m.react('✅');
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error(error);
         await m.react('❌');
         return m.reply('✖ Ocurrió un error. Intenta nuevamente');
     }
