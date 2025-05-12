@@ -1,4 +1,4 @@
-import { resetSubbot } from "../_resett.js"
+import { resetSubbot } from "./_resett.js"
 
 const handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!args[0]) {
