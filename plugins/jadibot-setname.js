@@ -1,34 +1,27 @@
-let handler = async (m, { conn, text, isRowner }) => {
-  if (!text) return m.reply(`${emoji} Por favor, proporciona un nombre para el bot.\n> Ejemplo: #setname Nombre/Texto`);
+import ws from "ws";
 
-  const names = text.split('/');
-  if (names.length !== 2) return m.reply(`${emoji} Por favor, proporciona ambos nombres separados por una barra (/) en el formato: nombre1/nombre2.`);
+let handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
+    const users = [...new Set(
+        global.conns
+            .filter(conn => conn.user && conn.ws?.socket && conn.ws.socket.readyState !== ws.CLOSED)
+            .map(conn => conn.user.jid)
+    )];
 
-  // Guardar en variables globales
-  global.botname = names[0].trim();
-  const texto1bot = ` • Powered By ${etiqueta}`;
-  global.textbot = `${names[1].trim()}${texto1bot}`;
-  
-  // Guardar en la base de datos del usuario para que el menú pueda acceder a él
-  const botJid = conn.user.jid;
-  if (!global.db.data.users[botJid]) {
-    global.db.data.users[botJid] = {};
-  }
-  global.db.data.users[botJid].namebebot = global.botname;
-  
-  // También guardar en la configuración del bot
-  if (!global.db.data.settings[botJid]) {
-    global.db.data.settings[botJid] = {};
-  }
-  global.db.data.settings[botJid].botname = global.botname;
-  global.db.data.settings[botJid].textbot = global.textbot;
-  
-  m.reply(`${emoji} El nombre del bot ha sido cambiado a: ${global.botname}\n\n> ${emoji2} El texto del bot ha sido cambiado a: ${global.textbot}`);
-};
+    let isSubbot = users.includes(m.sender);
+    if (!isSubbot && !isOwner) return m.reply("Solo un subbot autorizado puede usar este comando.");
 
-handler.help = ['setname'];
-handler.tags = ['tools'];
-handler.command = ['setname'];
-handler.rowner = true;
+    if (!text) {
+        return m.reply(`🌲 Por favor especifica el nuevo nombre del bot.`);
+    }
+global.db.data.settings[conn.user.jid].botName = text
+let cap = `
+≡ 🌴 Se ha cambiado con éxito el nombre para @${conn.user.jid.split("@")[0]}
 
+🌿 Nuevo nombre : ${text}
+`;
+conn.reply(m.chat, cap, m, { mentions: conn.parseMention(cap)})
+
+}
+handler.tags = ["serbot"];
+handler.help = handler.command = ["setname"];
 export default handler;
