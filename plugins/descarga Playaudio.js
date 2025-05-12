@@ -2,27 +2,20 @@ const handler = async (m, { conn, usedPrefix, command, text }) => {
   if (!text) return m.reply(`❀ Ingresa un texto para buscar en YouTube.\n> *Ejemplo:* ${usedPrefix + command} Shakira`)
 
   try {
-    const searchMsg = await m.reply("🔍 *Buscando en YouTube...*")
-
     const searchApi = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${encodeURIComponent(text)}`
-    let searchResponse, searchData
+    const searchResponse = await fetch(searchApi)
 
-    try {
-      searchResponse = await fetch(searchApi, { timeout: 10000 })
-      const searchText = await searchResponse.text()
-
-      try {
-        searchData = JSON.parse(searchText)
-      } catch (jsonError) {
-        console.error("JSON inválido recibido:", searchText)
-        throw new Error("La API de búsqueda devolvió un JSON inválido")
-      }
-    } catch (fetchError) {
-      console.error("Error en fetch de búsqueda:", fetchError)
-      throw new Error("Error al conectar con la API de búsqueda")
+    if (!searchResponse.ok) {
+      return m.reply(`❌ Error en la búsqueda: ${searchResponse.status} ${searchResponse.statusText}`)
     }
 
-    await conn.sendMessage(m.chat, { delete: searchMsg.key })
+    let searchData
+    try {
+      searchData = await searchResponse.json()
+    } catch (jsonError) {
+      console.error("Error al parsear JSON de búsqueda:", jsonError)
+      return m.reply("❌ Error al procesar la respuesta de búsqueda. Intenta de nuevo más tarde.")
+    }
 
     if (!searchData?.data || searchData.data.length === 0) {
       return m.reply(`⚠️ No se encontraron resultados para "${text}".`)
@@ -47,32 +40,24 @@ const handler = async (m, { conn, usedPrefix, command, text }) => {
       { quoted: m },
     )
 
-    const downloadMsg = await m.reply("⏳ *Descargando audio...*")
-
     const downloadApi = `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(video.url)}`
-    let downloadResponse, downloadData
+    const downloadResponse = await fetch(downloadApi)
 
+    if (!downloadResponse.ok) {
+      return m.reply(`❌ Error en la descarga: ${downloadResponse.status} ${downloadResponse.statusText}`)
+    }
+
+    let downloadData
     try {
-      downloadResponse = await fetch(downloadApi, { timeout: 15000 })
-      const downloadText = await downloadResponse.text()
-
-      try {
-        downloadData = JSON.parse(downloadText)
-      } catch (jsonError) {
-        console.error("JSON inválido recibido:", downloadText)
-        throw new Error("La API de descarga devolvió un JSON inválido")
-      }
-    } catch (fetchError) {
-      console.error("Error en fetch de descarga:", fetchError)
-      throw new Error("Error al conectar con la API de descarga")
+      downloadData = await downloadResponse.json()
+    } catch (jsonError) {
+      console.error("Error al parsear JSON de descarga:", jsonError)
+      return m.reply("❌ Error al procesar la respuesta de descarga. Intenta de nuevo más tarde.")
     }
 
     if (!downloadData?.result?.download?.url) {
-      await conn.sendMessage(m.chat, { delete: downloadMsg.key })
       return m.reply("❌ No se pudo obtener el audio del video.")
     }
-
-    await conn.sendMessage(m.chat, { delete: downloadMsg.key })
 
     await conn.sendMessage(
       m.chat,
@@ -86,13 +71,13 @@ const handler = async (m, { conn, usedPrefix, command, text }) => {
 
     await m.react("✅")
   } catch (error) {
-    console.error(error)
-    m.reply(`❌ Error al procesar la solicitud:\n${error.message}`)
+    console.error("Error completo:", error)
+    m.reply(`❌ Error al procesar la solicitud: ${error.message || "Error desconocido"}`)
   }
 }
 
 handler.command = ["playaudio", "play"]
-handler.help = ["play <texto>", "playaudio <texto>"]
+handler.help = ["play <texto>", "play<texto>"]
 handler.tags = ["media"]
 
 export default handler
