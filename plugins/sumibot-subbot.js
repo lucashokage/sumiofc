@@ -26,11 +26,11 @@ import { makeWASocket } from '../lib/simple.js'
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 
-const MAX_RECONNECT_ATTEMPTS = 15
-const INITIAL_RECONNECT_DELAY = 5000
+const MAX_RECONNECT_ATTEMPTS = 3
+const INITIAL_RECONNECT_DELAY = 10000
 const MAX_SUBBOTS = 120
 
-// Objeto para rastrear las conexiones iniciales
+
 const initialConnections = new Map()
 
 let store
