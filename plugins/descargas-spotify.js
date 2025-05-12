@@ -25,16 +25,17 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             return m.reply(`✖ No se encontró "${text}" en Spotify`);
         }
 
-        const [audioResponse, imageResponse] = await Promise.all([
-            fetch(songData.result.downloadUrl),
-            songData.result.thumbnail ? fetch(songData.result.thumbnail) : Promise.resolve(null)
-        ]);
-
+        // Descargar el audio
+        const audioResponse = await fetch(songData.result.downloadUrl);
         const audioBuffer = await audioResponse.arrayBuffer();
         const buffer = Buffer.from(audioBuffer);
-        
+
+        // Descargar la imagen fija que quieres usar
+        const imageUrl = 'https://files.catbox.moe/g2nz84.png';
+        const imageResponse = await fetch(imageUrl);
         let thumbnailBuffer = null;
-        if (imageResponse && imageResponse.ok) {
+        
+        if (imageResponse.ok) {
             try {
                 const imageBuffer = await imageResponse.arrayBuffer();
                 thumbnailBuffer = Buffer.from(imageBuffer);
@@ -59,7 +60,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
                     externalAdReply: {
                         title: songData.result.title || text.substring(0, 32),
                         body: songData.result.artist || 'Artista desconocido',
-                        thumbnail: `https://files.catbox.moe/g2nz84.png`,
+                        thumbnail: thumbnailBuffer, // Usa la imagen descargada
                         mediaType: 1,
                         mediaUrl: '',
                         sourceUrl: songData.result.url || ''
