@@ -38,7 +38,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     } catch (error) {
         console.error('Error en el comando spotify:', error);
         await m.react('❌');
-        await m.reply(`❀ Ocurrió un error al procesar tu solicitud:\n${error.message}\n\nPor favor, intenta con otro nombre o más tarde.`);
+        await m.reply(`❀ Por favor, ingresa el nombre de una canción de Spotify.\nEjemplo: *${usedPrefix + command}* Believer`);
     }
 };
 
