@@ -1,90 +1,94 @@
-import fetch from 'node-fetch'
-import yts from 'yt-search'
+let handler = async (m, { conn, usedPrefix, command, text }) => {
+  if (!text) return m.reply(`❀ Ingresa un texto para buscar en YouTube.\n> *Ejemplo:* ${usedPrefix + command} Shakira`);
 
-let handler = async (m, { conn, text, args }) => {
-  if (!text) return m.reply("🥮 Ingresa el nombre de la canción o artista")
-  
-  // Buscar en YouTube
-  let ytres = await search(args.join(" "))
-  if (!ytres.length) return m.reply("No se encontraron resultados para tu búsqueda.")
-  
-  let video = ytres[0]
-  let txt = `🎬 *Título*: ${video.title}
-⏱️ *Duración*: ${video.timestamp}
-📅 *Publicado*: ${video.ago}
-📺 *Canal*: ${video.author.name || 'Desconocido'}
-🔗 *Url*: ${video.url}`
-  
-  await conn.sendFile(m.chat, video.image, 'thumbnail.jpg', txt, m)
-
-  // Intentar descargar con múltiples servicios
   try {
-    const audio = await downloadAudio(video.url)
-    await conn.sendMessage(
-      m.chat,
-      { 
-        audio: { url: audio }, 
-        mimetype: 'audio/mpeg',
-        fileName: `${video.title}.mp3`,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: "Audio descargado",
-            thumbnailUrl: video.image
-          }
+    // Buscar en YouTube
+    const searchApi = `https://delirius-apiofc.vercel.app/search/ytsearch?q=${text}`;
+    const searchResponse = await fetch(searchApi);
+    const searchData = await searchResponse.json();
+
+    if (!searchData?.data || searchData.data.length === 0) {
+      return m.reply(`⚠️ No se encontraron resultados para "${text}".`);
+    }
+
+    const video = searchData.data[0];
+    const videoDetails = ` *「✦」 ${video.title}*
+
+> ✦ *Canal:* » ${video.author.name}
+> ⴵ *Duración:* » ${video.duration}
+> ✰ *Vistas:* » ${video.views}
+> ✐ *Publicado:* » ${video.publishedAt}
+> 🜸 *Enlace:* » ${video.url}
+`;
+
+    await conn.sendMessage(m.chat, {
+      image: { url: video.image },
+      caption: videoDetails.trim()
+    }, { quoted: m });
+
+    // Opción 1: API vreden.my.id
+    const downloadFromVreden = async () => {
+      const apiUrl = `https://api.vreden.my.id/api/ytmp3?url=${video.url}`;
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        if (data?.result?.download?.url) {
+          return {
+            url: data.result.download.url,
+            source: 'vreden.my.id'
+          };
         }
-      },
-      { quoted: m }
-    )
+      } catch (e) {
+        console.log('Error con vreden API:', e.message);
+        return null;
+      }
+    };
+
+    // Opción 2: API alternativa (delirius)
+    const downloadFromDelirius = async () => {
+      const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${video.url}`;
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        if (data?.result?.url) {
+          return {
+            url: data.result.url,
+            source: 'delirius'
+          };
+        }
+      } catch (e) {
+        console.log('Error con delirius API:', e.message);
+        return null;
+      }
+    };
+
+    // Intentar con ambas APIs
+    let audioData = await downloadFromVreden();
+    if (!audioData) {
+      audioData = await downloadFromDelirius();
+    }
+
+    if (!audioData) {
+      return m.reply("❌ No se pudo obtener el audio del video. Ambas APIs fallaron.");
+    }
+
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioData.url },
+      mimetype: 'audio/mpeg',
+      fileName: `${video.title}.mp3`
+    }, { quoted: m });
+
+    await m.reply(`✅ Audio descargado usando API: ${audioData.source}`);
+    await m.react("✅");
   } catch (error) {
-    console.error(error)
-    m.reply(`❌ Error en todos los servidores de descarga:\n${error.message}`)
+    console.error(error);
+    m.reply(`❌ Error al procesar la solicitud:\n${error.message}`);
+    await m.react("✖️");
   }
-}
+};
 
-// Función con múltiples fuentes de descarga
-async function downloadAudio(url) {
-  const services = [
-    // Servidor 1 (API pública)
-    async () => {
-      let res = await fetch(`https://api.lyrics.ovh/ytdl/audio?url=${encodeURIComponent(url)}`)
-      if (!res.ok) throw new Error('Servidor 1 falló')
-      return res.url
-    },
-    
-    // Servidor 2 (alternativo)
-    async () => {
-      let res = await fetch(`https://yt-downloader.cyclic.cloud/audio?url=${encodeURIComponent(url)}`)
-      let data = await res.json()
-      if (!data.url) throw new Error('Servidor 2 falló')
-      return data.url
-    },
-    
-    // Servidor 3 (respaldo)
-    async () => {
-      let res = await fetch(`https://api.tiklydown.eu.org/api/yta?url=${encodeURIComponent(url)}`)
-      let data = await res.json()
-      if (!data.audio) throw new Error('Servidor 3 falló')
-      return data.audio
-    }
-  ]
+handler.command = ['playaudio', 'play'];
+handler.help = ['play <texto>', 'playaudio <texto>'];
+handler.tags = ['media'];
 
-  // Intentar cada servicio hasta que uno funcione
-  for (let service of services) {
-    try {
-      return await service()
-    } catch (e) {
-      console.log(`Servidor falló: ${e.message}`)
-      continue
-    }
-  }
-  throw new Error('Todos los servidores fallaron')
-}
-
-handler.command = /^(playaudio|ytmp3)$/i
-export default handler
-
-async function search(query) {
-  let search = await yts.search({ query, hl: "es", gl: "ES" })
-  return search.videos
-        }
+export default handler;
