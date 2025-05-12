@@ -1,9 +1,9 @@
 export async function before(m) {
-  if (!m.text || !global.prefix.test(m.text)) {
+  if (!m.text || !/^[.#]/.test(m.text)) {
     return;
   }
 
-  const usedPrefix = global.prefix.exec(m.text)[0];
+  const usedPrefix = m.text.match(/^[.#]/)[0]; // Obtener el primer carácter (que será . o #)
   const command = m.text.slice(usedPrefix.length).trim().split(' ')[0].toLowerCase();
 
   const validCommand = (command, plugins) => {
@@ -19,7 +19,8 @@ export async function before(m) {
 
   if (command === "bot") {
     return;
-    }
+  }
+  
   if (validCommand(command, global.plugins)) {
     let chat = global.db.data.chats[m.chat];
     let user = global.db.data.users[m.sender];
