@@ -59,7 +59,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
                     externalAdReply: {
                         title: songData.result.title || text.substring(0, 32),
                         body: songData.result.artist || 'Artista desconocido',
-                        thumbnail: thumbnailBuffer,
+                        thumbnail:`https://files.catbox.moe/g2nz84.png`,
                         mediaType: 1,
                         mediaUrl: '',
                         sourceUrl: songData.result.url || ''
