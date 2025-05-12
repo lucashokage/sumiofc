@@ -30,17 +30,37 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             songData.result.thumbnail ? fetch(songData.result.thumbnail) : Promise.resolve(null)
         ]);
 
+        if (!audioResponse.ok) {
+            await m.react('❌');
+            return m.reply('✖ Error al descargar el audio');
+        }
+
         const audioBuffer = await audioResponse.arrayBuffer();
         const buffer = Buffer.from(audioBuffer);
         
-        let thumbnailBuffer = null;
+        // Handle thumbnail properly
+        let thumbnailData = null;
         if (imageResponse && imageResponse.ok) {
             try {
                 const imageBuffer = await imageResponse.arrayBuffer();
-                thumbnailBuffer = Buffer.from(imageBuffer);
+                const imageType = await fileTypeFromBuffer(imageBuffer);
+                
+                thumbnailData = {
+                    buffer: Buffer.from(imageBuffer),
+                    mimetype: imageType?.mime || 'image/jpeg'
+                };
             } catch (e) {
                 console.error('Error al procesar imagen:', e);
+                thumbnailData = {
+                    url: 'https://i.imgur.com/7eR7NiM.jpeg',
+                    mimetype: 'image/jpeg'
+                };
             }
+        } else {
+            thumbnailData = {
+                url: 'https://i.imgur.com/7eR7NiM.jpeg',
+                mimetype: 'image/jpeg'
+            };
         }
 
         const fileType = await fileTypeFromBuffer(buffer);
@@ -49,9 +69,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             return m.reply('✖ El archivo no es un audio válido');
         }
 
-        // Enviar primero la información con imagen
+        // Send image message first
         await conn.sendMessage(m.chat, {
-            image: thumbnailBuffer || 'https://i.imgur.com/7eR7NiM.jpeg',
+            image: thumbnailData,
             caption: `🎵 *${songData.result.title || text}*\n👤 Artista: ${songData.result.artist || 'Desconocido'}\n\n🔍 Búsqueda: ${text}`,
             footer: 'Powered by Spotify Downloader',
             templateButtons: [{
@@ -62,11 +82,12 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             }]
         }, { quoted: m });
 
-        // Enviar luego el audio por separado
+        // Send audio message
         await conn.sendMessage(m.chat, { 
             audio: buffer,
             mimetype: fileType.mime,
-            fileName: `${(songData.result.title || text).substring(0, 64)}.${fileType.ext}`
+            fileName: `${(songData.result.title || text).substring(0, 64)}.${fileType.ext}`,
+            ptt: false
         }, { quoted: m });
         
         await m.react('✅');
