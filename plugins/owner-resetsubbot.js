@@ -21,7 +21,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 }
 
 handler.help = ["resetbot"]
-handler.tags = ["owner"]
+handler.tags = ["subbot"]
 handler.command = ["resetbot", "resetsub", "reiniciarbot"]
 handler.rowner = true
 
