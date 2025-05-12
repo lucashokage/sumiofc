@@ -80,7 +80,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   }
 };
 
-handler.command = ['playaudio', 'play'];
+handler.command = ['playaudio', 'playaump3'];
 handler.help = ['play <texto>', 'playaudio <texto>'];
 handler.tags = ['media'];
 
