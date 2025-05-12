@@ -9,8 +9,16 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const totalreg = Object.keys(global.db.data.users).length
     const pluginsCount = Object.keys(global.plugins || {}).length
     const botType = conn.user.jid == global.conn.user.jid ? "official" : "subbot"
-    // Mostrar directamente el nombre del subbot sin texto adicional
-    const displayBotName = botType === "official" ? "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦" : user.namebebot || "subBot"
+    
+    // Obtener el nombre correcto para el bot
+    let displayBotName
+    if (botType === "official") {
+      displayBotName = "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦"
+    } else {
+      // Para subbots, usar el nombre personalizado con .setname o el nombre de WhatsApp
+      displayBotName = user.namebebot || conn.getName(conn.user.jid) || "Bot"
+    }
+    
     const bot = global.db.data.settings[conn.user.jid] || {}
 
     
@@ -122,7 +130,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       { cmd: "#tourl › #catbox", desc: "_*Convierte la imagen en un link.*_" },
     ])
 
-    // Enviar el menú como mensaje con imagen y configurar como reenviado del canal especificado
+  
+    const channelId = "120363324350463849@newsletter"
+    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─" 
     await conn.sendMessage(
       m.chat,
       {
@@ -131,12 +141,16 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           mentionedJid: [m.sender, userId],
           isForwarded: true,
           forwardingScore: 999,
-          forwardedJid: ["120363324350463849@newsletter"], // Canal específico de reenvío
+          forwardedFromChannel: true, 
+          channelId: channelId,
+          channelName: channelName,
+          viewOnceMessage: true,
+          viewOnce: true,
           externalAdReply: {
             title: displayBotName,
             body: "Menú general",
             thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
-            sourceUrl: "https://whatsapp.com",
+            sourceUrl: `https://whatsapp.com/channel/${channelId.split('@')[0]}`,
             mediaType: 1,
             showAdAttribution: true,
             renderLargerThumbnail: true,
@@ -169,7 +183,6 @@ function generateSection(title, commands) {
   return section
 }
 
-// Función para obtener descripción de sección
 function getDescriptionForSection(title) {
   const descriptions = {
     SETLOGO: "cambiar logos y nombres",
@@ -188,12 +201,10 @@ function getDescriptionForSection(title) {
   return descriptions[title] || "usar comandos diversos"
 }
 
-// Función para determinar el país basado en el código del número
 function getCountryFromNumber(phoneNumber) {
   try {
     const cleanNumber = phoneNumber.replace(/[^\d]/g, "")
 
-    // Mapeo directo de códigos de país
     const countryCodes = {
       1: "Estados Unidos",
       52: "México",
@@ -219,21 +230,18 @@ function getCountryFromNumber(phoneNumber) {
       53: "Cuba",
     }
 
-    // Comprobar códigos de 3 dígitos primero
     for (const [code, country] of Object.entries(countryCodes)) {
       if (code.length === 3 && cleanNumber.startsWith(code)) {
         return country
       }
     }
 
-    // Luego comprobar códigos de 2 dígitos
     for (const [code, country] of Object.entries(countryCodes)) {
       if (code.length === 2 && cleanNumber.startsWith(code)) {
         return country
       }
     }
 
-    // Finalmente comprobar códigos de 1 dígito
     for (const [code, country] of Object.entries(countryCodes)) {
       if (code.length === 1 && cleanNumber.startsWith(code)) {
         return country
@@ -246,7 +254,6 @@ function getCountryFromNumber(phoneNumber) {
   }
 }
 
-// Función para formatear el tiempo de actividad
 function clockString(ms) {
   const seconds = Math.floor((ms / 1000) % 60)
   const minutes = Math.floor((ms / (1000 * 60)) % 60)
