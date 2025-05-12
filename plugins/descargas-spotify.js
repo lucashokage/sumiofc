@@ -10,7 +10,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
         await m.react('🕒');
         
-        // Obtener datos de la canción
         const apiUrl = `https://api.nekorinn.my.id/downloader/spotifyplay?q=${encodeURIComponent(text)}`;
         const songResponse = await fetch(apiUrl);
         
@@ -26,19 +25,30 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             return m.reply(`✖ No se encontró "${text}" en Spotify`);
         }
 
-        // Descargar el audio
-        const audioResponse = await fetch(songData.result.downloadUrl);
+        const [audioResponse, imageResponse] = await Promise.all([
+            fetch(songData.result.downloadUrl),
+            songData.result.thumbnail ? fetch(songData.result.thumbnail) : Promise.resolve(null)
+        ]);
+
         const audioBuffer = await audioResponse.arrayBuffer();
         const buffer = Buffer.from(audioBuffer);
         
-        // Detectar tipo de archivo
+        let thumbnailBuffer = null;
+        if (imageResponse && imageResponse.ok) {
+            try {
+                const imageBuffer = await imageResponse.arrayBuffer();
+                thumbnailBuffer = Buffer.from(imageBuffer);
+            } catch (e) {
+                console.error('Error al procesar imagen:', e);
+            }
+        }
+
         const fileType = await fileTypeFromBuffer(buffer);
         if (!fileType || !fileType.mime.startsWith('audio/')) {
             await m.react('❌');
             return m.reply('✖ El archivo no es un audio válido');
         }
 
-        // Enviar el audio
         await conn.sendMessage(
             m.chat, 
             { 
@@ -47,9 +57,12 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
                 fileName: `${text.substring(0, 64)}.${fileType.ext}`,
                 contextInfo: {
                     externalAdReply: {
-                        title: text.substring(0, 32),
-                        body: 'sumi sakurasawa • Powered By ৎ୭࠭͢𓆩𝕷͢𝖊𝖔፝֟፝֟፝֟፝֟፝֟፝֟𝖓𝖊𝖑𓆪',
-                        thumbnailUrl: songData.result.thumbnail || null
+                        title: songData.result.title || text.substring(0, 32),
+                        body: songData.result.artist || 'Artista desconocido',
+                        thumbnail: thumbnailBuffer,
+                        mediaType: 1,
+                        mediaUrl: '',
+                        sourceUrl: songData.result.url || ''
                     }
                 }
             }, 
