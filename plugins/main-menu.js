@@ -9,6 +9,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const totalreg = Object.keys(global.db.data.users).length
     const pluginsCount = Object.keys(global.plugins || {}).length
     const botType = conn.user.jid == global.conn.user.jid ? "official" : "subbot"
+    // Mostrar directamente el nombre del subbot sin texto adicional
     const displayBotName = botType === "official" ? "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦" : user.namebebot || "subBot"
     const bot = global.db.data.settings[conn.user.jid] || {}
 
@@ -28,9 +29,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const country = getCountryFromNumber(m.sender.split("@")[0])
 
     // Construir el menú
-    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
+    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
-> _Hola @${userId.split("@")[0]}, bienvenido/a al menú de @${displayBotName}_
+> _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
 
 ╭┈ ↷
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
@@ -121,7 +122,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       { cmd: "#tourl › #catbox", desc: "_*Convierte la imagen en un link.*_" },
     ])
 
-    // Enviar el menú como mensaje con imagen
+    // Enviar el menú como mensaje con imagen y configurar como reenviado del canal especificado
     await conn.sendMessage(
       m.chat,
       {
@@ -130,6 +131,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           mentionedJid: [m.sender, userId],
           isForwarded: true,
           forwardingScore: 999,
+          forwardedJid: ["120363324350463849@newsletter"], // Canal específico de reenvío
           externalAdReply: {
             title: displayBotName,
             body: "Menú general",
