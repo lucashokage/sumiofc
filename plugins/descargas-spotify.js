@@ -48,7 +48,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
                 contextInfo: {
                     externalAdReply: {
                         title: text.substring(0, 32),
-                        body: 'Descargado desde Spotify',
+                        body: 'sumi sakurasawa • Powered By ৎ୭࠭͢𓆩𝕷͢𝖊𝖔፝֟፝֟፝֟፝֟፝֟፝֟𝖓𝖊𝖑𓆪',
                         thumbnailUrl: songData.result.thumbnail || null
                     }
                 }
