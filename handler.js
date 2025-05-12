@@ -4,7 +4,6 @@ import { fileURLToPath } from "url"
 import path, { join } from "path"
 import { unwatchFile, watchFile } from "fs"
 import chalk from "chalk"
-
 import { WebSocket } from "ws"
 const ws = WebSocket
 
@@ -32,12 +31,14 @@ export async function handler(chatUpdate) {
   let m = chatUpdate.messages[chatUpdate.messages.length - 1]
   if (!m) return
   if (global.db.data == null) await global.loadDatabase()
+
   try {
     m = smsg(this, m) || m
     if (!m) return
     m.exp = 0
     m.coin = 0
     m.diamond = false
+
     try {
       const user = global.db.data.users[m.sender]
       if (typeof user !== "object") global.db.data.users[m.sender] = {}
@@ -93,6 +94,7 @@ export async function handler(chatUpdate) {
           namebebot: "",
           isbebot: false,
         }
+
       const chat = global.db.data.chats[m.chat]
       if (typeof chat !== "object") global.db.data.chats[m.chat] = {}
       if (chat) {
@@ -111,6 +113,8 @@ export async function handler(chatUpdate) {
         if (!("nsfw" in chat)) chat.nsfw = false
         if (!isNumber(chat.expired)) chat.expired = 0
         if (!("rules" in chat)) chat.rules = ""
+        if (!("antiLag" in chat)) chat.antiLag = true
+        if (!("per" in chat)) chat.per = []
       } else
         global.db.data.chats[m.chat] = {
           isBanned: false,
@@ -129,6 +133,8 @@ export async function handler(chatUpdate) {
           nsfw: false,
           expired: 0,
           rules: "",
+          antiLag: true,
+          per: [],
         }
 
       if (!global.db) global.db = {}
@@ -155,6 +161,15 @@ export async function handler(chatUpdate) {
     } catch (e) {
       console.error(e)
     }
+
+    const mainBot = global.conn.user.jid
+    const chat = global.db.data.chats[m.chat] || {}
+    const isAntiLag = chat.antiLag === true
+    const allowedBots = chat.per || []
+    if (!allowedBots.includes(mainBot)) allowedBots.push(mainBot)
+    const isAllowed = allowedBots.includes(this.user.jid)
+    if (isAntiLag && !isAllowed) return
+
     if (global.opts["nyimak"]) return
     if (!m.fromMe && global.opts["self"]) return
     if (global.db.data.settings[this.user.jid].solopv && m.chat.endsWith("g.us")) return
@@ -519,7 +534,7 @@ export async function groupsUpdate(groupsUpdate) {
         "=͟͟͞❀ 𝙀𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖 \n@group ⏤͟͟͞͞★"
       ).replace("@group", groupUpdate.subject)
     if (groupUpdate.icon)
-      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
+      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 �𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
         "@icon",
         groupUpdate.icon,
       )
