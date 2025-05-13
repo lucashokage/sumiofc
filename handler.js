@@ -7,6 +7,8 @@ import chalk from "chalk"
 import { WebSocket } from "ws"
 const ws = WebSocket
 
+import { default as WAMessageStubType } from '@whiskeysockets/baileys'
+
 const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = (x) => typeof x === "number" && !isNaN(x)
 const delay = (ms) =>
@@ -100,7 +102,7 @@ export async function handler(chatUpdate) {
       if (chat) {
         if (!("isBanned" in chat)) chat.isBanned = false
         if (!("welcome" in chat)) chat.welcome = false
-        if (!("detect" in chat)) chat.detect = false
+        if (!("detect" in chat)) chat.detect = true
         if (!("sWelcome" in chat)) chat.sWelcome = ""
         if (!("sBye" in chat)) chat.sBye = ""
         if (!("sPromote" in chat)) chat.sPromote = ""
@@ -118,7 +120,7 @@ export async function handler(chatUpdate) {
         global.db.data.chats[m.chat] = {
           isBanned: false,
           welcome: false,
-          detect: false,
+          detect: true,
           sWelcome: "",
           sBye: "",
           sPromote: "",
@@ -463,33 +465,43 @@ export async function participantsUpdate({ id, participants, action }) {
   if (global.db.data == null) await global.loadDatabase()
   const chat = global.db.data.chats[id] || {}
 
-  if (chat.welcome) {
-    const groupMetadata = (await this.groupMetadata(id)) || (global.conn.chats[id] || {}).metadata
-
-    for (const user of participants) {
-      if (action === "add" || action === "remove") {
-        try {
-          const welcomePlugin = await import("./plugins/_welcome.js")
-          if (welcomePlugin && typeof welcomePlugin.before === "function") {
-            await welcomePlugin.before.call(
-              this,
-              {
-                messageStubType: action === "add" ? 27 : 28,
-                messageStubParameters: [user],
-                isGroup: true,
-                chat: id,
-              },
-              {
-                conn: this,
-                participants: groupMetadata.participants,
-                groupMetadata: groupMetadata,
-              },
-            )
-          }
-        } catch (e) {
-          console.error("Error in welcome plugin:", e)
-        }
+  // Always process events regardless of chat.detect setting (it's enabled by default now)
+  const fkontak = { 
+    "key": { 
+      "participants":"0@s.whatsapp.net", 
+      "remoteJid": "status@broadcast", 
+      "fromMe": false, 
+      "id": "Halo" 
+    }, 
+    "message": { 
+      "contactMessage": { 
+        "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${participants[0].split('@')[0]}:${participants[0].split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` 
       }
+    }, 
+    "participant": "0@s.whatsapp.net"
+  };
+
+  if (action === "add" || action === "remove") {
+    try {
+      const welcomePlugin = await import("./plugins/_welcome.js")
+      if (welcomePlugin && typeof welcomePlugin.before === "function") {
+        await welcomePlugin.before.call(
+          this,
+          {
+            messageStubType: action === "add" ? 27 : 28,
+            messageStubParameters: [participants[0]],
+            isGroup: true,
+            chat: id,
+          },
+          {
+            conn: this,
+            participants: (await this.groupMetadata(id)).participants,
+            groupMetadata: await this.groupMetadata(id),
+          },
+        )
+      }
+    } catch (e) {
+      console.error("Error in welcome plugin:", e)
     }
   }
 
@@ -501,9 +513,9 @@ export async function participantsUpdate({ id, participants, action }) {
       text = chat.sDemote || this.sdemote || global.conn.sdemote || "=͟͟͞❀ @user 𝙮𝙖 𝙣𝙤 𝙚𝙨 𝙖𝙙𝙢𝙞𝙣𝙞𝙨𝙩𝙧𝙖𝙙𝙤𝙧 ⏤͟͟͞͞★"
     }
 
-    const pp = await this.profilePictureUrl(participants[0], "image").catch((_) => "./media/avatar.jpg")
     text = text.replace("@user", "@" + participants[0].split("@")[0])
-    if (chat.detect) this.sendFile(id, pp, "pp.jpg", text, null, false, { mentions: this.parseMention(text) })
+    // Only send text, no image
+    this.sendMessage(id, { text, mentions: this.parseMention(text) })
   }
 }
 
@@ -512,9 +524,11 @@ export async function groupsUpdate(groupsUpdate) {
   for (const groupUpdate of groupsUpdate) {
     const id = groupUpdate.id
     if (!id) continue
-    let chats = global.db.data.chats[id],
-      text = ""
-    if (!chats?.detect) continue
+    let chats = global.db.data.chats[id]
+    if (!chats) continue
+    
+    // Always process updates regardless of detect setting
+    let text = ""
     if (groupUpdate.desc)
       text = (chats.sDesc || this.sDesc || global.conn.sDesc || "=͟͟͞❀ 𝘿𝙚𝙨𝙘𝙧𝙞𝙥𝙘𝙞ó𝙣 𝙘𝙖𝙢𝙗𝙞𝙖𝙙𝙖 𝙖 \n@desc ⏤͟͟͞͞★").replace(
         "@desc",
@@ -527,11 +541,15 @@ export async function groupsUpdate(groupsUpdate) {
         global.conn.sSubject ||
         "=͟͟͞❀ 𝙀𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖 \n@group ⏤͟͟͞͞★"
       ).replace("@group", groupUpdate.subject)
-    if (groupUpdate.icon)
-      text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★").replace(
-        "@icon",
-        groupUpdate.icon,
-      )
+    if (groupUpdate.icon) {
+      // For icon changes, we'll send an image
+      const pp = await this.profilePictureUrl(id, 'image').catch(_ => null)
+      if (pp) {
+        text = (chats.sIcon || this.sIcon || global.conn.sIcon || "=͟͟͞❀ 𝙀𝙡 𝙞𝙘𝙤𝙣𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó ⏤͟͟͞͞★")
+        await this.sendMessage(id, { image: { url: pp }, caption: text, mentions: this.parseMention(text) })
+        continue // Skip the text-only message for icon changes
+      }
+    }
     if (groupUpdate.revoke)
       text = (
         chats.sRevoke ||
@@ -539,8 +557,11 @@ export async function groupsUpdate(groupsUpdate) {
         global.conn.sRevoke ||
         "=͟͟͞❀ 𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙘𝙖𝙢𝙗𝙞ó 𝙖\n@revoke ⏤͟͟͞͞★"
       ).replace("@revoke", groupUpdate.revoke)
-    if (!text) continue
-    await this.sendMessage(id, { text, mentions: this.parseMention(text) })
+    
+    if (text) {
+      // Send text-only message for all other updates
+      await this.sendMessage(id, { text, mentions: this.parseMention(text) })
+    }
   }
 }
 
