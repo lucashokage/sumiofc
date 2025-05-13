@@ -41,7 +41,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 ╭┈ ↷
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
 │✧ *Versión ›* ^1.0.0
-│*Plugins ›* ${pluginsCount}
+│❖ *Plugins ›* ${pluginsCount}
 │🜸 https://bit.ly/sumioficial
 │
 │• *Fecha ›* ${currentDate}
