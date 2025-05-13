@@ -1,7 +1,3 @@
-/* Código hecho por I'm Fz `
- - https/Github.com/FzTeis
-*/
-
 import axios from 'axios';
 import cheerio from 'cheerio';
 
@@ -24,7 +20,7 @@ const searchAnime = async (query) => {
                 name,
                 id,
                 image: `https://tioanime.com${image}`,
-                url: animeUrl, 
+                url: animeUrl
             });
         });
 
@@ -41,26 +37,20 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
     }
 
     const results = await searchAnime(args[0]);
-    if (results.length === 0) {
+    if (results.error || results.length === 0) {
         return conn.reply(m.chat, `${emoji2} No se encontraron resultados.`, m);
     }
 
-    const messages = [];
-    for (const { name, id, url, image } of results) {
-        messages.push([
-            `Informacion del anime`,
-            `Título: ${name}\n\n🔖 ID: ${id}\n*Usa este ID para descargar el anime o bien, selecciona una opción de la lista.*`,
-            image,
-            [],
-            [[`${url}`]],
-            [],
-            [{ title: `Selecciona para obtener la información del anime.`, rows: [
-                { title: name, description: 'Click para obtener información detallada del anime.', rowId: `${usedPrefix}animeinfo ${url}` }
-            ]}]
-        ]);
-    }
+    let message = `*Resultados de búsqueda para* "${args[0]}"\n\n`;
+    results.forEach((anime, index) => {
+        message += `*${index + 1}. ${anime.name}*\n`;
+        message += `🔖 ID: ${anime.id}\n`;
+        message += `🌐 URL: ${anime.url}\n\n`;
+    });
+    message += `*Usa el ID o la URL para obtener más información sobre el anime.*\n`;
+    message += `Ejemplo: ${usedPrefix}animeinfo [ID o URL]`;
 
-    await conn.sendCarousel(m.chat, '', `\`\`\`🍭 ¡Hola! A continuación te muestro la lista de animes encontrados.\`\`\``, "", messages, m);
+    await conn.reply(m.chat, message, m);
 }
 
 handler.help = ['animes', 'animesearch', 'animess'];
