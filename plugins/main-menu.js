@@ -34,7 +34,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     
     const country = getCountryFromNumber(m.sender.split("@")[0])
 
-    // Construir el menú
     let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
 > _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
@@ -43,6 +42,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
 │✧ *Versión ›* ^1.0.0
 │❖ *Plugins ›* ${pluginsCount}
+│🜸 *Canal >* https://bit.ly/sumioficial
 │
 │• *Fecha ›* ${currentDate}
 │• *Pais ›* ${country}
@@ -751,7 +751,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
             title: displayBotName,
             body: "Menú general",
             thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
-            sourceUrl: `https://whatsapp.com/channel/${channelId.split('@')[0]}`,
+            sourceUrl: `https://bit.ly/sumioficial`,
             mediaType: 1,
             showAdAttribution: true,
             renderLargerThumbnail: true,
