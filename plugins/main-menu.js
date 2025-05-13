@@ -754,7 +754,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
             sourceUrl: `https://bit.ly/sumioficial`,
             mediaType: 1,
             showAdAttribution: true,
-            renderLargerThumbnail: true,
+            renderLargerThumbnail: false,
           },
         },
       },
@@ -771,6 +771,3 @@ handler.tags = ["main"]
 handler.command = /^(menu|help|comandos|cmd)$/i
 
 export default handler
-
-// Ejecutar para mostrar el resultado
-console.log("Archivo actualizado correctamente con los nuevos comandos.");
