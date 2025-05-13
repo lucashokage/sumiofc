@@ -7,8 +7,7 @@ import chalk from "chalk"
 import { WebSocket } from "ws"
 const ws = WebSocket
 
-const { proto, default: WAMessageStubType } = (await import("@whiskeysockets/baileys")).default
-
+const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = (x) => typeof x === "number" && !isNaN(x)
 const delay = (ms) =>
   isNumber(ms) &&
@@ -462,16 +461,10 @@ export async function handler(chatUpdate) {
 export async function participantsUpdate({ id, participants, action }) {
   if (global.opts["self"]) return
   if (global.db.data == null) await global.loadDatabase()
-  const chat = global.db.data.chats[id] || {}
-  
-  // No enviamos mensajes personalizados para evitar duplicados
-  // Las notificaciones del sistema de WhatsApp ya se mostrarán automáticamente
 }
 
 export async function groupsUpdate(groupsUpdate) {
   if (global.opts["self"]) return
-  // No enviamos mensajes personalizados para evitar duplicados
-  // Las notificaciones del sistema de WhatsApp ya se mostrarán automáticamente
 }
 
 global.dfail = (type, m, conn) => {
