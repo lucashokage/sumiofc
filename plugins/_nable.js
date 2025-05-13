@@ -11,16 +11,16 @@ const handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, i
 
   if (args[0] === 'on' || args[0] === 'enable') {
     isEnable = true;
-} else if (args[0] === 'off' || args[0] === 'disable') {
+  } else if (args[0] === 'off' || args[0] === 'disable') {
     isEnable = false
-} else {
+  } else {
     const estado = isEnable ? '✓ Activado' : '✗ Desactivado'
     return conn.reply(m.chat, `「✦」Un administrador puede activar o desactivar el *${command}* utilizando:\n\n> ✐ *${usedPrefix}${command} on* para activar.\n> ✐ *${usedPrefix}${command} off* para desactivar.\n\n✧ Estado actual » *${estado}*`, m)
   }
 
   switch (type) {
-case 'antilag':
-case 'antiLag':
+    case 'antilag':
+    case 'antiLag':
       if (!m.isGroup) {
         if (!isOwner) {
           global.dfail('group', m, conn)
@@ -198,7 +198,7 @@ case 'antiLag':
       chat.antiLink = isEnable
       break
 
-      case 'antifake':
+    case 'antifake':
       if (m.isGroup) {
         if (!(isAdmin || isOwner)) {
           global.dfail('admin', m, conn)
