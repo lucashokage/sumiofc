@@ -1,36 +1,66 @@
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, text }) => {
-    if (!text) throw m.reply(`${emoji} Por favor, ingresa un link de MediaFire.`);
-    
+    // Verificación inicial
+    if (!text) {
+        await m.reply(`${emoji} Por favor, ingresa un link de MediaFire.`);
+        return;
+    }
+
     try {
-        // Reacción de espera ⏳
+        // Paso 1: Indicador de procesamiento
         await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 
-        // 1. Obtener datos de la API
-        const apiResponse = await fetch(`https://api.agatz.xyz/api/mediafire?url=${encodeURIComponent(text)}`);
-        if (!apiResponse.ok) throw new Error('❌ La API no respondió correctamente.');
+        // Paso 2: Obtención de datos con timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+        
+        const apiResponse = await fetch(`https://api.agatz.xyz/api/mediafire?url=${encodeURIComponent(text)}`, {
+            signal: controller.signal
+        }).finally(() => clearTimeout(timeout));
+
+        if (!apiResponse.ok) {
+            throw new Error(`Error en la API: ${apiResponse.status} ${apiResponse.statusText}`);
+        }
 
         const data = await apiResponse.json();
-        if (!data?.data?.[0]?.link) throw new Error('🔹 No se encontró ningún archivo en el enlace.');
+        
+        // Validación estricta de datos
+        if (!data?.data?.[0]?.link) {
+            throw new Error('La API no devolvió un enlace válido');
+        }
 
         const fileData = data.data[0];
 
-        // 2. Enviar el archivo (con manejo de errores)
-        await conn.sendFile(
-            m.chat,
-            fileData.link,
-            fileData.nama || 'archivo_descargado',
-            `乂  *¡MEDIAFIRE - DESCARGAS!*  乂\n\n✩ *Nombre* : ${fileData.nama}\n✩ *Peso* : ${fileData.size}\n✩ *MimeType* : ${fileData.mime}\n> ${dev}`,
-            m
-        ).catch(() => m.reply('❌ No se pudo enviar el archivo. ¿Tal vez es muy grande?'));
+        // Paso 3: Envío del archivo con verificación
+        try {
+            await conn.sendFile(
+                m.chat,
+                fileData.link,
+                fileData.nama || 'archivo_descargado',
+                `乂  *¡MEDIAFIRE - DESCARGAS!*  乂\n\n✩ *Nombre* : ${fileData.nama}\n✩ *Peso* : ${fileData.size}\n✩ *MimeType* : ${fileData.mime}\n> ${dev}`,
+                m
+            );
+        } catch (sendError) {
+            console.error('Error al enviar archivo:', sendError);
+            throw new Error('No se pudo enviar el archivo. Puede ser muy grande o el formato no es compatible');
+        }
 
-        // 3. Reacción de éxito ✅
+        // Confirmación de éxito
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
 
     } catch (error) {
-        console.error(error);
-        await m.reply(`❌ *Error al descargar:* ${error.message}`);
+        console.error('Error en comando mediafire:', error);
+        
+        // Manejo de errores específicos
+        let errorMessage = '❌ Ocurrió un error';
+        if (error.name === 'AbortError') {
+            errorMessage = '⌛ La solicitud tardó demasiado. Intenta nuevamente';
+        } else if (error.message.includes('tamaño')) {
+            errorMessage = '📁 El archivo es demasiado grande para enviar por WhatsApp';
+        }
+        
+        await m.reply(`${errorMessage}\nDetalle: ${error.message}`);
         await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
     }
 };
