@@ -24,6 +24,9 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     chat.detect = true;
   }
   
+  // Si detect está desactivado, no procesamos los mensajes
+  if (chat && chat.detect === false) return;
+  
   let usuario = `@${m.sender.split`@`[0]}`;
   let pp = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null) || 'https://files.catbox.moe/xr2m6u.jpg';
 
