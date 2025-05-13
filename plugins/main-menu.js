@@ -1,6 +1,5 @@
 const handler = async (m, { conn, usedPrefix, command }) => {
   try {
-    
     const userId = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
     const user = global.db.data.users[userId] || {}
     const name = conn.getName(userId)
@@ -9,17 +8,18 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const totalreg = Object.keys(global.db.data.users).length
     const pluginsCount = Object.keys(global.plugins || {}).length
     const botType = conn.user.jid == global.conn.user.jid ? "official" : "subbot"
-    
+
+    // Obtener el nombre correcto para el bot
     let displayBotName
     if (botType === "official") {
       displayBotName = "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦"
     } else {
+      // Para subbots, usar el nombre personalizado con .setname o el nombre de WhatsApp
       displayBotName = user.namebebot || conn.getName(conn.user.jid) || "Bot"
     }
-    
+
     const bot = global.db.data.settings[conn.user.jid] || {}
 
-    
     const date = new Date()
     const options = {
       day: "2-digit",
@@ -31,9 +31,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     }
     const currentDate = date.toLocaleDateString("es-ES", options)
 
-    
     const country = getCountryFromNumber(m.sender.split("@")[0])
 
+    // Construir el menú
     let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
 > _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
@@ -41,7 +41,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 ╭┈ ↷
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
 │✧ *Versión ›* ^1.0.0
-│❖ *Plugins ›* ${pluginsCount}
+│*Plugins ›* ${pluginsCount}
 │🜸 https://bit.ly/sumioficial
 │
 │• *Fecha ›* ${currentDate}
@@ -635,105 +635,104 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Elimina las sesiones de subbots.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
-  // Función para generar una sección del menú (mantenida para compatibilidad)
-  function generateSection(title, commands) {
-    let section = `
+    // Función para generar una sección del menú (mantenida para compatibilidad)
+    function generateSection(title, commands) {
+      let section = `
 
 »  ⊹˚୨ •(=^●ω●^=)• *${title}*  ❀
 
 ᥫ᭡ Comandos para ${getDescriptionForSection(title)}.
 ─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─`
 
-    commands.forEach((cmd) => {
-      section += `
+      commands.forEach((cmd) => {
+        section += `
 ᰔᩚ *${cmd.cmd}*
 > ${cmd.desc}`
-    })
+      })
 
-    return section
-  }
-
-  function getDescriptionForSection(title) {
-    const descriptions = {
-      SETLOGO: "cambiar logos y nombres",
-      ANIME: "interacciones de anime",
-      DOWNLOAD: "descargar contenido de varias plataformas",
-      GACHA: "coleccionar y gestionar waifus",
-      GRUPO: "administrar grupos",
-      IA: "interactuar con inteligencia artificial",
-      INFO: "obtener información del bot",
-      NSFW: "contenido para adultos",
-      PROFILE: "gestionar tu perfil",
-      RPG: "jugar y ganar monedas",
-      UTILS: "herramientas útiles",
+      return section
     }
 
-    return descriptions[title] || "usar comandos diversos"
-  }
-
-  function getCountryFromNumber(phoneNumber) {
-    try {
-      const cleanNumber = phoneNumber.replace(/[^\d]/g, "")
-
-      const countryCodes = {
-        1: "Estados Unidos",
-        52: "México",
-        51: "Perú",
-        57: "Colombia",
-        56: "Chile",
-        54: "Argentina",
-        591: "Bolivia",
-        593: "Ecuador",
-        595: "Paraguay",
-        598: "Uruguay",
-        58: "Venezuela",
-        34: "España",
-        55: "Brasil",
-        502: "Guatemala",
-        503: "El Salvador",
-        504: "Honduras",
-        505: "Nicaragua",
-        506: "Costa Rica",
-        507: "Panamá",
-        809: "República Dominicana",
-        1787: "Puerto Rico",
-        53: "Cuba",
+    function getDescriptionForSection(title) {
+      const descriptions = {
+        SETLOGO: "cambiar logos y nombres",
+        ANIME: "interacciones de anime",
+        DOWNLOAD: "descargar contenido de varias plataformas",
+        GACHA: "coleccionar y gestionar waifus",
+        GRUPO: "administrar grupos",
+        IA: "interactuar con inteligencia artificial",
+        INFO: "obtener información del bot",
+        NSFW: "contenido para adultos",
+        PROFILE: "gestionar tu perfil",
+        RPG: "jugar y ganar monedas",
+        UTILS: "herramientas útiles",
       }
 
-      for (const [code, country] of Object.entries(countryCodes)) {
-        if (code.length === 3 && cleanNumber.startsWith(code)) {
-          return country
-        }
-      }
-
-      for (const [code, country] of Object.entries(countryCodes)) {
-        if (code.length === 2 && cleanNumber.startsWith(code)) {
-          return country
-        }
-      }
-
-      for (const [code, country] of Object.entries(countryCodes)) {
-        if (code.length === 1 && cleanNumber.startsWith(code)) {
-          return country
-        }
-      }
-
-      return "Desconocido"
-    } catch (error) {
-      return "Desconocido"
+      return descriptions[title] || "usar comandos diversos"
     }
-  }
 
-  function clockString(ms) {
-    const seconds = Math.floor((ms / 1000) % 60)
-    const minutes = Math.floor((ms / (1000 * 60)) % 60)
-    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24)
-    return `${hours}h ${minutes}m ${seconds}s`
-  }
+    function getCountryFromNumber(phoneNumber) {
+      try {
+        const cleanNumber = phoneNumber.replace(/[^\d]/g, "")
 
-  
+        const countryCodes = {
+          1: "Estados Unidos",
+          52: "México",
+          51: "Perú",
+          57: "Colombia",
+          56: "Chile",
+          54: "Argentina",
+          591: "Bolivia",
+          593: "Ecuador",
+          595: "Paraguay",
+          598: "Uruguay",
+          58: "Venezuela",
+          34: "España",
+          55: "Brasil",
+          502: "Guatemala",
+          503: "El Salvador",
+          504: "Honduras",
+          505: "Nicaragua",
+          506: "Costa Rica",
+          507: "Panamá",
+          809: "República Dominicana",
+          1787: "Puerto Rico",
+          53: "Cuba",
+        }
+
+        for (const [code, country] of Object.entries(countryCodes)) {
+          if (code.length === 3 && cleanNumber.startsWith(code)) {
+            return country
+          }
+        }
+
+        for (const [code, country] of Object.entries(countryCodes)) {
+          if (code.length === 2 && cleanNumber.startsWith(code)) {
+            return country
+          }
+        }
+
+        for (const [code, country] of Object.entries(countryCodes)) {
+          if (code.length === 1 && cleanNumber.startsWith(code)) {
+            return country
+          }
+        }
+
+        return "Desconocido"
+      } catch (error) {
+        return "Desconocido"
+      }
+    }
+
+    function clockString(ms) {
+      const seconds = Math.floor((ms / 1000) % 60)
+      const minutes = Math.floor((ms / (1000 * 60)) % 60)
+      const hours = Math.floor((ms / (1000 * 60 * 60)) % 24)
+      return `${hours}h ${minutes}m ${seconds}s`
+    }
+
     const channelId = "120363324350463849@newsletter"
-    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─" 
+    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─"
     await conn.sendMessage(
       m.chat,
       {
@@ -742,7 +741,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           mentionedJid: [m.sender, userId],
           isForwarded: true,
           forwardingScore: 999,
-          forwardedFromChannel: true, 
+          forwardedFromChannel: true,
           channelId: channelId,
           channelName: channelName,
           viewOnceMessage: true,
@@ -750,7 +749,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           externalAdReply: {
             title: displayBotName,
             body: "Menú general",
-            thumbnailUrl: bot.logo?.banner || "https://bit.ly/sumioficial",
+            thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
             sourceUrl: `https://bit.ly/sumioficial`,
             mediaType: 1,
             showAdAttribution: true,
