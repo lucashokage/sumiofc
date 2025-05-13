@@ -20,7 +20,6 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
   };
   
   let chat = global.db.data.chats[m.chat];
-  // Set detect to true by default if it doesn't exist
   if (chat && typeof chat.detect === 'undefined') {
     chat.detect = true;
   }
@@ -37,11 +36,9 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
   admingp = `《✦》@${m.messageStubParameters[0].split`@`[0]} Ahora es admin del grupo.\n\n> ✧ Acción hecha por:\n> » ${usuario}`;
   noadmingp = `《✦》@${m.messageStubParameters[0].split`@`[0]} Deja de ser admin del grupo.\n\n> ✧ Acción hecha por:\n> » ${usuario}`;
   
-  // Process events regardless of chat.detect setting (it's enabled by default now)
   if (m.messageStubType == 21) {
     await conn.sendMessage(m.chat, { text: nombre, mentions: [m.sender] }, { quoted: fkontak });   
   } else if (m.messageStubType == 22) {
-    // Only send image for group icon changes
     await conn.sendMessage(m.chat, { image: { url: pp }, caption: foto, mentions: [m.sender] }, { quoted: fkontak });
   } else if (m.messageStubType == 23) {
     await conn.sendMessage(m.chat, { text: newlink, mentions: [m.sender] }, { quoted: fkontak });    
