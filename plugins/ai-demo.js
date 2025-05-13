@@ -7,7 +7,7 @@ let handler = async (m, { conn, text }) => {
         conn.reply(m.chat, m);
         let data = await chatGpt(text);
         await conn.sendMessage(m.chat, { 
-            text: '*Demo:* ' + data
+            text: data
         }, { quoted: m });
 
     } catch (err) {
@@ -16,7 +16,7 @@ let handler = async (m, { conn, text }) => {
 }
 
 handler.help = ['demo *<texto>*'];
-handler.command = ['demo', 'openai'];
+handler.command = ['demo', 'sumi'];
 handler.tags = ['ai'];
 handler.group = true;
 
