@@ -24,6 +24,7 @@ global.packname = '✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦'
 global.author = '✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦' 
 
 global.botName = '✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦'
+global.vs = '1.0.0'
 global.fgig = 'https://instagram.com/' 
 global.fgsc = 'https://github.com/' 
 global.fgyt = 'https://youtube.com/'
