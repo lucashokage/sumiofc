@@ -42,7 +42,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
 │✧ *Versión ›* ^1.0.0
 │❖ *Plugins ›* ${pluginsCount}
-│🜸 *Canal >* https://bit.ly/sumioficial
+│🜸 https://bit.ly/sumioficial
 │
 │• *Fecha ›* ${currentDate}
 │• *Pais ›* ${country}
@@ -750,11 +750,11 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           externalAdReply: {
             title: displayBotName,
             body: "Menú general",
-            thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
+            thumbnailUrl: bot.logo?.banner || "https://bit.ly/sumioficial",
             sourceUrl: `https://bit.ly/sumioficial`,
             mediaType: 1,
             showAdAttribution: true,
-            renderLargerThumbnail: false,
+            renderLargerThumbnail: true,
           },
         },
       },
