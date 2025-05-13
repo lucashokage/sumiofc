@@ -552,7 +552,7 @@ function setupPeriodicHealthCheck() {
 
 handler.help = ['botclone']
 handler.tags = ['subbot']
-handler.command = ['code', 'serbot', 'jadibot', 'serbot --code', 'clonebot']
+handler.command = ['code']
 handler.rowner = false
 
 export default handler
