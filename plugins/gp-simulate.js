@@ -1,13 +1,11 @@
-let handler = async (m, { conn, usedPrefix, command, args: [event], text }) => {
-  // Verificar si los eventos están activados
-  let chat = global.db.data.chats[m.chat]
+const handler = async (m, { conn, usedPrefix, command, args: [event], text }) => {
+  // Verificar que las bienvenidas estén activadas
+  const chat = global.db.data.chats[m.chat] || {}
   if (!chat.welcome) {
-    await m.reply(`✳️ Para usar este comando debe activar las Bienvenidas con\n\n*${usedPrefix}on welcome*`)
-    return
+    throw `✳️ Para usar este comando debe activar las Bienvenidas con\n\n*${usedPrefix}on welcome*`
   }
 
-  // Mensaje de ayuda
-  let helpText = `
+  const te = `
   ┌─⊷ *EVENTOS*
   ▢ welcome
   ▢ bye
@@ -16,67 +14,60 @@ let handler = async (m, { conn, usedPrefix, command, args: [event], text }) => {
   └───────────
   
   📌 Ejemplo:
+  
   *${usedPrefix + command}* welcome @user`
 
-  if (!event) {
-    await m.reply(helpText)
-    return
+  if (!event) return await m.reply(te)
+
+  const mentions = text.replace(event, "").trimStart()
+  const who = mentions ? conn.parseMention(mentions) : []
+  const part = who.length ? who : [m.sender]
+  let act = false
+
+  m.reply(`✅ Simulando ${event}...`)
+
+  switch (event.toLowerCase()) {
+    case "add":
+    case "bienvenida":
+    case "invite":
+    case "welcome":
+      act = "add"
+      break
+
+    case "bye":
+    case "despedida":
+    case "leave":
+    case "remove":
+      act = "remove"
+      break
+
+    case "promote":
+    case "promover":
+      act = "promote"
+      break
+
+    case "demote":
+    case "degradar":
+      act = "demote"
+      break
+
+    default:
+      throw te
   }
 
-  try {
-    // Procesar menciones
-    let mentions = text.replace(event, '').trimStart()
-    let who = mentions ? conn.parseMention(mentions) : []
-    let part = who.length ? who : [m.sender]
-    
-    await m.reply(`✅ Simulando ${event}...`)
-
-    // Determinar la acción
-    let action
-    switch (event.toLowerCase()) {
-      case 'add':
-      case 'bienvenida':
-      case 'invite':
-      case 'welcome':
-        action = 'add'
-        break
-      case 'bye':
-      case 'despedida':
-      case 'leave':
-      case 'remove':
-        action = 'remove'
-        break
-      case 'promote':
-      case 'promover':
-        action = 'promote'
-        break
-      case 'demote':
-      case 'degradar':
-        action = 'demote'
-        break
-      default:
-        await m.reply(helpText)
-        return
-    }
-
-    // Ejecutar la acción
-    if (action) {
-      await conn.participantsUpdate({
-        id: m.chat,
-        participants: part,
-        action: action
-      })
-      await m.reply(`✔️ Evento ${event} simulado correctamente`)
-    }
-  } catch (error) {
-    console.error('Error en el comando simular:', error)
-    await m.reply(`❌ Ocurrió un error al simular el evento:\n${error.message}`)
+  // Simular el evento actualizando los participantes
+  if (act) {
+    return conn.participantsUpdate({
+      id: m.chat,
+      participants: part,
+      action: act,
+    })
   }
 }
 
-handler.help = ['simulate <event> @user']
-handler.tags = ['group']
-handler.command = ['simular', 'simulate'] 
+handler.help = ["simulate <evento> @usuario"]
+handler.tags = ["group"]
+handler.command = ["simular", "simulate"]
 handler.admin = true
 handler.group = true
 
