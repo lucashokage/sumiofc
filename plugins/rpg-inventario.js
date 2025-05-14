@@ -3,7 +3,7 @@ const handler = async (m, { conn, usedPrefix }) => {
 
   // Verificar que el usuario existe
   if (!user) {
-    return conn.reply(m.chat, "❌ No se encontraron datos de usuario.", m)
+    return conn.reply(m.chat, `${global.emoji || "❌"} El usuario no se encuentra en la base de Datos.`, m)
   }
 
   // Función para formatear números grandes
@@ -11,27 +11,40 @@ const handler = async (m, { conn, usedPrefix }) => {
     return num ? num.toLocaleString() : "0"
   }
 
+  // Calcular tiempos de espera
+  const calculateCooldown = (lastTime, cooldownTime) => {
+    if (!lastTime) return "Disponible"
+    const timeLeft = lastTime + cooldownTime - Date.now()
+    return timeLeft > 0 ? msToTime(timeLeft) : "Disponible"
+  }
+
+  // Obtener estado de cooldowns
+  const miningCooldown = calculateCooldown(user.lastmiming, 600000) // 10 minutos
+  const huntingCooldown = calculateCooldown(user.lastberburu, 2700000) // 45 minutos
+  const adventureCooldown = calculateCooldown(user.lastAdventure, 1500000) // 25 minutos
+  const chestCooldown = calculateCooldown(user.lastcofre, 86400000) // 24 horas
+
   const inventario = `
-╭━━━━━━━━━⬣
+╭━━━━━━━━━━━━━━━━━━━━⬣
 ┃ *INVENTARIO DE ${conn.getName(m.sender)}*
 ┃
 ┃ 💰 *ECONOMÍA*
 ┃ • ${global.moneda || "💸"}: ${formatNumber(user.coin || 0)}
 ┃ • 💎 Diamantes: ${formatNumber(user.diamonds || 0)}
 ┃ • 🏦 Banco: ${formatNumber(user.bank || 0)}
+┃ • ❖ Tokens: ${formatNumber(user.joincount || 0)}
 ┃
 ┃ 🧪 *POCIONES Y CONSUMIBLES*
 ┃ • 🧪 Pociones: ${formatNumber(user.potion || 0)}
 ┃ • 🍗 Comida: ${formatNumber(user.food || 0)}
 ┃
-┃ 🔮 *RECURSOS MINADOS*
+┃ 🔮 *RECURSOS MINADOS Y AVENTURA*
 ┃ • 🪵 Madera: ${formatNumber(user.wood || 0)}
 ┃ • 🪨 Piedra: ${formatNumber(user.stone || 0)}
 ┃ • 🔩 Hierro: ${formatNumber(user.iron || 0)}
 ┃ • 🏅 Oro: ${formatNumber(user.gold || 0)}
 ┃ • ♦️ Esmeralda: ${formatNumber(user.emerald || 0)}
 ┃ • 🕋 Carbón: ${formatNumber(user.coal || 0)}
-┃ • ✨ Experiencia: ${formatNumber(user.exp || 0)}
 ┃
 ┃ 🐾 *ANIMALES CAZADOS*
 ┃ • 🐂 Búfalo: ${formatNumber(user.banteng || 0)}
@@ -49,49 +62,49 @@ const handler = async (m, { conn, usedPrefix }) => {
 ┃
 ┃ ⚔️ *ESTADÍSTICAS*
 ┃ • ❤️ Salud: ${user.health || 0}/100
-┃ • ⚡ Experiencia: ${formatNumber(user.exp || 0)}
+┃ • ✨ Experiencia: ${formatNumber(user.exp || 0)}
 ┃ • 🏆 Nivel: ${user.level || 0}
 ┃ • 🏅 Rango: ${user.role || "Novato"}
 ┃
 ┃ 🛠️ *DURABILIDAD DE HERRAMIENTAS*
 ┃ • ⛏️ Pico: ${user.pickaxedurability || 0}/100
 ┃
-┃ ⏱️ *COOLDOWNS*
-┃ • ⛏️ Minar: ${user.lastmiming ? formatCooldown(user.lastmiming) : "Disponible"}
-┃ • 🏹 Cazar: ${user.lastberburu ? formatCooldown(user.lastberburu) : "Disponible"}
-╰━━━━━━━━━⬣
+┃ ⏱️ *TIEMPOS DE ESPERA*
+┃ • ⛏️ Minar: ${miningCooldown}
+┃ • 🏹 Cazar: ${huntingCooldown}
+┃ • 🗺️ Aventura: ${adventureCooldown}
+┃ • 🎁 Cofre: ${chestCooldown}
+╰━━━━━━━━━━━━━━━━━━━━⬣
 
-Usa *${usedPrefix}shop* para comprar objetos.
-Usa *${usedPrefix}minar* para obtener recursos.
-Usa *${usedPrefix}cazar* para obtener animales.`
+*COMANDOS DISPONIBLES:*
+• *${usedPrefix}shop* - Comprar objetos
+• *${usedPrefix}minar* - Obtener recursos minando
+• *${usedPrefix}cazar* - Cazar animales
+• *${usedPrefix}aventura* - Ir de aventura
+• *${usedPrefix}cofre* - Abrir cofre diario
+• *${usedPrefix}heal* - Curarse con pociones`
 
   conn.reply(m.chat, inventario, m)
 }
 
-// Función para formatear el tiempo de cooldown
-function formatCooldown(lastTime) {
-  const now = new Date()
-  const miningCooldown = 600000 // 10 minutos para minar
-  const huntingCooldown = 2700000 // 45 minutos para cazar
-
-  const miningTime = lastTime + miningCooldown - now
-  const huntingTime = lastTime + huntingCooldown - now
-
-  if (miningTime > 0) {
-    return msToTime(miningTime)
-  } else if (huntingTime > 0) {
-    return msToTime(huntingTime)
-  } else {
-    return "Disponible"
-  }
-}
-
 // Función para convertir milisegundos a formato de tiempo
 function msToTime(duration) {
+  // Convertir a valores positivos
+  duration = Math.max(0, duration)
+
+  const milliseconds = Number.parseInt((duration % 1000) / 100)
   const seconds = Math.floor((duration / 1000) % 60)
   const minutes = Math.floor((duration / (1000 * 60)) % 60)
+  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
 
-  return minutes + " m y " + seconds + " s"
+  // Formatear según la duración
+  if (hours > 0) {
+    return `${hours} h ${minutes} m`
+  } else if (minutes > 0) {
+    return `${minutes} m ${seconds} s`
+  } else {
+    return `${seconds} s`
+  }
 }
 
 handler.help = ["inventario"]
