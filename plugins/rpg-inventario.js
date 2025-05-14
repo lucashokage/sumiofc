@@ -6,9 +6,9 @@ const handler = async (m, { conn, usedPrefix }) => {
     return conn.reply(m.chat, `${global.emoji || "❌"} El usuario no se encuentra en la base de Datos.`, m)
   }
 
-  // Función para formatear números grandes
+  // Función para formatear números
   const formatNumber = (num) => {
-    return num ? num.toLocaleString() : "0"
+    return num !== undefined && num !== null ? num.toLocaleString() : "0"
   }
 
   // Calcular tiempos de espera
@@ -29,40 +29,40 @@ const handler = async (m, { conn, usedPrefix }) => {
 ┃ *INVENTARIO DE ${conn.getName(m.sender)}*
 ┃
 ┃ 💰 *ECONOMÍA*
-┃ • ${global.moneda || "💸"}: ${formatNumber(user.coin || 0)}
-┃ • 💎 Diamantes: ${formatNumber(user.diamonds || 0)}
-┃ • 🏦 Banco: ${formatNumber(user.bank || 0)}
-┃ • ❖ Tokens: ${formatNumber(user.joincount || 0)}
+┃ • ${global.moneda || "💸"}: ${formatNumber(user.coin)}
+┃ • 💎 Diamantes: ${formatNumber(user.diamonds)}
+┃ • 🏦 Banco: ${formatNumber(user.bank)}
+┃ • ❖ Tokens: ${formatNumber(user.joincount)}
 ┃
 ┃ 🧪 *POCIONES Y CONSUMIBLES*
-┃ • 🧪 Pociones: ${formatNumber(user.potion || 0)}
-┃ • 🍗 Comida: ${formatNumber(user.food || 0)}
+┃ • 🧪 Pociones: ${formatNumber(user.potion)}
+┃ • 🍗 Comida: ${formatNumber(user.food)}
 ┃
 ┃ 🔮 *RECURSOS MINADOS Y AVENTURA*
-┃ • 🪵 Madera: ${formatNumber(user.wood || 0)}
-┃ • 🪨 Piedra: ${formatNumber(user.stone || 0)}
-┃ • 🔩 Hierro: ${formatNumber(user.iron || 0)}
-┃ • 🏅 Oro: ${formatNumber(user.gold || 0)}
-┃ • ♦️ Esmeralda: ${formatNumber(user.emerald || 0)}
-┃ • 🕋 Carbón: ${formatNumber(user.coal || 0)}
+┃ • 🪵 Madera: ${formatNumber(user.wood)}
+┃ • 🪨 Piedra: ${formatNumber(user.stone)}
+┃ • 🔩 Hierro: ${formatNumber(user.iron)}
+┃ • 🏅 Oro: ${formatNumber(user.gold)}
+┃ • ♦️ Esmeralda: ${formatNumber(user.emerald)}
+┃ • 🕋 Carbón: ${formatNumber(user.coal)}
 ┃
 ┃ 🐾 *ANIMALES CAZADOS*
-┃ • 🐂 Búfalo: ${formatNumber(user.banteng || 0)}
-┃ • 🐅 Tigre: ${formatNumber(user.harimau || 0)}
-┃ • 🐘 Elefante: ${formatNumber(user.gajah || 0)}
-┃ • 🐐 Cabra: ${formatNumber(user.kambing || 0)}
-┃ • 🐼 Panda: ${formatNumber(user.panda || 0)}
-┃ • 🐊 Cocodrilo: ${formatNumber(user.buaya || 0)}
-┃ • 🐃 Búfalo de agua: ${formatNumber(user.kerbau || 0)}
-┃ • 🐮 Vaca: ${formatNumber(user.sapi || 0)}
-┃ • 🐒 Mono: ${formatNumber(user.monyet || 0)}
-┃ • 🐗 Jabalí: ${formatNumber(user.babihutan || 0)}
-┃ • 🐖 Cerdo: ${formatNumber(user.babi || 0)}
-┃ • 🐓 Pollo: ${formatNumber(user.ayam || 0)}
+┃ • 🐂 Búfalo: ${formatNumber(user.banteng)}
+┃ • 🐅 Tigre: ${formatNumber(user.harimau)}
+┃ • 🐘 Elefante: ${formatNumber(user.gajah)}
+┃ • 🐐 Cabra: ${formatNumber(user.kambing)}
+┃ • 🐼 Panda: ${formatNumber(user.panda)}
+┃ • 🐊 Cocodrilo: ${formatNumber(user.buaya)}
+┃ • 🐃 Búfalo de agua: ${formatNumber(user.kerbau)}
+┃ • 🐮 Vaca: ${formatNumber(user.sapi)}
+┃ • 🐒 Mono: ${formatNumber(user.monyet)}
+┃ • 🐗 Jabalí: ${formatNumber(user.babihutan)}
+┃ • 🐖 Cerdo: ${formatNumber(user.babi)}
+┃ • 🐓 Pollo: ${formatNumber(user.ayam)}
 ┃
 ┃ ⚔️ *ESTADÍSTICAS*
 ┃ • ❤️ Salud: ${user.health || 0}/100
-┃ • ✨ Experiencia: ${formatNumber(user.exp || 0)}
+┃ • ✨ Experiencia: ${formatNumber(user.exp)}
 ┃ • 🏆 Nivel: ${user.level || 0}
 ┃ • 🏅 Rango: ${user.role || "Novato"}
 ┃
@@ -92,7 +92,6 @@ function msToTime(duration) {
   // Convertir a valores positivos
   duration = Math.max(0, duration)
 
-  const milliseconds = Number.parseInt((duration % 1000) / 100)
   const seconds = Math.floor((duration / 1000) % 60)
   const minutes = Math.floor((duration / (1000 * 60)) % 60)
   const hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
