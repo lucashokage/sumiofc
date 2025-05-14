@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { makeWASocket } from "@whiskeysockets/baileys"
 
 let handler = async (m, { conn }) => {
   try {
@@ -16,7 +17,7 @@ let handler = async (m, { conn }) => {
       return conn.reply(m.chat, '❌ No hay bots configurados', m)
     }
 
-    await conn.reply(m.chat, `♻️ Reconectando ${botFolders.length} bots...`, m)
+    await conn.reply(m.chat, `♻️ Iniciando reconexión de ${botFolders.length} bots...`, m)
 
     let successCount = 0
     const failedBots = []
@@ -25,33 +26,39 @@ let handler = async (m, { conn }) => {
       try {
         const botPath = path.join(sumibotsDir, botId, 'creds.json')
         if (fs.existsSync(botPath)) {
-          const { state, saveState } = JSON.parse(fs.readFileSync(botPath))
+          const { state } = JSON.parse(fs.readFileSync(botPath))
           
           const newConn = makeWASocket({
-            printQRInTerminal: true,
-            auth: {
-              creds: state.creds,
-              keys: state.keys
+            printQRInTerminal: false,
+            auth: { creds: state.creds, keys: state.keys },
+            logger: { level: 'silent' }
+          })
+
+          newConn.ev.on('connection.update', (update) => {
+            if (update.connection === 'open') {
+              successCount++
+              global.connections[botId] = newConn
             }
           })
-          
-          global.connections[botId] = newConn
-          successCount++
+
+          await new Promise(resolve => setTimeout(resolve, 2500))
         }
-        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (e) {
         failedBots.push(botId)
       }
     }
 
-    let result = `✅ Resultado:\nConectados: ${successCount}\nFallidos: ${failedBots.length}`
+    await new Promise(resolve => setTimeout(resolve, 5000))
+
+    let result = `✅ Resultado final:\n🟢 Conectados: ${successCount}\n🔴 Fallidos: ${failedBots.length}`
     if (failedBots.length > 0) {
-      result += `\nFallidos:\n${failedBots.slice(0, 5).join('\n')}`
+      result += `\n\nBots con problemas:\n${failedBots.slice(0, 5).join('\n')}`
+      if (failedBots.length > 5) result += `\n...y ${failedBots.length - 5} más`
     }
 
     return conn.reply(m.chat, result, m)
   } catch (error) {
-    return conn.reply(m.chat, '⚠️ Error en el proceso', m)
+    return conn.reply(m.chat, '⚠️ Error crítico en el proceso', m)
   }
 }
 
