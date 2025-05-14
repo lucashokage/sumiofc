@@ -26,11 +26,12 @@ import { makeWASocket } from '../lib/simple.js'
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 
-const MAX_RECONNECT_ATTEMPTS = 3
-const INITIAL_RECONNECT_DELAY = 800000
+// Configuración principal
+const MAX_RECONNECT_ATTEMPTS = 5
+const RECONNECT_INTERVAL = 25 * 60 * 1000 // 25 minutos en milisegundos
 const MAX_SUBBOTS = 120
 
-
+// Mapa para rastrear conexiones iniciales
 const initialConnections = new Map()
 
 let store
@@ -43,7 +44,10 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
   }
 
   async function bbts() {
-    let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8)
+    // Generar ID único para el subbot basado en el número del remitente
+    let phoneNumber = m.sender.split('@')[0]
+    let subbotId = crypto.randomBytes(4).toString('hex')
+    let authFolderB = `${phoneNumber}sbt-${subbotId}`
 
     if (!fs.existsSync("./sumibots/"+ authFolderB)){
       fs.mkdirSync("./sumibots/"+ authFolderB, { recursive: true });
@@ -56,7 +60,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     const msgRetryCounterMap = (MessageRetryMap) => { };
     const msgRetryCounterCache = new NodeCache()
     const {version} = await fetchLatestBaileysVersion();
-    let phoneNumber = m.sender.split('@')[0]
 
     const methodCodeQR = process.argv.includes("qr")
     const methodCode = !!phoneNumber || process.argv.includes("code")
@@ -65,6 +68,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
     const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
 
+    // Configuración de conexión optimizada
     const connectionOptions = {
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false,
@@ -87,12 +91,13 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       version,
       retryRequestDelayMs: 800000,
       connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
+      keepAliveIntervalMs: RECONNECT_INTERVAL,
     }
 
     let conn = makeWASocket(connectionOptions)
     let reconnectAttempts = 0
-    let reconnectDelay = INITIAL_RECONNECT_DELAY
+    let reconnectTimer = null
+    let autoReconnectTimer = null
 
     if (methodCode && !conn.authState.creds.registered) {
       if (!phoneNumber) {
@@ -115,7 +120,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
           
           rl.close();
         } catch (error) {
-          console.error("Error al solicitar código de emparejamiento:", error);
           await parent.sendMessage(m.chat, { text: "❌ Error al generar el código. Intente nuevamente." }, { quoted: m });
           rl.close();
         }
@@ -126,37 +130,36 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     let isInit = true
     conn.uptime = new Date()
 
+    // Función para programar la reconexión automática
+    function scheduleAutoReconnect() {
+      if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
+      
+      autoReconnectTimer = setTimeout(() => {
+        // Solo un mensaje en consola para la reconexión automática
+        console.log(chalk.blue(`🔄 Reconexión automática para ${authFolderB}`));
+        
+        if (conn.ws.readyState !== CLOSED) {
+          conn.ws.close();
+        }
+      }, RECONNECT_INTERVAL);
+    }
+
+    // Función de actualización de conexión optimizada
     async function connectionUpdate(update) {
       const { connection, lastDisconnect, isNewLogin, qr } = update
       if (isNewLogin) conn.isInit = true
-
-      if (connection === 'connecting') {
-        console.log(chalk.yellow('Conectando...'));
-      }
 
       const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
       
       if (connection === 'close' || (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null)) {
         let i = global.conns.indexOf(conn)
-        if (i < 0) return console.log(await creloadHandler(true).catch(console.error))
+        if (i < 0) return console.log(await creloadHandler(true).catch(() => {}))
         
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts++;
           
-          if (reconnectAttempts < 5) {
-            reconnectDelay = 10000;
-          } else if (reconnectAttempts < 10) {
-            reconnectDelay = 15000;
-          } else if (reconnectAttempts < 15) {
-            reconnectDelay = 30000;
-          }
-          
-          console.log(chalk.yellow(`Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en ${reconnectDelay/1000} segundos...`));
-          
-          // Solo mostrar en consola, no enviar al grupo
-          if (code !== DisconnectReason.connectionClosed) { 
-            console.log(chalk.yellow(`⚠️ Conexión perdida, intentando reconectar... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`));
-          }
+          // Solo un mensaje en consola para intentos de reconexión
+          console.log(chalk.yellow(`Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en 10 segundos...`));
           
           setTimeout(async () => {
             try {
@@ -174,32 +177,33 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
               conn = makeWASocket(connectionOptions)
               await creloadHandler(false);
             } catch (err) {
-              console.log(chalk.red('Error durante la reconexión:', err));
+              // Silenciar errores en consola
             }
-          }, reconnectDelay);
+          }, 10000);
           
           return;
         } else {
           delete global.conns[i]
           global.conns.splice(i, 1)
           
-          // Este mensaje sí se envía al grupo porque es el final de los intentos
+          // Solo un mensaje al grupo cuando se agotan los intentos
           parent.sendMessage(m.chat, {
-            text: `⛔ La sesión ha sido cerrada después de ${MAX_RECONNECT_ATTEMPTS} intentos fallidos. Deberás conectarte nuevamente.`
-          }, { quoted: m }).catch(console.error);
+            text: `⛔ La sesión ha sido cerrada después de ${MAX_RECONNECT_ATTEMPTS} intentos fallidos.`
+          }, { quoted: m }).catch(() => {});
           
           if (code === DisconnectReason.loggedOut) {
             const folderPath = `./sumibots/${authFolderB}`;
             if (fs.existsSync(folderPath)) {
               fs.rmdirSync(folderPath, { recursive: true });
-              console.log(chalk.cyan(`🌿 Credenciales eliminadas para subbot ${authFolderB}.`));
             }
           }
         }
       } else if (connection === 'open') {
         reconnectAttempts = 0;
-        reconnectDelay = INITIAL_RECONNECT_DELAY;
         conn.uptime = new Date();
+        
+        // Programar reconexión automática
+        scheduleAutoReconnect();
       }
       
       if (global.db.data == null) loadDatabase()
@@ -208,23 +212,27 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         conn.isInit = true
         global.conns.push(conn)
         
-        // Siempre enviar el primer mensaje de conexión al grupo
+        // Solo un mensaje de conexión exitosa
         await parent.sendMessage(m.chat, {
-          text: args[0] ? `✅ Conectado exitosamente al bot!` : `(๑˃̵　ᴗ　˂̵)و Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`
+          text: args[0] ? `✅ Conectado exitosamente al bot!` : `✅ Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`
         }, { quoted: m })
         
         await sleep(5000)
         if (args[0]) return
         
+        // Mensaje privado con token de reconexión
+        const reconnectToken = `${phoneNumber}+${subbotId}`
         await parent.sendMessage(conn.user.jid, {
-          text: `*（｡>‿‿<｡ ） ¡Conectado exitosamente! Ahora eres un sub-bot. Usa los comandos normalmente.*`
+          text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`
         }, { quoted: m })
         
+        // También enviar el código base64 para compatibilidad
         const codeText = usedPrefix + command + " " + Buffer.from(fs.readFileSync("./sumibots/" + authFolderB + "/creds.json"), "utf-8").toString("base64")
         await parent.sendMessage(conn.user.jid, {text: codeText}, { quoted: m })
       }
     }
 
+    // Ping periódico silencioso
     setInterval(async () => {
       if (!conn.user) {
         try { conn.ws.close() } catch { }
@@ -237,7 +245,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         try {
           await conn.sendPresenceUpdate('available', conn.user.jid);
         } catch (error) {
-          console.log(chalk.red("Error en ping de conexión:", error));
+          // Silenciar errores de ping
         }
       }
     }, 60000)
@@ -245,10 +253,10 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     let handler = await import('../handler.js')
     let creloadHandler = async function (restatConn) {
       try {
-        const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
+        const Handler = await import(`../handler.js?update=${Date.now()}`).catch(() => {})
         if (Object.keys(Handler || {}).length) handler = Handler
       } catch (e) {
-        console.error(e)
+        // Silenciar errores
       }
       
       if (restatConn) {
@@ -278,15 +286,14 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
 
       conn.handler = handler.handler.bind(conn)
       
-      // FIX: Wrap participantsUpdate in a safe function with null checks
+      // Manejador de participantes seguro
       conn.participantsUpdate = async function(...args) {
         try {
-          // Add null check before accessing participants
           if (args[0] && args[0].participants) {
             return await handler.participantsUpdate.apply(this, args);
           }
         } catch (error) {
-          console.error('Error in participantsUpdate:', error);
+          // Silenciar errores
         }
       }
       
@@ -299,7 +306,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
           try {
             await eventHandler(...args);
           } catch (error) {
-            console.error(`Error en manejador de eventos: ${error}`);
+            // Silenciar errores
           }
         };
       };
@@ -311,7 +318,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       conn.ev.on('creds.update', safeEventHandler(conn.credsUpdate))
       
       conn.ev.on('error', (error) => {
-        console.error(chalk.red('Error en la conexión:', error));
+        // Silenciar errores
       });
       
       isInit = false
@@ -326,6 +333,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
   await bbts()
 }
 
+// Función para cargar subbots existentes
 async function loadSubbots() {
   console.log(chalk.green('🔄 Cargando subbots existentes...'));
   
@@ -337,7 +345,7 @@ async function loadSubbots() {
   
   for (const folder of subbotFolders) {
     if (users.length >= MAX_SUBBOTS) {
-      console.log(chalk.red(`☕ Límite máximo de ${MAX_SUBBOTS} subbots alcanzado. No se cargarán más.`));
+      console.log(chalk.red(`☕ Límite máximo de ${MAX_SUBBOTS} subbots alcanzado.`));
       break;
     }
 
@@ -350,7 +358,7 @@ async function loadSubbots() {
         
         const socketConfig = {
           version,
-          keepAliveIntervalMs: 30000,
+          keepAliveIntervalMs: RECONNECT_INTERVAL,
           printQRInTerminal: false,
           logger: pino({ level: 'fatal' }),
           auth: {
@@ -370,10 +378,24 @@ async function loadSubbots() {
         sock.uptime = new Date();
         
         let reconnectAttempts = 0;
-        let reconnectDelay = INITIAL_RECONNECT_DELAY;
+        let autoReconnectTimer = null;
         
         // Marcar como conexión inicial
         initialConnections.set(folder, true);
+
+        // Función para programar la reconexión automática
+        function scheduleAutoReconnect() {
+          if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
+          
+          autoReconnectTimer = setTimeout(() => {
+            // Solo un mensaje en consola para la reconexión automática
+            console.log(chalk.blue(`🔄 Reconexión automática para ${folder}`));
+            
+            if (sock.ws.readyState !== CLOSED) {
+              sock.ws.close();
+            }
+          }, RECONNECT_INTERVAL);
+        }
 
         async function connectionUpdate(update) {
           const { connection, lastDisconnect, isNewLogin } = update;
@@ -390,27 +412,21 @@ async function loadSubbots() {
             sock.isInit = true;
             global.conns.push(sock);
             
-            // Solo mostrar en consola para conexiones existentes
-            console.log(chalk.green(`🌿 Subbot ${folder} conectado exitosamente`));
+            // Solo un mensaje en consola para conexiones exitosas
+            console.log(chalk.green(`✅ Subbot ${folder} conectado exitosamente`));
             
             reconnectAttempts = 0;
-            reconnectDelay = INITIAL_RECONNECT_DELAY;
+            
+            // Programar reconexión automática
+            scheduleAutoReconnect();
           }
 
           if (connection === 'close' || (statusCode && statusCode !== DisconnectReason.loggedOut && sock?.ws.socket == null)) {
             if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
               reconnectAttempts++;
               
-              if (reconnectAttempts < 5) {
-                reconnectDelay = 10000;
-              } else if (reconnectAttempts < 10) {
-                reconnectDelay = 15000;
-              } else if (reconnectAttempts < 15) {
-                reconnectDelay = 30000;
-              }
-              
-              // Solo mostrar en consola
-              console.log(chalk.yellow(`Subbot ${folder}: Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en ${reconnectDelay/1000} segundos...`));
+              // Solo un mensaje en consola para intentos de reconexión
+              console.log(chalk.yellow(`Subbot ${folder}: Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} en 10 segundos...`));
               
               setTimeout(async () => {
                 try {
@@ -425,9 +441,9 @@ async function loadSubbots() {
                   sock = makeWASocket(socketConfig);
                   await reloadHandler(false);
                 } catch (err) {
-                  console.log(chalk.red(`Error durante la reconexión de ${folder}:`, err));
+                  // Silenciar errores
                 }
-              }, reconnectDelay);
+              }, 10000);
             } else {
               console.log(chalk.red(`Subbot ${folder}: Máximo de intentos de reconexión alcanzado.`));
               
@@ -440,7 +456,6 @@ async function loadSubbots() {
               if (statusCode === DisconnectReason.loggedOut) {
                 if (fs.existsSync(folderPath)) {
                   fs.rmdirSync(folderPath, { recursive: true });
-                  console.log(chalk.cyan(`🌿 Credenciales eliminadas para subbot ${folder}.`));
                 }
               }
             }
@@ -455,7 +470,7 @@ async function loadSubbots() {
               handler = newHandler;
             }
           } catch (err) {
-            console.log(err);
+            // Silenciar errores
           }
 
           if (restartConnection) {
@@ -471,15 +486,14 @@ async function loadSubbots() {
 
           sock.handler = handler.handler.bind(sock);
           
-          // FIX: Wrap participantsUpdate in a safe function with null checks
+          // Manejador de participantes seguro
           sock.participantsUpdate = async function(...args) {
             try {
-              // Add null check before accessing participants
               if (args[0] && args[0].participants) {
                 return await handler.participantsUpdate.apply(this, args);
               }
             } catch (error) {
-              console.error('Error in participantsUpdate:', error);
+              // Silenciar errores
             }
           }
           
@@ -491,7 +505,7 @@ async function loadSubbots() {
               try {
                 await eventHandler(...args);
               } catch (error) {
-                console.error(`Error en manejador de eventos: ${error}`);
+                // Silenciar errores
               }
             };
           };
@@ -502,7 +516,7 @@ async function loadSubbots() {
           sock.ev.on('creds.update', safeEventHandler(sock.credsUpdate));
           
           sock.ev.on('error', (error) => {
-            console.error(chalk.red(`Error en la conexión de ${folder}:`, error));
+            // Silenciar errores
           });
           
           return true;
@@ -511,55 +525,59 @@ async function loadSubbots() {
         await reloadHandler(false);
         setupPeriodicStateSaving(sock, folder);
       } catch (err) {
-        console.error(chalk.red(`Error cargando subbot ${folder}:`, err));
+        // Silenciar errores
       }
     }
   }
 
-  console.log(chalk.green(`🌿 Conectados exitosamente ${global.conns.length} subbots`));
+  console.log(chalk.green(`✅ Conectados exitosamente ${global.conns.length} subbots`));
 }
 
+// Guardar estado periódicamente
 function setupPeriodicStateSaving(conn, authFolder) {
   setInterval(async () => {
     if (conn.user) {
       try {
         await conn.authState.saveState();
-        console.log(chalk.blue(`Estado guardado correctamente para ${authFolder}`));
+        // Silenciar mensajes de guardado
       } catch (error) {
-        console.error(chalk.red(`Error al guardar estado para ${authFolder}:`, error));
+        // Silenciar errores
       }
     }
   }, 300000);
 }
 
+// Verificación de salud silenciosa
 function setupPeriodicHealthCheck() {
   setInterval(async () => {
     const activeConns = global.conns.filter(conn => conn.user && conn.ws.readyState !== ws.CLOSED);
-    console.log(chalk.blue(`🔍 Verificación de salud: ${activeConns.length} subbots activos`));
+    // Solo un mensaje de verificación de salud
+    console.log(chalk.blue(`🔍 Verificación: ${activeConns.length} subbots activos`));
     
     for (let conn of global.conns) {
       if (conn.user && conn.ws.readyState === ws.CLOSED) {
-        console.log(chalk.yellow(`🔄 Detectado subbot desconectado, intentando reconectar...`));
         try {
           conn.ev.emit('connection.update', { connection: 'close' });
         } catch (error) {
-          console.error(chalk.red(`Error al intentar reconectar:`, error));
+          // Silenciar errores
         }
       }
     }
   }, 120000);
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Iniciar carga de subbots
+await loadSubbots().catch(() => {});
+setupPeriodicHealthCheck();
+
+// Exportar solo el comando code
 handler.help = ['botclone']
 handler.tags = ['subbot']
 handler.command = ['code']
 handler.rowner = false
 
 export default handler
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-await loadSubbots().catch(console.error);
-setupPeriodicHealthCheck();
