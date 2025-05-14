@@ -31,6 +31,7 @@ const RECONNECT_INTERVAL = 10 * 60 * 1000
 const MAX_SUBBOTS = 120
 
 const initialConnections = new Map()
+const reconnectTokens = new Map()
 
 let store
 let loadDatabase
@@ -53,16 +54,13 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     args[0] ? fs.writeFileSync("./sumibots/" + authFolderB + "/creds.json", 
       JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
     
-    const {state, saveState, saveCreds} = await useMultiFileAuthState(`./sumibots/${authFolderB}`)
+    let state, saveState, saveCreds;
+    
+    const { version: _version } = await fetchLatestBaileysVersion();
+    const version = _version || [2, 2323, 4];
+
     const msgRetryCounterMap = (MessageRetryMap) => { };
     const msgRetryCounterCache = new NodeCache()
-    let version
-    try {
-        const {version: _version} = await fetchLatestBaileysVersion();
-        version = _version
-    } catch (error) {
-        version = [2, 2323, 4]
-    }
 
     const methodCodeQR = process.argv.includes("qr")
     const methodCode = !!phoneNumber || process.argv.includes("code")
@@ -70,6 +68,13 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
     const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
+
+    try {
+        ({ state, saveState, saveCreds } = await useMultiFileAuthState(`./sumibots/${authFolderB}`));
+    } catch (error) {
+        console.error("Error al cargar useMultiFileAuthState:", error);
+        return;
+    }
 
     const connectionOptions = {
       logger: pino({ level: 'silent' }),
@@ -99,6 +104,9 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     let conn = makeWASocket(connectionOptions)
     let reconnectAttempts = 0
     let autoReconnectTimer = null
+    
+    // Guardar información para reconexión
+    const isReconnect = !!args[0]
 
     if (methodCode && !conn.authState.creds.registered) {
       if (!phoneNumber) {
@@ -190,7 +198,10 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         reconnectAttempts = 0;
         conn.uptime = new Date();
         
-        console.log(chalk.green(`✅ Reconexión exitosa para ${authFolderB}`));
+        // Mostrar mensaje de reconexión exitosa si es una reconexión
+        if (isReconnect) {
+          console.log(chalk.green(`✅ Reconexión exitosa para ${authFolderB}`));
+        }
         
         scheduleAutoReconnect();
       }
@@ -209,12 +220,15 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         if (args[0]) return
         
         const reconnectToken = `${phoneNumber}+${subbotId}`
+        reconnectTokens.set(reconnectToken, {
+          phoneNumber,
+          subbotId,
+          authFolder: authFolderB
+        });
+        
         await parent.sendMessage(conn.user.jid, {
           text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`
         }, { quoted: m })
-        
-        const codeText = usedPrefix + command + " " + Buffer.from(fs.readFileSync("./sumibots/" + authFolderB + "/creds.json"), "utf-8").toString("base64")
-        await parent.sendMessage(conn.user.jid, {text: codeText}, { quoted: m })
       }
     }
 
@@ -326,14 +340,9 @@ async function loadSubbots() {
     
     if (fs.statSync(folderPath).isDirectory()) {
       try {
-        const { state, saveCreds } = await useMultiFileAuthState(folderPath);
-        let version
-        try {
-            const {version: _version} = await fetchLatestBaileysVersion();
-            version = _version
-        } catch (error) {
-            version = [2, 2323, 4]
-        }
+        let state, saveCreds;
+        const { version: _version } = await fetchLatestBaileysVersion();
+        const version = _version || [2, 2323, 4];
         
         const socketConfig = {
           version,
@@ -341,8 +350,8 @@ async function loadSubbots() {
           printQRInTerminal: false,
           logger: pino({ level: 'fatal' }),
           auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+            creds: undefined,
+            keys: undefined,
           },
           browser: ['Ubuntu', 'Chrome', '4.1.0'],
           markOnlineOnConnect: true,
@@ -360,6 +369,18 @@ async function loadSubbots() {
         let autoReconnectTimer = null;
         
         initialConnections.set(folder, true);
+
+        try {
+          ({ state, saveCreds } = await useMultiFileAuthState(folderPath));
+          sock.authState = { creds: state.creds, keys: state.keys };
+          socketConfig.auth = {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+          };
+        } catch (error) {
+          console.error("Error al cargar useMultiFileAuthState:", error);
+          continue;
+        }
 
         function scheduleAutoReconnect() {
           if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
@@ -516,6 +537,34 @@ function setupPeriodicHealthCheck() {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
+  if (!args[0]) return conn.reply(m.chat, `Formato incorrecto. Uso: ${usedPrefix}rconect [token]`, m);
+  
+  const token = args[0];
+  const tokenParts = token.split('+');
+  
+  if (tokenParts.length !== 2) return conn.reply(m.chat, 'Token inválido. Debe tener formato: número+ID', m);
+  
+  const [phoneNumber, subbotId] = tokenParts;
+  const authFolderB = `${phoneNumber}sbt-${subbotId}`;
+  const folderPath = `./sumibots/${authFolderB}`;
+  
+  if (!fs.existsSync(folderPath)) {
+    return conn.reply(m.chat, 'No se encontró ninguna sesión con ese token.', m);
+  }
+  
+  try {
+    const credsBase64 = Buffer.from(fs.readFileSync(`${folderPath}/creds.json`, "utf-8")).toString("base64");
+    
+    console.log(chalk.blue(`🔄 Iniciando reconexión para ${authFolderB} mediante comando`));
+    
+    await handler(m, { conn, args: [credsBase64], usedPrefix, command: 'code' });
+    return conn.reply(m.chat, '✅ Reconexión iniciada con éxito.', m);
+  } catch (error) {
+    return conn.reply(m.chat, '❌ Error al procesar la solicitud. Intente nuevamente.', m);
+  }
 }
 
 await loadSubbots().catch(() => {});
