@@ -7,7 +7,7 @@ let handler = async (m, { conn }) => {
     const sumibotsDir = './sumibots'
     
     if (!fs.existsSync(sumibotsDir)) {
-      return conn.reply(m.chat, '❌ No se encontró la carpeta de bots', m)
+      return conn.reply(m.chat, '❌ Carpeta sumibots no encontrada', m)
     }
 
     const botFolders = fs.readdirSync(sumibotsDir)
@@ -21,44 +21,68 @@ let handler = async (m, { conn }) => {
 
     let successCount = 0
     const failedBots = []
-    
+    const connectionResults = []
+
     for (const botId of botFolders) {
       try {
         const botPath = path.join(sumibotsDir, botId, 'creds.json')
-        if (fs.existsSync(botPath)) {
-          const { state } = JSON.parse(fs.readFileSync(botPath))
-          
-          const newConn = makeWASocket({
-            printQRInTerminal: false,
-            auth: { creds: state.creds, keys: state.keys },
-            logger: { level: 'silent' }
-          })
+        if (!fs.existsSync(botPath)) {
+          failedBots.push(`${botId} (sin creds.json)`)
+          continue
+        }
 
+        const { state } = JSON.parse(fs.readFileSync(botPath))
+        let connectionSuccessful = false
+
+        const newConn = makeWASocket({
+          printQRInTerminal: false,
+          auth: { creds: state.creds, keys: state.keys },
+          logger: { level: 'silent' }
+        })
+
+        const connectionPromise = new Promise((resolve) => {
           newConn.ev.on('connection.update', (update) => {
             if (update.connection === 'open') {
-              successCount++
+              connectionSuccessful = true
               global.connections[botId] = newConn
+              resolve(true)
             }
           })
 
-          await new Promise(resolve => setTimeout(resolve, 2500))
+          setTimeout(() => {
+            if (!connectionSuccessful) {
+              newConn.ws.close()
+              resolve(false)
+            }
+          }, 10000)
+        })
+
+        const result = await connectionPromise
+        if (result) {
+          successCount++
+          connectionResults.push(`🟢 ${botId} - Conectado`)
+        } else {
+          failedBots.push(botId)
+          connectionResults.push(`🔴 ${botId} - Falló`)
         }
+
+        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (e) {
         failedBots.push(botId)
+        connectionResults.push(`🔴 ${botId} - Error: ${e.message}`)
       }
     }
 
-    await new Promise(resolve => setTimeout(resolve, 5000))
-
-    let result = `✅ Resultado final:\n🟢 Conectados: ${successCount}\n🔴 Fallidos: ${failedBots.length}`
-    if (failedBots.length > 0) {
-      result += `\n\nBots con problemas:\n${failedBots.slice(0, 5).join('\n')}`
-      if (failedBots.length > 5) result += `\n...y ${failedBots.length - 5} más`
+    let resultMessage = `✅ Resultado final:\nConectados: ${successCount}\nFallidos: ${failedBots.length}\n\n`
+    resultMessage += connectionResults.slice(0, 10).join('\n')
+    
+    if (connectionResults.length > 10) {
+      resultMessage += `\n...y ${connectionResults.length - 10} más`
     }
 
-    return conn.reply(m.chat, result, m)
+    return conn.reply(m.chat, resultMessage, m)
   } catch (error) {
-    return conn.reply(m.chat, '⚠️ Error crítico en el proceso', m)
+    return conn.reply(m.chat, `⚠️ Error en el proceso: ${error.message}`, m)
   }
 }
 
