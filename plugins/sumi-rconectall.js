@@ -27,16 +27,31 @@ let handler = async (m, { conn }) => {
       try {
         const botPath = path.join(sumibotsDir, botId, 'creds.json')
         if (!fs.existsSync(botPath)) {
-          failedBots.push(`${botId} (sin creds.json)`)
+          failedBots.push(`${botId} (creds.json no encontrado)`)
           continue
         }
 
-        const { state } = JSON.parse(fs.readFileSync(botPath))
-        let connectionSuccessful = false
+        const credsData = JSON.parse(fs.readFileSync(botPath))
+        const authState = {
+          creds: credsData,
+          keys: {
+            // Estructura compatible con Baileys
+            noiseKey: credsData.noiseKey,
+            pairingEphemeralKeyPair: credsData.pairingEphemeralKeyPair,
+            signedIdentityKey: credsData.signedIdentityKey,
+            signedPreKey: credsData.signedPreKey
+          }
+        }
 
+        if (!authState.creds || !authState.keys) {
+          failedBots.push(`${botId} (estructura inválida)`)
+          continue
+        }
+
+        let connectionSuccessful = false
         const newConn = makeWASocket({
           printQRInTerminal: false,
-          auth: { creds: state.creds, keys: state.keys },
+          auth: authState,
           logger: { level: 'silent' }
         })
 
@@ -51,10 +66,10 @@ let handler = async (m, { conn }) => {
 
           setTimeout(() => {
             if (!connectionSuccessful) {
-              newConn.ws.close()
+              try { newConn.ws.close() } catch {}
               resolve(false)
             }
-          }, 10000)
+          }, 15000)
         })
 
         const result = await connectionPromise
@@ -63,26 +78,31 @@ let handler = async (m, { conn }) => {
           connectionResults.push(`🟢 ${botId} - Conectado`)
         } else {
           failedBots.push(botId)
-          connectionResults.push(`🔴 ${botId} - Falló`)
+          connectionResults.push(`🔴 ${botId} - Timeout`)
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 2500))
       } catch (e) {
         failedBots.push(botId)
-        connectionResults.push(`🔴 ${botId} - Error: ${e.message}`)
+        connectionResults.push(`🔴 ${botId} - Error: ${e.message.split('\n')[0]}`)
       }
     }
 
-    let resultMessage = `✅ Resultado final:\nConectados: ${successCount}\nFallidos: ${failedBots.length}\n\n`
-    resultMessage += connectionResults.slice(0, 10).join('\n')
-    
-    if (connectionResults.length > 10) {
-      resultMessage += `\n...y ${connectionResults.length - 10} más`
+    let resultMessage = [
+      `📊 Resultado final:`,
+      `✅ Conectados: ${successCount}`,
+      `❌ Fallidos: ${failedBots.length}`,
+      ``,
+      ...connectionResults.slice(0, 8)
+    ].join('\n')
+
+    if (connectionResults.length > 8) {
+      resultMessage += `\n...y ${connectionResults.length - 8} más`
     }
 
     return conn.reply(m.chat, resultMessage, m)
   } catch (error) {
-    return conn.reply(m.chat, `⚠️ Error en el proceso: ${error.message}`, m)
+    return conn.reply(m.chat, `⚠️ Error global: ${error.message}`, m)
   }
 }
 
