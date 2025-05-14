@@ -1,5 +1,4 @@
 import fs from "fs"
-import chalk from 'chalk'
 
 let handler = async (m, { conn, args, usedPrefix }) => {
   if (!global.handleReconnectCommand) {
