@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 
 let handler = async (m, { conn, args, usedPrefix }) => {
   if (!global.handleReconnectCommand) {
@@ -8,49 +9,58 @@ let handler = async (m, { conn, args, usedPrefix }) => {
   // Verificar si se solicita reconectar todos los bots
   if (args[0]?.toLowerCase() === 'all') {
     try {
-      // Obtener lista de archivos de subbots
-      const subbotFiles = fs.readdirSync('./plugins')
-        .filter(file => file.startsWith('sumibot-subbot') && file.endsWith('.js'))
+      const sumibotsDir = './sumibots' // Ruta a la carpeta sumibots
       
-      if (subbotFiles.length === 0) {
-        return conn.reply(m.chat, '❌ No se encontraron bots subordinados.', m)
+      // Verificar si existe la carpeta
+      if (!fs.existsSync(sumibotsDir)) {
+        return conn.reply(m.chat, '❌ No se encontró la carpeta "sumibots".', m)
       }
 
-      // Enviar mensaje de inicio
-      await conn.reply(m.chat, `♻️ Iniciando reconexión de ${subbotFiles.length} bots subordinados...`, m)
+      // Obtener todas las subcarpetas (cada una representa un bot)
+      const botFolders = fs.readdirSync(sumibotsDir)
+        .filter(folder => 
+          fs.statSync(path.join(sumibotsDir, folder)).isDirectory() && 
+          folder !== 'creds' // Excluir carpeta de credenciales si existe
+        )
 
-      // Reconectar cada bot
+      if (botFolders.length === 0) {
+        return conn.reply(m.chat, '❌ No se encontraron bots en la carpeta sumibots.', m)
+      }
+
+      await conn.reply(m.chat, `♻️ Iniciando reconexión de ${botFolders.length} bots...`, m)
+
       let successCount = 0
-      for (const file of subbotFiles) {
+      for (const folder of botFolders) {
         try {
-          // Eliminar caché del módulo
-          delete require.cache[require.resolve(`../plugins/${file}`)]
+          // Aquí implementa la lógica específica para reconectar cada bot
+          // Dependerá de cómo manejas las sesiones en tu estructura
+          await global.handleReconnectCommand(m, { 
+            conn, 
+            args: [...args, folder], // Pasamos la carpeta como parámetro adicional
+            usedPrefix 
+          })
           
-          // Ejecutar reconexión
-          await global.handleReconnectCommand(m, { conn, args, usedPrefix })
           successCount++
-          
-          // Pequeño delay entre reconexiones
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise(resolve => setTimeout(resolve, 2500)) // Delay entre reconexiones
         } catch (e) {
-          console.error(`Error reconectando ${file}:`, e)
+          console.error(`Error reconectando ${folder}:`, e)
         }
       }
 
-      return conn.reply(m.chat, `✅ Reconexión completada:\n${successCount} bots reconectados exitosamente.\n${subbotFiles.length - successCount} fallos.`, m)
+      return conn.reply(m.chat, `✅ Reconexión masiva completada:\n🟢 ${successCount} exitosas\n🔴 ${botFolders.length - successCount} fallidas`, m)
     } catch (error) {
       console.error('Error en reconexión masiva:', error)
       return conn.reply(m.chat, '❌ Error al reconectar todos los bots.', m)
     }
   }
 
-  // Reconexión normal para el bot actual
+  // Reconexión normal individual
   return global.handleReconnectCommand(m, { conn, args, usedPrefix })
 }
 
 handler.help = ['reconnect [all]']
 handler.tags = ['subbot']
 handler.command = ['rconect', 'reconnect']
-handler.rowner = false
+handler.rowner = true // Recomendado dejarlo solo para owner
 
 export default handler
