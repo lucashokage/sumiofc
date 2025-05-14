@@ -1,8 +1,18 @@
 import fs from "fs"
 import path from "path"
 import { makeWASocket } from "@whiskeysockets/baileys"
+import pino from "pino"
 
 let handler = async (m, { conn }) => {
+  // Configuración del logger robusto
+  const logger = pino({
+    level: 'silent',
+    transport: {
+      target: 'pino-pretty',
+      options: { colorize: true }
+    }
+  })
+
   try {
     const sumibotsDir = './sumibots'
     
@@ -21,13 +31,14 @@ let handler = async (m, { conn }) => {
 
     let successCount = 0
     const failedBots = []
-    const connectionResults = []
+    const connectionDetails = []
 
     for (const botId of botFolders) {
       try {
         const botPath = path.join(sumibotsDir, botId, 'creds.json')
         if (!fs.existsSync(botPath)) {
-          failedBots.push(`${botId} (creds.json no encontrado)`)
+          failedBots.push(botId)
+          connectionDetails.push(`🔴 ${botId} - creds.json no encontrado`)
           continue
         }
 
@@ -35,7 +46,6 @@ let handler = async (m, { conn }) => {
         const authState = {
           creds: credsData,
           keys: {
-            // Estructura compatible con Baileys
             noiseKey: credsData.noiseKey,
             pairingEphemeralKeyPair: credsData.pairingEphemeralKeyPair,
             signedIdentityKey: credsData.signedIdentityKey,
@@ -43,72 +53,66 @@ let handler = async (m, { conn }) => {
           }
         }
 
-        if (!authState.creds || !authState.keys) {
-          failedBots.push(`${botId} (estructura inválida)`)
-          continue
-        }
-
-        let connectionSuccessful = false
         const newConn = makeWASocket({
           printQRInTerminal: false,
           auth: authState,
-          logger: { level: 'silent' }
+          logger: logger, // Logger configurado correctamente
+          markOnlineOnConnect: false,
+          connectTimeoutMs: 30_000,
+          keepAliveIntervalMs: 25_000
         })
 
-        const connectionPromise = new Promise((resolve) => {
-          newConn.ev.on('connection.update', (update) => {
-            if (update.connection === 'open') {
-              connectionSuccessful = true
-              global.connections[botId] = newConn
-              resolve(true)
-            }
-          })
+        // Verificación de conexión con Promise.race
+        const connectionResult = await Promise.race([
+          new Promise(resolve => {
+            newConn.ev.on('connection.update', update => {
+              if (update.connection === 'open') {
+                global.connections[botId] = newConn
+                resolve(true)
+              }
+            })
+          }),
+          new Promise(resolve => setTimeout(() => resolve(false), 20_000))
+        ])
 
-          setTimeout(() => {
-            if (!connectionSuccessful) {
-              try { newConn.ws.close() } catch {}
-              resolve(false)
-            }
-          }, 15000)
-        })
-
-        const result = await connectionPromise
-        if (result) {
+        if (connectionResult) {
           successCount++
-          connectionResults.push(`🟢 ${botId} - Conectado`)
+          connectionDetails.push(`🟢 ${botId} - Conectado`)
         } else {
           failedBots.push(botId)
-          connectionResults.push(`🔴 ${botId} - Timeout`)
+          connectionDetails.push(`🔴 ${botId} - Timeout`)
+          try { newConn.end() } catch {}
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2500))
+        await new Promise(resolve => setTimeout(resolve, 3000))
       } catch (e) {
         failedBots.push(botId)
-        connectionResults.push(`🔴 ${botId} - Error: ${e.message.split('\n')[0]}`)
+        connectionDetails.push(`🔴 ${botId} - ${e.message.split('\n')[0].slice(0, 50)}`)
       }
     }
 
-    let resultMessage = [
-      `📊 Resultado final:`,
+    // Generar reporte detallado
+    let report = [
+      '📊 **Resultado de Reconexión**',
       `✅ Conectados: ${successCount}`,
       `❌ Fallidos: ${failedBots.length}`,
-      ``,
-      ...connectionResults.slice(0, 8)
+      '',
+      ...connectionDetails.slice(0, 10)
     ].join('\n')
 
-    if (connectionResults.length > 8) {
-      resultMessage += `\n...y ${connectionResults.length - 8} más`
+    if (connectionDetails.length > 10) {
+      report += `\n...y ${connectionDetails.length - 10} más`
     }
 
-    return conn.reply(m.chat, resultMessage, m)
+    return conn.reply(m.chat, report, m)
   } catch (error) {
-    return conn.reply(m.chat, `⚠️ Error global: ${error.message}`, m)
+    return conn.reply(m.chat, `⚠️ Error crítico: ${error.message}`, m)
   }
 }
 
 handler.help = ['rconectall']
 handler.tags = ['subbot']
-handler.command = ['rconectall','reconectartodos'] 
+handler.command = ['rconectall', 'reconectartodos']
 handler.rowner = true
 
 export default handler
