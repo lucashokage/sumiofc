@@ -32,6 +32,7 @@ const MAX_SUBBOTS = 120
 
 const initialConnections = new Map()
 const reconnectTokens = new Map()
+const activeConnections = new Set()
 
 let store
 let loadDatabase
@@ -72,7 +73,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     try {
         ({ state, saveState, saveCreds } = await useMultiFileAuthState(`./sumibots/${authFolderB}`));
     } catch (error) {
-        console.error("Error al cargar useMultiFileAuthState:", error);
         return;
     }
 
@@ -105,8 +105,8 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
     let reconnectAttempts = 0
     let autoReconnectTimer = null
     
-    // Guardar información para reconexión
     const isReconnect = !!args[0]
+    const reconnectToken = `${phoneNumber}+${subbotId}`
 
     if (methodCode && !conn.authState.creds.registered) {
       if (!phoneNumber) {
@@ -143,8 +143,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
       if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
       
       autoReconnectTimer = setTimeout(() => {
-        console.log(chalk.blue(`🔄 Iniciando reconexión para ${authFolderB}`));
-        
         if (conn.ws.readyState !== CLOSED) {
           conn.ws.close();
         }
@@ -187,21 +185,16 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
           delete global.conns[i]
           global.conns.splice(i, 1)
           
-          console.log(chalk.red(`❌ Reconexión perdida para ${authFolderB}`));
-          
           const folderPath = `./sumibots/${authFolderB}`;
           if (fs.existsSync(folderPath)) {
             fs.rmdirSync(folderPath, { recursive: true });
           }
+          
+          activeConnections.delete(reconnectToken);
         }
       } else if (connection === 'open') {
         reconnectAttempts = 0;
         conn.uptime = new Date();
-        
-        // Mostrar mensaje de reconexión exitosa si es una reconexión
-        if (isReconnect) {
-          console.log(chalk.green(`✅ Reconexión exitosa para ${authFolderB}`));
-        }
         
         scheduleAutoReconnect();
       }
@@ -212,23 +205,27 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         conn.isInit = true
         global.conns.push(conn)
         
-        await parent.sendMessage(m.chat, {
-          text: args[0] ? `✅ Conectado exitosamente al bot!` : `✅ Bot conectado correctamente con ID: ${conn.user.jid.split`@`[0]}`
-        }, { quoted: m })
-        
-        await sleep(5000)
-        if (args[0]) return
-        
-        const reconnectToken = `${phoneNumber}+${subbotId}`
-        reconnectTokens.set(reconnectToken, {
-          phoneNumber,
-          subbotId,
-          authFolder: authFolderB
-        });
-        
-        await parent.sendMessage(conn.user.jid, {
-          text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`
-        }, { quoted: m })
+        if (!activeConnections.has(reconnectToken)) {
+          activeConnections.add(reconnectToken);
+          
+          await parent.sendMessage(m.chat, {
+            text: `✅ Conectado exitosamente al bot!`
+          }, { quoted: m });
+          
+          await sleep(5000);
+          
+          if (!args[0]) {
+            reconnectTokens.set(reconnectToken, {
+              phoneNumber,
+              subbotId,
+              authFolder: authFolderB
+            });
+            
+            await parent.sendMessage(conn.user.jid, {
+              text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`
+            }, { quoted: m });
+          }
+        }
       }
     }
 
@@ -240,6 +237,8 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
         if (i < 0) return
         delete global.conns[i]
         global.conns.splice(i, 1)
+        
+        activeConnections.delete(reconnectToken);
       } else {
         try {
           await conn.sendPresenceUpdate('available', conn.user.jid);
@@ -322,8 +321,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
 }
 
 async function loadSubbots() {
-  console.log(chalk.green('🔄 Cargando subbots existentes...'));
-  
   const subbotFolders = fs.readdirSync('./sumibots');
   const users = [...new Set([...global.conns
     .filter(conn => conn.user && conn.ws.readyState && conn.ws.readyState !== ws.CONNECTING)
@@ -332,7 +329,6 @@ async function loadSubbots() {
   
   for (const folder of subbotFolders) {
     if (users.length >= MAX_SUBBOTS) {
-      console.log(chalk.red(`☕ Límite máximo de ${MAX_SUBBOTS} subbots alcanzado.`));
       break;
     }
 
@@ -361,6 +357,17 @@ async function loadSubbots() {
           connectTimeoutMs: 60000,
         };
 
+        try {
+          ({ state, saveCreds } = await useMultiFileAuthState(folderPath));
+          
+          socketConfig.auth = {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+          };
+        } catch (error) {
+          continue;
+        }
+
         let sock = makeWASocket(socketConfig);
         sock.isInit = false;
         sock.uptime = new Date();
@@ -370,24 +377,10 @@ async function loadSubbots() {
         
         initialConnections.set(folder, true);
 
-        try {
-          ({ state, saveCreds } = await useMultiFileAuthState(folderPath));
-          sock.authState = { creds: state.creds, keys: state.keys };
-          socketConfig.auth = {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-          };
-        } catch (error) {
-          console.error("Error al cargar useMultiFileAuthState:", error);
-          continue;
-        }
-
         function scheduleAutoReconnect() {
           if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
           
           autoReconnectTimer = setTimeout(() => {
-            console.log(chalk.blue(`🔄 Iniciando reconexión para ${folder}`));
-            
             if (sock.ws.readyState !== CLOSED) {
               sock.ws.close();
             }
@@ -408,8 +401,6 @@ async function loadSubbots() {
             sock.uptime = new Date();
             sock.isInit = true;
             global.conns.push(sock);
-            
-            console.log(chalk.green(`✅ Reconexión exitosa para ${folder}`));
             
             reconnectAttempts = 0;
             
@@ -435,8 +426,6 @@ async function loadSubbots() {
                 } catch (err) {}
               }, 10000);
             } else {
-              console.log(chalk.red(`❌ Reconexión perdida para ${folder}`));
-              
               let i = global.conns.indexOf(sock);
               if (i >= 0) {
                 delete global.conns[i];
@@ -507,8 +496,6 @@ async function loadSubbots() {
       } catch (err) {}
     }
   }
-
-  console.log(chalk.green(`✅ Conectados exitosamente ${global.conns.length} subbots`));
 }
 
 function setupPeriodicStateSaving(conn, authFolder) {
@@ -555,13 +542,15 @@ global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
     return conn.reply(m.chat, 'No se encontró ninguna sesión con ese token.', m);
   }
   
+  if (activeConnections.has(token)) {
+    return conn.reply(m.chat, 'Este bot ya está conectado.', m);
+  }
+  
   try {
     const credsBase64 = Buffer.from(fs.readFileSync(`${folderPath}/creds.json`, "utf-8")).toString("base64");
     
-    console.log(chalk.blue(`🔄 Iniciando reconexión para ${authFolderB} mediante comando`));
-    
     await handler(m, { conn, args: [credsBase64], usedPrefix, command: 'code' });
-    return conn.reply(m.chat, '✅ Reconexión iniciada con éxito.', m);
+    return;
   } catch (error) {
     return conn.reply(m.chat, '❌ Error al procesar la solicitud. Intente nuevamente.', m);
   }
