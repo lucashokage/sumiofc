@@ -1,66 +1,65 @@
 import fs from "fs"
 import path from "path"
 
-let handler = async (m, { conn, usedPrefix }) => {
-  if (!global.handleReconnectCommand) {
-    return conn.reply(m.chat, '❌ Error: Sistema de reconexión no disponible.', m)
+let handler = async (m, { conn }) => {
+  if (!global.handleMassReconnect) {
+    return conn.reply(m.chat, '❌ Error: Función de reconexión masiva no disponible', m)
   }
 
   try {
     const sumibotsDir = './sumibots'
     
     if (!fs.existsSync(sumibotsDir)) {
-      return conn.reply(m.chat, '❌ No se encontró la carpeta "sumibots".', m)
+      return conn.reply(m.chat, '❌ No se encontró la carpeta de bots "sumibots"', m)
     }
-
     const botFolders = fs.readdirSync(sumibotsDir)
       .filter(folder => 
         fs.statSync(path.join(sumibotsDir, folder)).isDirectory() && 
-        folder !== 'creds'
+        !folder.includes('creds') // Excluir carpeta de credenciales
       )
 
     if (botFolders.length === 0) {
-      return conn.reply(m.chat, '❌ No se encontraron bots en la carpeta sumibots.', m)
+      return conn.reply(m.chat, '❌ No hay bots configurados para reconexión', m)
     }
 
-    await conn.reply(m.chat, `♻️ Iniciando reconexión masiva de ${botFolders.length} bots...`, m)
+    // Iniciar proceso
+    await conn.reply(m.chat, `♻️ Iniciando reconexión automática de ${botFolders.length} bots...`, m)
 
     let successCount = 0
     const failedBots = []
     
-    for (const folder of botFolders) {
+    for (const botId of botFolders) {
       try {
-        await global.handleReconnectCommand(m, { 
-          conn,
-          args: [folder],
-          usedPrefix,
-          isMassReconnect: true
-        })
-        
+        await global.handleMassReconnect(botId)
         successCount++
-        await new Promise(resolve => setTimeout(resolve, 2500))
+        
+        // Pequeña pausa entre reconexiones
+        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (e) {
-        failedBots.push(folder)
-        console.error(`Error reconectando ${folder}:`, e)
+        failedBots.push(botId)
+        console.error(`Error en bot ${botId}:`, e.message)
       }
     }
 
-    let resultMessage = `✅ Reconexión masiva completada:\n🟢 ${successCount} exitosas\n🔴 ${botFolders.length - successCount} fallidas`
-    
+    let result = `✅ Reconexión masiva completada:
+🟢 ${successCount} exitosas
+🔴 ${failedBots.length} fallidas`
+
     if (failedBots.length > 0) {
-      resultMessage += `\n\nBots con problemas:\n${failedBots.join('\n')}`
+      result += `\n\n📛 Fallos:\n${failedBots.slice(0, 5).join('\n')}`
+      if (failedBots.length > 5) result += `\n...y ${failedBots.length - 5} más`
     }
 
-    return conn.reply(m.chat, resultMessage, m)
+    return conn.reply(m.chat, result, m)
   } catch (error) {
-    console.error('Error en reconexión masiva:', error)
-    return conn.reply(m.chat, '❌ Error crítico durante la reconexión masiva', m)
+    console.error('Error crítico:', error)
+    return conn.reply(m.chat, '⚠️ Error inesperado durante la reconexión masiva', m)
   }
 }
 
-handler.help = ['reconnectall']
+handler.help = ['rconectall']
 handler.tags = ['subbot']
-handler.command = ['rconectall', 'reconnectall']
-handler.rowner = true
+handler.command = ['rconectall', 'reconectartodos'] 
+handler.rowner = true // Solo el dueño puede usarlo
 
 export default handler
