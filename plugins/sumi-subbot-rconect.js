@@ -6,7 +6,7 @@ let handler = async (m, { conn, args, usedPrefix }) => {
     return conn.reply(m.chat, '❌ Error: Sistema de reconexión no disponible.', m)
   }
 
-  // Verificar si se solicita reconectar todos los bots
+  // Modo reconexión masiva (all)
   if (args[0]?.toLowerCase() === 'all') {
     try {
       const sumibotsDir = './sumibots'
@@ -32,18 +32,12 @@ let handler = async (m, { conn, args, usedPrefix }) => {
       
       for (const folder of botFolders) {
         try {
-          // Verificamos si la carpeta tiene el formato correcto (número+ID)
-          if (!/^\d+.*/.test(folder)) {
-            failedBots.push(`${folder} (formato inválido)`)
-            continue
-          }
-
-          // Ejecutamos la reconexión sin pasar el folder como argumento
-          // para evitar el mensaje de token inválido
+          // Lógica especial para reconexión masiva que evita la validación de token
           await global.handleReconnectCommand(m, { 
             conn, 
-            args: [], // No pasamos argumentos adicionales
-            usedPrefix 
+            args: ['bypass_validation'], // Argumento especial para evitar validación
+            usedPrefix,
+            isMassReconnect: true // Flag especial
           })
           
           successCount++
@@ -67,11 +61,15 @@ let handler = async (m, { conn, args, usedPrefix }) => {
     }
   }
 
-  // Reconexión normal individual
+  // Modo reconexión individual (validación normal)
+  if (!args[0] || !/^\d+.*/.test(args[0])) {
+    return conn.reply(m.chat, 'Formato incorrecto. Uso: .rconect [token]', m)
+  }
+
   return global.handleReconnectCommand(m, { conn, args, usedPrefix })
 }
 
-handler.help = ['reconnect [all]']
+handler.help = ['reconnect [token/all]']
 handler.tags = ['subbot']
 handler.command = ['rconect', 'reconnect']
 handler.rowner = true
