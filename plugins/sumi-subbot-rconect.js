@@ -9,18 +9,16 @@ let handler = async (m, { conn, args, usedPrefix }) => {
   // Verificar si se solicita reconectar todos los bots
   if (args[0]?.toLowerCase() === 'all') {
     try {
-      const sumibotsDir = './sumibots' // Ruta a la carpeta sumibots
+      const sumibotsDir = './sumibots'
       
-      // Verificar si existe la carpeta
       if (!fs.existsSync(sumibotsDir)) {
         return conn.reply(m.chat, '❌ No se encontró la carpeta "sumibots".', m)
       }
 
-      // Obtener todas las subcarpetas (cada una representa un bot)
       const botFolders = fs.readdirSync(sumibotsDir)
         .filter(folder => 
           fs.statSync(path.join(sumibotsDir, folder)).isDirectory() && 
-          folder !== 'creds' // Excluir carpeta de credenciales si existe
+          folder !== 'creds'
         )
 
       if (botFolders.length === 0) {
@@ -30,24 +28,39 @@ let handler = async (m, { conn, args, usedPrefix }) => {
       await conn.reply(m.chat, `♻️ Iniciando reconexión de ${botFolders.length} bots...`, m)
 
       let successCount = 0
+      const failedBots = []
+      
       for (const folder of botFolders) {
         try {
-          // Aquí implementa la lógica específica para reconectar cada bot
-          // Dependerá de cómo manejas las sesiones en tu estructura
+          // Verificamos si la carpeta tiene el formato correcto (número+ID)
+          if (!/^\d+.*/.test(folder)) {
+            failedBots.push(`${folder} (formato inválido)`)
+            continue
+          }
+
+          // Ejecutamos la reconexión sin pasar el folder como argumento
+          // para evitar el mensaje de token inválido
           await global.handleReconnectCommand(m, { 
             conn, 
-            args: [...args, folder], // Pasamos la carpeta como parámetro adicional
+            args: [], // No pasamos argumentos adicionales
             usedPrefix 
           })
           
           successCount++
-          await new Promise(resolve => setTimeout(resolve, 2500)) // Delay entre reconexiones
+          await new Promise(resolve => setTimeout(resolve, 2500))
         } catch (e) {
+          failedBots.push(folder)
           console.error(`Error reconectando ${folder}:`, e)
         }
       }
 
-      return conn.reply(m.chat, `✅ Reconexión masiva completada:\n🟢 ${successCount} exitosas\n🔴 ${botFolders.length - successCount} fallidas`, m)
+      let resultMessage = `✅ Reconexión masiva completada:\n🟢 ${successCount} exitosas\n🔴 ${botFolders.length - successCount} fallidas`
+      
+      if (failedBots.length > 0) {
+        resultMessage += `\n\nBots con problemas:\n${failedBots.join('\n')}`
+      }
+
+      return conn.reply(m.chat, resultMessage, m)
     } catch (error) {
       console.error('Error en reconexión masiva:', error)
       return conn.reply(m.chat, '❌ Error al reconectar todos los bots.', m)
@@ -61,6 +74,6 @@ let handler = async (m, { conn, args, usedPrefix }) => {
 handler.help = ['reconnect [all]']
 handler.tags = ['subbot']
 handler.command = ['rconect', 'reconnect']
-handler.rowner = true // Recomendado dejarlo solo para owner
+handler.rowner = true
 
 export default handler
