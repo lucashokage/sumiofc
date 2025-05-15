@@ -2,19 +2,30 @@ import { createCanvas, registerFont } from 'canvas';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
-import { getFont } from 'google-fonts-complete';
+import { readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Cargar fuentes desde archivo JSON local
+const googleFonts = JSON.parse(
+  readFileSync(join(__dirname, 'node_modules/google-fonts-complete/google-fonts.json'), 'utf-8')
+);
+
+const getFont = (options) => {
+  const font = googleFonts.find(f => f.family.toLowerCase() === options.family.toLowerCase());
+  if (!font) throw new Error(`Font ${options.family} not found`);
+  return font;
+};
 
 let robotoBuffer;
 let notoSansBuffer;
 
 const loadFonts = async () => {
   try {
-    const [roboto, notoSans] = await Promise.all([
+    const [roboto, notoSans] = [
       getFont({ family: 'Roboto' }),
       getFont({ family: 'Noto Sans' })
-    ]);
+    ];
     
     const buffers = await Promise.all([
       fetch(roboto.variants[400].normal.url).then(res => res.buffer()),
@@ -26,6 +37,7 @@ const loadFonts = async () => {
     
     return true;
   } catch (error) {
+    console.error('Error loading fonts:', error);
     return false;
   }
 };
