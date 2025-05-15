@@ -3,19 +3,44 @@ import { performance } from 'perf_hooks';
 import os from 'os';
 
 let handler = async (m, { conn, usedPrefix, isROwner }) => {
+    // Obtener tiempos y estadísticas
     let _uptime = process.uptime() * 1000;
     let uptime = clockString(_uptime);
+    
+    // Estadísticas de base de datos
     let totalreg = Object.keys(global.db.data.users).length;
     let totalchats = Object.keys(global.db.data.chats).length;
-    let conns = [...new Set([...global.conns.filter(conn => conn.user && conn.ws?.socket && conn.ws.socket.readyState !== ws.CLOSED).map(conn => conn)])];
-    let totalConnections = conns.length;
-    const chats = Object.entries(conn.chats).filter(([id, data]) => id && data.isChats);
-    const groupsIn = chats.filter(([id]) => id.endsWith('@g.us'));
-    const privateChats = chats.length - groupsIn.length;
+    
+    // Estadísticas de conexiones - Con verificación
+    let totalConnections = 0;
+    let conns = [];
+    if (global.conns && Array.isArray(global.conns)) {
+        conns = [...new Set([...global.conns.filter(conn => 
+            conn && conn.user && conn.ws?.socket && conn.ws.socket.readyState !== ws.CLOSED
+        ).map(conn => conn)])];
+        totalConnections = conns.length;
+    }
+    
+    // Estadísticas de chats con verificación
+    let privateChats = 0;
+    let groupsCount = 0;
+    let totalChats = 0;
+    
+    if (conn.chats) {
+        const chats = Object.entries(conn.chats).filter(([id, data]) => id && data?.isChats);
+        const groupsIn = chats.filter(([id]) => id.endsWith('@g.us'));
+        privateChats = chats.length - groupsIn.length;
+        groupsCount = groupsIn.length;
+        totalChats = chats.length;
+    }
+    
+    // Medición de velocidad
     let old = performance.now();
-    await new Promise(resolve => setTimeout(resolve, 100)); // Pequeña espera para medición
+    await new Promise(resolve => setTimeout(resolve, 100));
     let neww = performance.now();
     let speed = neww - old;
+    
+    // Uso de memoria
     const used = process.memoryUsage();
     const formatMemory = (bytes) => {
         if (bytes === 0) return '0 Bytes';
@@ -25,6 +50,7 @@ let handler = async (m, { conn, usedPrefix, isROwner }) => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
     
+    // Información del sistema
     const cpus = os.cpus();
     const cpuModel = cpus[0]?.model || 'Desconocido';
     const platform = os.platform();
@@ -32,6 +58,7 @@ let handler = async (m, { conn, usedPrefix, isROwner }) => {
     const totalMem = formatMemory(os.totalmem());
     const freeMem = formatMemory(os.freemem());
     
+    // Construcción del mensaje
     let info = `
 ╭─「 *ESTADO DEL BOT* 」
 │
@@ -42,8 +69,8 @@ let handler = async (m, { conn, usedPrefix, isROwner }) => {
 │ *📊 Estadísticas:*
 │ *◉ Usuarios:* ${totalreg}
 │ *◉ Chats privados:* ${privateChats}
-│ *◉ Grupos:* ${groupsIn.length}
-│ *◉ Chats totales:* ${chats.length}
+│ *◉ Grupos:* ${groupsCount}
+│ *◉ Chats totales:* ${totalChats}
 │
 │ *⚡ Rendimiento:*
 │ *◉ Uptime:* ${uptime}
@@ -59,7 +86,6 @@ let handler = async (m, { conn, usedPrefix, isROwner }) => {
 ╰───────────────
     `.trim();
     
-    // Enviar mensaje con imagen (opcional)
     try {
         await conn.sendMessage(m.chat, { 
             text: info, 
