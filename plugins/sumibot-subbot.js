@@ -931,7 +931,7 @@ global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
 }
 
 /**
- * Manejador para el comando de estado
+
  */
 global.handleStatusCommand = async (m, { conn }) => {
   try {
@@ -985,12 +985,10 @@ function formatDate(date) {
   return moment(date).format('DD/MM/YY HH:mm:ss');
 }
 
-// Cargar sub-bots existentes al iniciar
 await loadSubbots().catch((error) => {
   console.error("Error en carga inicial de sub-bots:", error);
 });
 
-// Configurar verificación periódica de salud
 setupPeriodicHealthCheck();
 
 // Configuración del handler
