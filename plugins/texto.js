@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { readdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const fontsDir = join(__dirname, '../src/fonts');
+const fontsDir = join(__dirname, '../src/font');
 
 const registerAppFonts = () => {
   const results = {
