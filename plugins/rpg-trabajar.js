@@ -14,7 +14,7 @@ let handler = async (m, { conn, isPrems }) => {
   
   user.coin += rsl
   
-  let emoji = '💰'
+  let emoji = '❀'
   let moneda = global.moneda || 'Coin'
   await conn.reply(m.chat, `${emoji} ${pickRandom(trabajo)} *${toNum(rsl)}* ${moneda} ⛀`, m)
 }
