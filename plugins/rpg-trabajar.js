@@ -16,7 +16,7 @@ let handler = async (m, { conn, isPrems }) => {
   
   let emoji = '💰'
   let moneda = global.moneda || 'Coin'
-  await conn.reply(m.chat, `${emoji} ${pickRandom(trabajo)} *${toNum(rsl)}* ( *${rsl}* ) ${moneda} ⛀`, m)
+  await conn.reply(m.chat, `${emoji} ${pickRandom(trabajo)} *${toNum(rsl)}* ${moneda} ⛀`, m)
 }
 
 handler.help = ['trabajar']
