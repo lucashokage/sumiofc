@@ -1,52 +1,54 @@
 import { createCanvas, registerFont } from 'canvas';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { readdirSync } from 'fs';
 
-// Configuración de rutas
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const fontsDir = join(__dirname, 'fonts');
+const fontsDir = join(__dirname, '../src/fonts');
 
-// Registro de fuentes mejorado
 const registerAppFonts = () => {
   const results = {
-    emoji: false,
-    sansRegular: false,
-    sansItalic: false
+    success: [],
+    failed: []
   };
 
   try {
-    // 1. Intenta registrar Noto Color Emoji
-    try {
-      registerFont(join(fontsDir, 'NotoColorEmoji.ttf'), {
-        family: 'Noto Color Emoji',
-        weight: 'normal'
-      });
-      results.emoji = true;
-    } catch (e) {
-      console.warn('No se encontró NotoColorEmoji.ttf, usando emojis del sistema');
+    const fontFiles = readdirSync(fontsDir).filter(file => 
+      file.endsWith('.ttf') || 
+      file.endsWith('.otf') ||
+      file.endsWith('.woff')
+    );
+
+    if (fontFiles.length === 0) {
+      console.warn('No se encontraron archivos de fuentes en la carpeta fonts');
+      return results;
     }
 
-    // 2. Registrar fuentes variables principales
-    try {
-      registerFont(join(fontsDir, 'NotoSans-VariableFont_wdth,wght.ttf'), {
-        family: 'Noto Sans',
-        weight: '400'
-      });
-      results.sansRegular = true;
-    } catch (e) {
-      console.error('Error al registrar NotoSans-Variable:', e.message);
-    }
+    for (const file of fontFiles) {
+      try {
+        const fontPath = join(fontsDir, file);
+        const fontName = file.replace(/\.[^/.]+$/, '');
+        
+        const fontConfig = {
+          family: fontName,
+          weight: 'normal',
+          style: 'normal'
+        };
 
-    // 3. Registrar variante itálica
-    try {
-      registerFont(join(fontsDir, 'NotoSans-Italic-VariableFont_wdth,wght.ttf'), {
-        family: 'Noto Sans',
-        style: 'italic',
-        weight: '400'
-      });
-      results.sansItalic = true;
-    } catch (e) {
-      console.error('Error al registrar NotoSans-Italic:', e.message);
+        if (file.toLowerCase().includes('italic')) {
+          fontConfig.style = 'italic';
+        }
+        if (file.toLowerCase().includes('bold')) {
+          fontConfig.weight = 'bold';
+        }
+
+        registerFont(fontPath, fontConfig);
+        results.success.push(file);
+        console.log(`Fuente registrada: ${file} como ${fontName}`);
+      } catch (e) {
+        console.error(`Error al registrar fuente ${file}:`, e.message);
+        results.failed.push(file);
+      }
     }
 
     return results;
@@ -58,7 +60,6 @@ const registerAppFonts = () => {
 
 const fontStatus = registerAppFonts();
 
-// Configuración de canvas dinámica
 let canvasLib;
 const loadCanvas = async () => {
   if (!canvasLib) {
@@ -67,7 +68,6 @@ const loadCanvas = async () => {
   return canvasLib;
 };
 
-// Mapeo de banderas
 const flagMap = [
   ['598', '🇺🇾'], ['595', '🇵🇾'], ['593', '🇪🇨'], ['591', '🇧🇴'],
   ['590', '🇧🇶'], ['509', '🇭🇹'], ['507', '🇵🇦'], ['506', '🇨🇷'],
@@ -79,7 +79,6 @@ const flagMap = [
   ['34', '🇪🇸'], ['1', '🇺🇸']
 ];
 
-// Paleta de colores
 const colores = {
   rojo: ['#F44336', '#FFCDD2'],
   azul: ['#00B4DB', '#0083B0'],
@@ -92,7 +91,6 @@ const colores = {
   celeste: ['#00FFFF', '#E0FFFF']
 };
 
-// Funciones utilitarias
 function numberWithFlag(num) {
   const clean = num.replace(/[^0-9]/g, '');
   for (const [code, flag] of flagMap) {
@@ -149,11 +147,9 @@ function splitTextWithEmojis(text, maxWidth, ctx) {
   return lines;
 }
 
-// Handler principal
 const handler = async (msg, { conn, args }) => {
   const { createCanvas, loadImage } = await loadCanvas();
 
-  // Obtener parámetros del mensaje
   const { remoteJid: chatId } = msg.key;
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
@@ -184,10 +180,8 @@ const handler = async (msg, { conn, args }) => {
     }, { quoted: msg });
   }
 
-  // Obtener nombre para mostrar
   const displayName = await niceName(targetJid, conn, chatId, quotedName, fallbackPN);
   
-  // Obtener avatar
   let avatarUrl = 'https://telegra.ph/file/24fa902ead26340f3df2c.png';
   try {
     avatarUrl = await conn.profilePictureUrl(targetJid, 'image');
@@ -197,18 +191,15 @@ const handler = async (msg, { conn, args }) => {
 
   await conn.sendMessage(chatId, { react: { text: '🖼️', key: msg.key } });
 
-  // Crear canvas
   const canvas = createCanvas(1080, 1080);
   const ctx = canvas.getContext('2d');
 
-  // Fondo con gradiente
   const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
   gradient.addColorStop(0, gradColors[0]);
   gradient.addColorStop(1, gradColors[1]);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 1080, 1080);
 
-  // Dibujar avatar
   try {
     const avatar = await loadImage(avatarUrl);
     ctx.save();
@@ -221,22 +212,19 @@ const handler = async (msg, { conn, args }) => {
     console.error('Error al cargar avatar:', error);
   }
 
-  // Configurar fuentes
-  const titleFont = fontStatus.emoji 
+  const titleFont = fontStatus.success.length > 0 
     ? 'bold 40px "Noto Color Emoji", "Noto Sans", sans-serif'
     : 'bold 40px system-ui, -apple-system, "Segoe UI Emoji", sans-serif';
 
-  const contentFont = fontStatus.emoji
+  const contentFont = fontStatus.success.length > 0
     ? 'bold 60px "Noto Color Emoji", "Noto Sans", sans-serif'
     : 'bold 60px system-ui, -apple-system, "Segoe UI Emoji", sans-serif';
 
-  // Dibujar nombre
   ctx.font = titleFont;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.fillText(displayName, 220, 100);
 
-  // Dibujar texto principal
   ctx.font = contentFont;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
@@ -248,7 +236,6 @@ const handler = async (msg, { conn, args }) => {
     ctx.fillText(line, 540, startY + (i * 80));
   });
 
-  // Dibujar marca de agua
   try {
     const logo = await loadImage('https://files.catbox.moe/2oxo4b.jpg');
     ctx.drawImage(logo, 1080 - 180, 1080 - 180, 140, 140);
@@ -256,7 +243,6 @@ const handler = async (msg, { conn, args }) => {
     console.error('Error al cargar logo:', error);
   }
 
-  // Enviar imagen
   await conn.sendMessage(chatId, { 
     image: canvas.toBuffer('image/png'),
     caption: '🖼 Imagen generada con emojis'
