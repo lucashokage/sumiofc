@@ -163,8 +163,18 @@ export async function handler(chatUpdate) {
     const mainBot = global.conn.user.jid
     const chat = global.db.data.chats[m.chat] || {}
     const isAntiLag = chat.antiLag === true
-    const groupMetadata = m.isGroup ? await this.groupMetadata(m.chat).catch(() => null) : null
-    const botIsInGroup = groupMetadata?.participants.some((p) => p.id === mainBot)
+
+    let groupMetadata = null
+    if (m.isGroup) {
+      try {
+        groupMetadata = await this.groupMetadata(m.chat).catch(() => null)
+      } catch (error) {
+        console.error(error)
+        groupMetadata = null
+      }
+    }
+
+    const botIsInGroup = groupMetadata?.participants?.some((p) => p.id === mainBot) || false
 
     if (isAntiLag && botIsInGroup && this.user.jid !== mainBot) return
 
@@ -209,7 +219,7 @@ export async function handler(chatUpdate) {
 
     let usedPrefix
 
-    const participants = (m.isGroup ? groupMetadata.participants : []) || []
+    const participants = (m.isGroup && groupMetadata ? groupMetadata.participants : []) || []
     const user = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) === m.sender) : {}) || {}
     const bot = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) == this.user.jid) : {}) || {}
     const isRAdmin = user?.admin == "superadmin" || false
@@ -461,6 +471,11 @@ export async function handler(chatUpdate) {
 export async function participantsUpdate({ id, participants, action }) {
   if (global.opts["self"]) return
   if (global.db.data == null) await global.loadDatabase()
+
+  try {
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 export async function groupsUpdate(groupsUpdate) {
