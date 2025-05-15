@@ -1,72 +1,37 @@
 import { createCanvas, registerFont } from 'canvas';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { readdirSync } from 'fs';
+import fetch from 'node-fetch';
+import { getFont } from 'google-fonts-complete';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const fontsDir = join(__dirname, '../src/font');
 
-const registerAppFonts = () => {
-  const results = {
-    success: [],
-    failed: []
-  };
+let robotoBuffer;
+let notoSansBuffer;
 
+const loadFonts = async () => {
   try {
-    const fontFiles = readdirSync(fontsDir).filter(file => 
-      file.endsWith('.ttf') || 
-      file.endsWith('.otf') ||
-      file.endsWith('.woff')
-    );
+    const [roboto, notoSans] = await Promise.all([
+      getFont({ family: 'Roboto' }),
+      getFont({ family: 'Noto Sans' })
+    ]);
+    
+    const buffers = await Promise.all([
+      fetch(roboto.variants[400].normal.url).then(res => res.buffer()),
+      fetch(notoSans.variants[400].normal.url).then(res => res.buffer())
+    ]);
 
-    if (fontFiles.length === 0) {
-      console.warn('No se encontraron archivos de fuentes en la carpeta fonts');
-      return results;
-    }
-
-    for (const file of fontFiles) {
-      try {
-        const fontPath = join(fontsDir, file);
-        const fontName = file.replace(/\.[^/.]+$/, '');
-        
-        const fontConfig = {
-          family: fontName,
-          weight: 'normal',
-          style: 'normal'
-        };
-
-        if (file.toLowerCase().includes('italic')) {
-          fontConfig.style = 'italic';
-        }
-        if (file.toLowerCase().includes('bold')) {
-          fontConfig.weight = 'bold';
-        }
-
-        registerFont(fontPath, fontConfig);
-        results.success.push(file);
-        console.log(`Fuente registrada: ${file} como ${fontName}`);
-      } catch (e) {
-        console.error(`Error al registrar fuente ${file}:`, e.message);
-        results.failed.push(file);
-      }
-    }
-
-    return results;
+    registerFont(buffers[0], { family: 'Roboto' });
+    registerFont(buffers[1], { family: 'Noto Sans' });
+    
+    return true;
   } catch (error) {
-    console.error('Error crítico al registrar fuentes:', error);
-    return results;
+    return false;
   }
 };
 
-const fontStatus = registerAppFonts();
-
-let canvasLib;
-const loadCanvas = async () => {
-  if (!canvasLib) {
-    canvasLib = await import('canvas');
-  }
-  return canvasLib;
-};
+let fontsLoaded = false;
+loadFonts().then(loaded => { fontsLoaded = loaded; });
 
 const flagMap = [
   ['598', '🇺🇾'], ['595', '🇵🇾'], ['593', '🇪🇨'], ['591', '🇧🇴'],
@@ -148,8 +113,7 @@ function splitTextWithEmojis(text, maxWidth, ctx) {
 }
 
 const handler = async (msg, { conn, args }) => {
-  const { createCanvas, loadImage } = await loadCanvas();
-
+  const { createCanvas, loadImage } = await import('canvas');
   const { remoteJid: chatId } = msg.key;
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
@@ -185,9 +149,7 @@ const handler = async (msg, { conn, args }) => {
   let avatarUrl = 'https://telegra.ph/file/24fa902ead26340f3df2c.png';
   try {
     avatarUrl = await conn.profilePictureUrl(targetJid, 'image');
-  } catch {
-    console.log('Usando avatar por defecto');
-  }
+  } catch {}
 
   await conn.sendMessage(chatId, { react: { text: '🖼️', key: msg.key } });
 
@@ -208,17 +170,15 @@ const handler = async (msg, { conn, args }) => {
     ctx.clip();
     ctx.drawImage(avatar, 20, 20, 160, 160);
     ctx.restore();
-  } catch (error) {
-    console.error('Error al cargar avatar:', error);
-  }
+  } catch (error) {}
 
-  const titleFont = fontStatus.success.length > 0 
-    ? 'bold 40px "Noto Color Emoji", "Noto Sans", sans-serif'
-    : 'bold 40px system-ui, -apple-system, "Segoe UI Emoji", sans-serif';
+  const titleFont = fontsLoaded 
+    ? 'bold 40px "Roboto", "Noto Sans", sans-serif'
+    : 'bold 40px system-ui';
 
-  const contentFont = fontStatus.success.length > 0
-    ? 'bold 60px "Noto Color Emoji", "Noto Sans", sans-serif'
-    : 'bold 60px system-ui, -apple-system, "Segoe UI Emoji", sans-serif';
+  const contentFont = fontsLoaded
+    ? 'bold 60px "Roboto", "Noto Sans", sans-serif'
+    : 'bold 60px system-ui';
 
   ctx.font = titleFont;
   ctx.fillStyle = '#ffffff';
@@ -239,13 +199,11 @@ const handler = async (msg, { conn, args }) => {
   try {
     const logo = await loadImage('https://files.catbox.moe/2oxo4b.jpg');
     ctx.drawImage(logo, 1080 - 180, 1080 - 180, 140, 140);
-  } catch (error) {
-    console.error('Error al cargar logo:', error);
-  }
+  } catch (error) {}
 
   await conn.sendMessage(chatId, { 
     image: canvas.toBuffer('image/png'),
-    caption: '🖼 Imagen generada con emojis'
+    caption: '🖼 Imagen generada con Google Fonts'
   }, { quoted: msg });
 };
 
