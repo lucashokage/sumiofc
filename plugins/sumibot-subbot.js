@@ -4,7 +4,7 @@ import {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   makeWASocket as makeWASocketOriginal
-} from 'baileys';
+} from '@wiskeysockets/baileys';
 import pino from 'pino';
 import fs from 'fs/promises';
 import { existsSync, mkdirSync, copyFileSync } from 'fs';
