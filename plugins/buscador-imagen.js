@@ -9,7 +9,7 @@ const handler = async (m, {conn, text, usedPrefix, command}) => {
   try {
     const res = await googleImage(text);
     
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 1; i++) {
       const image = await res.getRandom();
       await conn.sendFile(m.chat, image, 'imagen.jpg', `✦ Resultado ${i+1} de: ${text}`, m);
     }
