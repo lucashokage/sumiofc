@@ -117,7 +117,7 @@ const handler = async (m, { conn, args, text }) => {
 
 handler.help = ["comprar <nombre>"]
 handler.tags = ["gacha"]
-handler.command = ["comprar", "buy"]
+handler.command = ["comprar2", "buy2"]
 handler.group = true
 handler.register = true
 
