@@ -6,9 +6,22 @@ const handler = async (m, { conn, usedPrefix }) => {
     return conn.reply(m.chat, `${global.emoji || "❌"} El usuario no se encuentra en la base de Datos.`, m)
   }
 
-  // Función para formatear números
-  const formatNumber = (num) => {
-    return num !== undefined && num !== null ? num.toLocaleString() : "0"
+  // Función mejorada para formatear números y evitar NaN
+  const formatNumber = (value) => {
+    // Convertir a número si es posible, o usar 0 como valor predeterminado
+    const num = Number(value) || 0
+    // Asegurarse de que es un número finito
+    if (!isFinite(num)) return "0"
+    // Formatear con separadores de miles
+    return num.toLocaleString()
+  }
+
+  // Función para obtener valor seguro
+  const getSafeValue = (obj, key) => {
+    if (!obj) return 0
+    const value = obj[key]
+    if (value === undefined || value === null) return 0
+    return value
   }
 
   // Calcular tiempos de espera
@@ -19,55 +32,55 @@ const handler = async (m, { conn, usedPrefix }) => {
   }
 
   // Obtener estado de cooldowns
-  const miningCooldown = calculateCooldown(user.lastmiming, 600000) // 10 minutos
-  const huntingCooldown = calculateCooldown(user.lastberburu, 2700000) // 45 minutos
-  const adventureCooldown = calculateCooldown(user.lastAdventure, 1500000) // 25 minutos
-  const chestCooldown = calculateCooldown(user.lastcofre, 86400000) // 24 horas
+  const miningCooldown = calculateCooldown(getSafeValue(user, "lastmiming"), 600000) // 10 minutos
+  const huntingCooldown = calculateCooldown(getSafeValue(user, "lastberburu"), 2700000) // 45 minutos
+  const adventureCooldown = calculateCooldown(getSafeValue(user, "lastAdventure"), 1500000) // 25 minutos
+  const chestCooldown = calculateCooldown(getSafeValue(user, "lastcofre"), 86400000) // 24 horas
 
   const inventario = `
 ╭━━━━━━━━━━━━━━━━━━━━⬣
 ┃ *INVENTARIO DE ${conn.getName(m.sender)}*
 ┃
 ┃ 💰 *ECONOMÍA*
-┃ • ${global.moneda || "💸"}: ${formatNumber(user.coin)}
-┃ • 💎 Diamantes: ${formatNumber(user.diamonds)}
-┃ • 🏦 Banco: ${formatNumber(user.bank)}
-┃ • ❖ Tokens: ${formatNumber(user.joincount)}
+┃ • ${global.moneda || "💸"}: ${formatNumber(getSafeValue(user, "coin"))}
+┃ • 💎 Diamantes: ${formatNumber(getSafeValue(user, "diamonds"))}
+┃ • 🏦 Banco: ${formatNumber(getSafeValue(user, "bank"))}
+┃ • ❖ Tokens: ${formatNumber(getSafeValue(user, "joincount"))}
 ┃
 ┃ 🧪 *POCIONES Y CONSUMIBLES*
-┃ • 🧪 Pociones: ${formatNumber(user.potion)}
-┃ • 🍗 Comida: ${formatNumber(user.food)}
+┃ • 🧪 Pociones: ${formatNumber(getSafeValue(user, "potion"))}
+┃ • 🍗 Comida: ${formatNumber(getSafeValue(user, "food"))}
 ┃
 ┃ 🔮 *RECURSOS MINADOS Y AVENTURA*
-┃ • 🪵 Madera: ${formatNumber(user.wood)}
-┃ • 🪨 Piedra: ${formatNumber(user.stone)}
-┃ • 🔩 Hierro: ${formatNumber(user.iron)}
-┃ • 🏅 Oro: ${formatNumber(user.gold)}
-┃ • ♦️ Esmeralda: ${formatNumber(user.emerald)}
-┃ • 🕋 Carbón: ${formatNumber(user.coal)}
+┃ • 🪵 Madera: ${formatNumber(getSafeValue(user, "wood"))}
+┃ • 🪨 Piedra: ${formatNumber(getSafeValue(user, "stone"))}
+┃ • 🔩 Hierro: ${formatNumber(getSafeValue(user, "iron"))}
+┃ • 🏅 Oro: ${formatNumber(getSafeValue(user, "gold"))}
+┃ • ♦️ Esmeralda: ${formatNumber(getSafeValue(user, "emerald"))}
+┃ • 🕋 Carbón: ${formatNumber(getSafeValue(user, "coal"))}
 ┃
 ┃ 🐾 *ANIMALES CAZADOS*
-┃ • 🐂 Búfalo: ${formatNumber(user.banteng)}
-┃ • 🐅 Tigre: ${formatNumber(user.harimau)}
-┃ • 🐘 Elefante: ${formatNumber(user.gajah)}
-┃ • 🐐 Cabra: ${formatNumber(user.kambing)}
-┃ • 🐼 Panda: ${formatNumber(user.panda)}
-┃ • 🐊 Cocodrilo: ${formatNumber(user.buaya)}
-┃ • 🐃 Búfalo de agua: ${formatNumber(user.kerbau)}
-┃ • 🐮 Vaca: ${formatNumber(user.sapi)}
-┃ • 🐒 Mono: ${formatNumber(user.monyet)}
-┃ • 🐗 Jabalí: ${formatNumber(user.babihutan)}
-┃ • 🐖 Cerdo: ${formatNumber(user.babi)}
-┃ • 🐓 Pollo: ${formatNumber(user.ayam)}
+┃ • 🐂 Búfalo: ${formatNumber(getSafeValue(user, "banteng"))}
+┃ • 🐅 Tigre: ${formatNumber(getSafeValue(user, "harimau"))}
+┃ • 🐘 Elefante: ${formatNumber(getSafeValue(user, "gajah"))}
+┃ • 🐐 Cabra: ${formatNumber(getSafeValue(user, "kambing"))}
+┃ • 🐼 Panda: ${formatNumber(getSafeValue(user, "panda"))}
+┃ • 🐊 Cocodrilo: ${formatNumber(getSafeValue(user, "buaya"))}
+┃ • 🐃 Búfalo de agua: ${formatNumber(getSafeValue(user, "kerbau"))}
+┃ • 🐮 Vaca: ${formatNumber(getSafeValue(user, "sapi"))}
+┃ • 🐒 Mono: ${formatNumber(getSafeValue(user, "monyet"))}
+┃ • 🐗 Jabalí: ${formatNumber(getSafeValue(user, "babihutan"))}
+┃ • 🐖 Cerdo: ${formatNumber(getSafeValue(user, "babi"))}
+┃ • 🐓 Pollo: ${formatNumber(getSafeValue(user, "ayam"))}
 ┃
 ┃ ⚔️ *ESTADÍSTICAS*
-┃ • ❤️ Salud: ${user.health || 0}/100
-┃ • ✨ Experiencia: ${formatNumber(user.exp)}
-┃ • 🏆 Nivel: ${user.level || 0}
-┃ • 🏅 Rango: ${user.role || "Novato"}
+┃ • ❤️ Salud: ${getSafeValue(user, "health")}/100
+┃ • ✨ Experiencia: ${formatNumber(getSafeValue(user, "exp"))}
+┃ • 🏆 Nivel: ${getSafeValue(user, "level") || 0}
+┃ • 🏅 Rango: ${getSafeValue(user, "role") || "Novato"}
 ┃
 ┃ 🛠️ *DURABILIDAD DE HERRAMIENTAS*
-┃ • ⛏️ Pico: ${user.pickaxedurability || 0}/100
+┃ • ⛏️ Pico: ${getSafeValue(user, "pickaxedurability") || 0}/100
 ┃
 ┃ ⏱️ *TIEMPOS DE ESPERA*
 ┃ • ⛏️ Minar: ${miningCooldown}
