@@ -3,10 +3,8 @@ import path from "path";
 import crypto from "crypto";
 import fetch from "node-fetch";
 import FormData from "form-data";
-import ws from "ws";
 
 let handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
-
     let isSubbotOwner = conn.user.jid === m.sender;
     if (!isSubbotOwner && !isOwner) {
         return m.reply("⚠️ Solo el owner del bot o el número asociado a este subbot pueden usar este comando.");
@@ -42,24 +40,30 @@ ${usedPrefix + command} welcome
     let filePath = `./${name}`;
     fs.writeFileSync(filePath, buffer);
 
-    let file = await upload(filePath);
-    fs.unlinkSync(filePath);
+    let fileUrl;
+    try {
+        fileUrl = await uploadToServer(filePath);
+        if (!fileUrl) {
+            fileUrl = await uploadToAlternativeServer(filePath);
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        fs.unlinkSync(filePath);
+    }
 
-    if (!file || !file[0]?.url) return m.reply("Error al subir el archivo.");
+    if (!fileUrl) return m.reply("Error al subir el archivo a ningún servidor.");
 
     let isWel = /wel|welcome$/.test(args[0]?.toLowerCase() || "");
-    let cap = `
-≡ 🌴 Se ha cambiado con éxito la imagen ${isWel ? "de la bienvenida" : "del menú"} para @${conn.user.jid.split("@")[0]}
-`;
+    let cap = `≡ 🌴 Se ha cambiado con éxito la imagen ${isWel ? "de la bienvenida" : "del menú"} para @${conn.user.jid.split("@")[0]}`;
 
-    // Inicialización segura de la estructura de datos
     if (!global.db.data.settings) global.db.data.settings = {};
     if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {};
     if (!global.db.data.settings[conn.user.jid].logo) global.db.data.settings[conn.user.jid].logo = {};
 
     if (args[0] === "banner" || args[0] === "welcome") {
-        global.db.data.settings[conn.user.jid].logo[args[0]] = file[0].url;
-        conn.sendMessage(m.chat, { image: { url: file[0].url }, caption: cap, mentions: conn.parseMention(cap) }, { quoted: m });
+        global.db.data.settings[conn.user.jid].logo[args[0]] = fileUrl;
+        conn.sendMessage(m.chat, { image: { url: fileUrl }, caption: cap, mentions: conn.parseMention(cap) }, { quoted: m });
     } else {
         return m.reply("No coincide con ninguna opción de la lista.");
     }
@@ -69,21 +73,46 @@ handler.tags = ["serbot"];
 handler.help = handler.command = ["setlogo"];
 export default handler;
 
-async function upload(filePath) {
+async function uploadToServer(filePath) {
     try {
         const formData = new FormData();
         formData.append("file", fs.createReadStream(filePath));
 
-        const response = await fetch("https://cdnmega.vercel.app/upload", {
+        const response = await fetch("https://telegra.ph/upload", {
             method: "POST",
             body: formData,
             headers: formData.getHeaders()
         });
 
         const result = await response.json();
-        return result.success ? result.files : null;
+        if (Array.isArray(result) && result[0]?.src) {
+            return `https://telegra.ph${result[0].src}`;
+        }
+        return null;
     } catch (error) {
-        console.error("Error al subir archivo:", error);
+        console.error(error);
+        return null;
+    }
+}
+
+async function uploadToAlternativeServer(filePath) {
+    try {
+        const formData = new FormData();
+        formData.append("file", fs.createReadStream(filePath));
+
+        const response = await fetch("https://file.io", {
+            method: "POST",
+            body: formData,
+            headers: formData.getHeaders()
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            return result.link;
+        }
+        return null;
+    } catch (error) {
+        console.error(error);
         return null;
     }
 }
