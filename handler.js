@@ -257,7 +257,7 @@ export async function handler(chatUpdate) {
 
       if (m.isGroup) {
         try {
-          groupMetadata = await getGroupMetadataWithRetry.call(this, m.chat)
+          groupMetadata = await safeGroupMetadata.call(this, m.chat)
         } catch (error) {
           console.error("Error al obtener metadata del grupo:", error)
         }
@@ -314,7 +314,7 @@ export async function handler(chatUpdate) {
     let groupMetadata = null
     if (m.isGroup) {
       try {
-        groupMetadata = await getGroupMetadataWithRetry.call(this, m.chat)
+        groupMetadata = await safeGroupMetadata.call(this, m.chat)
       } catch (error) {
         console.error("Error fetching group metadata:", error)
       }
