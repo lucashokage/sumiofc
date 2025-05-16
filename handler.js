@@ -94,6 +94,11 @@ export async function handler(chatUpdate) {
     m.coin = 0
     m.diamond = false
 
+    // Add additional logging to debug command processing
+    if (m.text && m.text.startsWith(global.prefix)) {
+      console.log(`Command detected: ${m.text}`)
+    }
+
     try {
       const user = global.db.data.users[m.sender]
       if (typeof user !== "object") global.db.data.users[m.sender] = {}
@@ -520,7 +525,7 @@ export async function handler(chatUpdate) {
       }
     }
   } catch (e) {
-    console.error(e)
+    console.error("Error processing message:", e)
   } finally {
     if (global.opts["queque"] && m.text) {
       const quequeIndex = this.msgqueque.indexOf(m.id || m.key.id)
