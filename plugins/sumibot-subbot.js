@@ -779,24 +779,29 @@ async function loadSubbots() {
           }
 
           sock.groupsUpdate = handler.groupsUpdate.bind(sock)
-          sock.connectionUpdate = connectionUpdate.bind(sock)
-          sock.credsUpdate = saveCreds.bind(sock, true)
+sock.connectionUpdate = connectionUpdate.bind(sock)
+sock.credsUpdate = saveCreds.bind(sock, true)
 
-          const safeEventHandler = (eventHandler) => {
-            return async (...args) => {
-              try {
-                await eventHandler(...args)
-              } catch (error) {}
+const safeEventHandler = (eventHandler) => {
+    return async (...args) => {
+        try {
+            if (!sock || !sock.user || !sock.user.jid) {
+                console.error('Error: Conexión no válida en event handler')
+                return
             }
-          }
+            await eventHandler(...args)
+        } catch (error) {
+            console.error('Error en event handler:', error)
+        }
+    }
+}
 
-          sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
-          sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
-          sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
-          sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
-          sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
-
-          sock.ev.on("error", (error) => {})
+sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
+sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
+sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
+sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
+sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
+sock.ev.on("error", (error) => {})
 
           return true
         }
