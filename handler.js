@@ -160,32 +160,31 @@ export async function handler(chatUpdate) {
       console.error(e)
     }
 
-   try {
-    const mainBot = global.conn?.user?.jid
-    if (!mainBot) {
-        console.error('Error: No se pudo obtener el JID del bot principal')
+    try {
+      const mainBot = global.conn?.user?.jid
+      if (!mainBot) {
+        console.error("Error: No se pudo obtener el JID del bot principal")
         return
-    }
-    
-    const chat = global.db?.data?.chats?.[m.chat] || {}
-    const isAntilag = chat.antilag === true
+      }
 
-    let groupMetadata = null
-    if (m.isGroup) {
+      const chat = global.db?.data?.chats?.[m.chat] || {}
+      const isAntiLag = chat.antiLag === true
+
+      let groupMetadata = null
+      if (m.isGroup) {
         try {
-            groupMetadata = await this.groupMetadata(m.chat).catch(() => null)
+          groupMetadata = await this.groupMetadata(m.chat)
         } catch (error) {
-            console.error('Error al obtener metadata del grupo:', error)
-            groupMetadata = null
+          console.error("Error al obtener metadata del grupo:", error)
         }
+      }
+
+      const botIsInGroup = groupMetadata?.participants?.some((p) => p.id === mainBot) || false
+
+      if (isAntiLag && botIsInGroup && this.user.jid !== mainBot) return
+    } catch (e) {
+      console.error("Error en handler:", e)
     }
-} catch (e) {
-    console.error('Error en handler:', e)
-}
-
-    const botIsInGroup = groupMetadata?.participants?.some((p) => p.id === mainBot) || false
-
-    if (isAntiLag && botIsInGroup && this.user.jid !== mainBot) return
 
     if (global.opts["nyimak"]) return
     if (!m.fromMe && global.opts["self"]) return
@@ -228,7 +227,16 @@ export async function handler(chatUpdate) {
 
     let usedPrefix
 
-    const participants = (m.isGroup && groupMetadata ? groupMetadata.participants : []) || []
+    let groupMetadata = null
+    if (m.isGroup) {
+      try {
+        groupMetadata = await this.groupMetadata(m.chat)
+      } catch (error) {
+        console.error("Error fetching group metadata:", error)
+      }
+    }
+
+    const participants = m.isGroup && groupMetadata ? groupMetadata.participants : []
     const user = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) === m.sender) : {}) || {}
     const bot = (m.isGroup ? participants.find((u) => global.conn.decodeJid(u.id) == this.user.jid) : {}) || {}
     const isRAdmin = user?.admin == "superadmin" || false
