@@ -77,7 +77,16 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
-      let authResult = null // Declare authResult outside the conditional block
+      let authResult = null
+
+      try {
+        authResult = await useMultiFileAuthState(authFolderPath)
+        state = authResult.state
+        saveCreds = authResult.saveCreds
+      } catch (error) {
+        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
+        return
+      }
 
       if (args[0] && args[0] !== "plz") {
         try {
@@ -91,15 +100,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           )
           return
         }
-      }
-
-      try {
-        authResult = await useMultiFileAuthState(authFolderPath)
-        state = authResult.state
-        saveCreds = authResult.saveCreds
-      } catch (error) {
-        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
-        return
       }
 
       const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 2323, 4] }))
@@ -159,12 +159,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         }
 
         const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "")
-        // Omitir la validación estricta de prefijos de país
-        // if (!Object.keys(PHONENUMBER_MCC || {}).some((v) => cleanedNumber.startsWith(v))) {
-        //   await parent.sendMessage(m.chat, { text: "❌ Número de teléfono inválido." }, { quoted: m })
-        //   rl.close()
-        //   return
-        // }
 
         setTimeout(async () => {
           try {
@@ -429,7 +423,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
         conn.handler = handler.handler.bind(conn)
 
-        conn.participantsUpdate = async function (...args) {
+        conn.participantsUpdate = async function participantsUpdate(...args) {
           try {
             if (args[0] && args[0].participants) {
               return await handler.participantsUpdate.apply(this, args)
@@ -770,7 +764,7 @@ async function loadSubbots() {
 
           sock.handler = handler.handler.bind(sock)
 
-          sock.participantsUpdate = async function (...args) {
+          sock.participantsUpdate = async function participantsUpdate(...args) {
             try {
               if (args[0] && args[0].participants) {
                 return await handler.participantsUpdate.apply(this, args)
@@ -779,29 +773,29 @@ async function loadSubbots() {
           }
 
           sock.groupsUpdate = handler.groupsUpdate.bind(sock)
-sock.connectionUpdate = connectionUpdate.bind(sock)
-sock.credsUpdate = saveCreds.bind(sock, true)
+          sock.connectionUpdate = connectionUpdate.bind(sock)
+          sock.credsUpdate = saveCreds.bind(sock, true)
 
-const safeEventHandler = (eventHandler) => {
-    return async (...args) => {
-        try {
-            if (!sock || !sock.user || !sock.user.jid) {
-                console.error('Error: Conexión no válida en event handler')
-                return
+          const safeEventHandler = (eventHandler) => {
+            return async (...args) => {
+              try {
+                if (!sock || !sock.user || !sock.user.jid) {
+                  console.error("Error: Conexión no válida en event handler")
+                  return
+                }
+                await eventHandler(...args)
+              } catch (error) {
+                console.error("Error en event handler:", error)
+              }
             }
-            await eventHandler(...args)
-        } catch (error) {
-            console.error('Error en event handler:', error)
-        }
-    }
-}
+          }
 
-sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
-sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
-sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
-sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
-sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
-sock.ev.on("error", (error) => {})
+          sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
+          sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
+          sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
+          sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
+          sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
+          sock.ev.on("error", (error) => {})
 
           return true
         }
