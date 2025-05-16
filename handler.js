@@ -160,19 +160,28 @@ export async function handler(chatUpdate) {
       console.error(e)
     }
 
-    const mainBot = global.conn.user.jid
-    const chat = global.db.data.chats[m.chat] || {}
-    const isAntiLag = chat.antiLag === true
+   try {
+    const mainBot = global.conn?.user?.jid
+    if (!mainBot) {
+        console.error('Error: No se pudo obtener el JID del bot principal')
+        return
+    }
+    
+    const chat = global.db?.data?.chats?.[m.chat] || {}
+    const isAntilag = chat.antilag === true
 
     let groupMetadata = null
     if (m.isGroup) {
-      try {
-        groupMetadata = await this.groupMetadata(m.chat).catch(() => null)
-      } catch (error) {
-        console.error(error)
-        groupMetadata = null
-      }
+        try {
+            groupMetadata = await this.groupMetadata(m.chat).catch(() => null)
+        } catch (error) {
+            console.error('Error al obtener metadata del grupo:', error)
+            groupMetadata = null
+        }
     }
+} catch (e) {
+    console.error('Error en handler:', e)
+}
 
     const botIsInGroup = groupMetadata?.participants?.some((p) => p.id === mainBot) || false
 
