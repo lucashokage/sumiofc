@@ -868,7 +868,7 @@ function setupHealthCheck(conn, authFolder, reconnectToken) {
         await conn.sendPresenceUpdate("available")
       }
     } catch (error) {}
-  }, CONFIG.HEALTH_CHECK_INTERVAL)
+  }, CONFIG.HEALTH_CHECK_INTERVAL * 2)
 
   conn.healthInterval = interval
 }
