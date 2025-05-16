@@ -24,6 +24,61 @@ global.loadDatabase = global.loadDatabase || (() => {})
 global.API = global.API || (() => {})
 global.mssg = global.mssg || {}
 
+// Rate limiting configuration
+const RATE_LIMIT = {
+  METADATA_CACHE_DURATION: 30 * 60 * 1000, // 30 minutes
+  METADATA_CACHE: new Map(),
+  QUEUE_DELAY: 3000, // 3 seconds between requests
+  requestQueue: [],
+  processing: false,
+}
+
+// Add a function to process the queue
+async function processQueue() {
+  if (RATE_LIMIT.processing || RATE_LIMIT.requestQueue.length === 0) return
+
+  RATE_LIMIT.processing = true
+  const { jid, resolve, reject } = RATE_LIMIT.requestQueue.shift()
+
+  try {
+    const result = await this.groupMetadata(jid)
+    resolve(result)
+  } catch (error) {
+    reject(error)
+  } finally {
+    RATE_LIMIT.processing = false
+    if (RATE_LIMIT.requestQueue.length > 0) {
+      setTimeout(() => processQueue.call(this), RATE_LIMIT.QUEUE_DELAY)
+    }
+  }
+}
+
+// Add a function to safely get group metadata with caching
+async function safeGroupMetadata(jid) {
+  // Check cache first
+  if (RATE_LIMIT.METADATA_CACHE.has(jid)) {
+    const { data, timestamp } = RATE_LIMIT.METADATA_CACHE.get(jid)
+    if (Date.now() - timestamp < RATE_LIMIT.METADATA_CACHE_DURATION) {
+      return data
+    }
+  }
+
+  // If not in cache or expired, queue the request
+  return new Promise((resolve, reject) => {
+    RATE_LIMIT.requestQueue.push({ jid, resolve, reject })
+    if (!RATE_LIMIT.processing) {
+      processQueue.call(this)
+    }
+  }).then((result) => {
+    // Cache the result
+    RATE_LIMIT.METADATA_CACHE.set(jid, {
+      data: result,
+      timestamp: Date.now(),
+    })
+    return result
+  })
+}
+
 export async function handler(chatUpdate) {
   this.msgqueque = this.msgqueque || []
   if (!chatUpdate) return
@@ -171,9 +226,38 @@ export async function handler(chatUpdate) {
       const isAntiLag = chat.antiLag === true
 
       let groupMetadata = null
+
+      async function getGroupMetadataWithRetry(jid, maxRetries = 5) {
+        let retries = 0
+        let lastError
+
+        while (retries < maxRetries) {
+          try {
+            return await safeGroupMetadata.call(this, jid)
+          } catch (error) {
+            lastError = error
+            if (error.toString().includes("rate-overlimit")) {
+              // Exponential backoff: wait longer between each retry
+              const waitTime = 1000 * Math.pow(2, retries)
+              console.log(
+                `Rate limit hit, waiting ${waitTime / 1000} seconds before retry ${retries + 1}/${maxRetries}`,
+              )
+              await new Promise((resolve) => setTimeout(resolve, waitTime))
+              retries++
+            } else {
+              // If it's not a rate limit error, don't retry
+              break
+            }
+          }
+        }
+
+        console.error("Failed to get group metadata after retries:", lastError)
+        return null
+      }
+
       if (m.isGroup) {
         try {
-          groupMetadata = await this.groupMetadata(m.chat)
+          groupMetadata = await getGroupMetadataWithRetry.call(this, m.chat)
         } catch (error) {
           console.error("Error al obtener metadata del grupo:", error)
         }
@@ -230,7 +314,7 @@ export async function handler(chatUpdate) {
     let groupMetadata = null
     if (m.isGroup) {
       try {
-        groupMetadata = await this.groupMetadata(m.chat)
+        groupMetadata = await getGroupMetadataWithRetry.call(this, m.chat)
       } catch (error) {
         console.error("Error fetching group metadata:", error)
       }
@@ -375,7 +459,7 @@ export async function handler(chatUpdate) {
         if (!isPrems && plugin.diamond && global.db.data.users[m.sender].diamond < plugin.diamond * 1) {
           this.reply(
             m.chat,
-            `=͟͟͞❀ 💎 𝙏𝙪𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 𝙨𝙚 𝙖𝙜𝙤𝙩𝙖𝙧𝙤𝙣 ⏤͟͟͞͞★\n𝙐𝙨𝙖 𝙚𝙡 𝙨𝙞𝙜𝙪𝙞𝙚𝙣𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 𝙥𝙖𝙧𝙖 𝙘𝙤𝙢𝙥𝙧𝙖𝙧 𝙢á𝙨 𝙙𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨\n\n*${usedPrefix}buy*`,
+            `=͟͟͞❀ 💎 𝙏𝙪𝙨 𝙙𝙞𝙖𝗺𝗮𝗻𝘁𝗲𝘀 𝘀𝗲 𝗮𝗴𝗼𝘁𝗮𝗿𝗼𝗻 ⏤͟͟͞͞★\n𝙐𝘀𝗮 𝗲𝗹 𝘀𝗶𝗴𝘂𝗶𝗲𝗻𝘁𝗲 𝗰𝗼𝗺𝗮𝗻𝗱𝗼 𝗽𝗮𝗿𝗮 𝗰𝗼𝗺𝗽𝗿𝗮𝗿 𝗺á𝘀 𝗱𝗶𝗮𝗺𝗮𝗻𝘁𝗲𝘀\n\n*${usedPrefix}buy*`,
             m,
           )
           continue
@@ -383,7 +467,7 @@ export async function handler(chatUpdate) {
         if (plugin.level > _user.level) {
           this.reply(
             m.chat,
-            `=͟͟͞❀ ⚠️ 𝙉𝙞𝙫𝙚𝙡 𝙧𝙚𝙦𝙪𝙚𝙧𝙞𝙙𝙤 ${plugin.level} 𝙥𝙖𝙧𝙖 𝙪𝙨𝙖𝙧 𝙚𝙨𝙩𝙚 𝙘𝙤𝙢𝙖𝙣𝙙𝙤 ⏤͟͟͞͞★\n𝙏𝙪 𝙣𝙞𝙫𝙚𝙡 𝙖𝙘𝙩𝙪𝙖𝙡: ${_user.level}`,
+            `=͟͟͞❀ ⚠️ 𝙉𝙞𝙫𝙚𝙡 𝗿𝗲𝗾𝘂𝗲𝗿𝗶𝗱𝗼 ${plugin.level} 𝗽𝗮𝗿𝗮 𝘂𝘀𝗮𝗿 𝗲𝘀𝘁𝗲 𝗰𝗼𝗺𝗮𝗻𝗱𝗼 ⏤͟͟͞͞★\n𝙏𝙪 𝗻𝗶𝘃𝗲𝗹 𝗮𝗰𝘁𝘂𝗮𝗹: ${_user.level}`,
             m,
           )
           continue
