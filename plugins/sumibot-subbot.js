@@ -77,6 +77,8 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
+      let authResult = null // Declare authResult outside the conditional block
+
       if (args[0] && args[0] !== "plz") {
         try {
           const credsData = JSON.parse(Buffer.from(args[0], "base64").toString("utf-8"))
@@ -92,7 +94,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       }
 
       try {
-        const authResult = await useMultiFileAuthState(authFolderPath)
+        authResult = await useMultiFileAuthState(authFolderPath)
         state = authResult.state
         saveCreds = authResult.saveCreds
       } catch (error) {
@@ -157,11 +159,12 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         }
 
         const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "")
-        if (!Object.keys(PHONENUMBER_MCC || {}).some((v) => cleanedNumber.startsWith(v))) {
-          await parent.sendMessage(m.chat, { text: "❌ Número de teléfono inválido." }, { quoted: m })
-          rl.close()
-          return
-        }
+        // Omitir la validación estricta de prefijos de país
+        // if (!Object.keys(PHONENUMBER_MCC || {}).some((v) => cleanedNumber.startsWith(v))) {
+        //   await parent.sendMessage(m.chat, { text: "❌ Número de teléfono inválido." }, { quoted: m })
+        //   rl.close()
+        //   return
+        // }
 
         setTimeout(async () => {
           try {
