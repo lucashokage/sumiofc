@@ -106,12 +106,12 @@ const checkRequestLimit = () => {
 // Handler principal
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
-    return conn.reply(m.chat, `👉 Uso: ${usedPrefix}${command} https://youtube.com/watch?v=iQEVguV71sI`, m);
+    return conn.reply(m.chat, `❀ Uso: ${usedPrefix}${command} https://youtube.com/watch?v=iQEVguV71sI`, m);
   }
 
   if (!isValidYouTubeUrl(text)) {
     await m.react('🔴');
-    return m.reply('🚫 Enlace de YouTube inválido');
+    return m.reply('✧ Enlace de YouTube inválido');
   }
 
   // Verificar límite de solicitudes y archivo pesado
@@ -136,11 +136,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     if (size > HEAVY_FILE_THRESHOLD) {
       isProcessingHeavy = true;
-      await conn.reply(m.chat, '🤨 Espera, estoy lidiando con un archivo pesado', m);
+      await conn.reply(m.chat, ' Espera,estoy descargando  un archivo pesado puede tardar un poco...', m);
     }
 
     await m.react('✅️'); // Descarga iniciada
-    const caption = `*💌 ${title}*\n> ⚖️ Peso: ${formatSize(size)}\n> 🌎 URL: ${text}`;
+    const caption = `*「✦」 ${title}*\n> ❏ Peso: ${formatSize(size)}\n> 🜸 URL: ${text}`;
     const isSmallVideo = size < VIDEO_THRESHOLD;
 
     const buffer = await (await fetch(url)).buffer();
