@@ -1,87 +1,115 @@
-import fs from 'fs';  
-import path from 'path';  
-import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
 import crypto from "crypto";
+import fetch from "node-fetch";
 import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
-let handler = async (m, { conn, isRowner }) => {
+let handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
 
-  if (!m.quoted || !/image/.test(m.quoted.mimetype)) return m.reply(`${emoji} Por favor, responde a una imagen con el comando *setbanner* para actualizar la foto del menu.`);
-
-  try {
-
-    const media = await m.quoted.download();
-    let link = await catbox(media);
-
-    if (!isImageValid(media)) {
-      return m.reply(`${emoji2} El archivo enviado no es una imagen válida.`);
+    let isSubbotOwner = conn.user.jid === m.sender;
+    if (!isSubbotOwner && !isOwner) {
+        return m.reply("⚠️ Solo el owner del bot o el número asociado a este subbot pueden usar este comando.");
     }
 
-    global.banner = `${link}`;  
+    if (!args[0]) {
+        return m.reply(`🌲 Por favor especifica la categoría en la que desea cambiar la imagen. Lista :
 
-    await conn.sendFile(m.chat, media, 'banner.jpg', `${emoji} Banner actualizado.`, m);
+- welcome -> Cambia la imagen del welcome.
+- banner -> Cambia la imagen del menú.
 
-  } catch (error) {
-    console.error(error);
-    m.reply(`${msm} Hubo un error al intentar cambiar el banner.`);
-  }
-};
+## Ejemplo :
+${usedPrefix + command} welcome
+`);
+    }
 
+    let q = m.quoted ? m.quoted : m;
+    if (!q) return m.reply(`🌱 Responde a una imagen para cambiar el logo del bot.`);
 
-const isImageValid = (buffer) => {
-  const magicBytes = buffer.slice(0, 4).toString('hex');
+    let buffer;
+    try {
+        buffer = await q.download();
+    } catch (e) {
+        if (q.url) {
+            buffer = await fetch(q.url).then(res => res.buffer());
+        }
+    }
+    if (!buffer) return m.reply("No se pudo descargar el archivo, intenta responder a una imagen primero.");
 
+    // Validar que sea una imagen
+    if (!isImageValid(buffer)) {
+        return m.reply("El archivo enviado no es una imagen válida.");
+    }
 
-  if (magicBytes === 'ffd8ffe0' || magicBytes === 'ffd8ffe1' || magicBytes === 'ffd8ffe2') {
-    return true;
-  }
+    let link;
+    try {
+        link = await catbox(buffer);
+    } catch (e) {
+        console.error(e);
+        return m.reply("Error al subir la imagen a catbox.");
+    }
 
+    let isWel = /wel|welcome$/.test(args[0]?.toLowerCase() || "");
+    let cap = `≡ 🌴 Se ha cambiado con éxito la imagen ${isWel ? "de la bienvenida" : "del menú"} para @${conn.user.jid.split("@")[0]}`;
 
-  if (magicBytes === '89504e47') {
-    return true;
-  }
+    // Inicialización segura de la estructura de datos
+    if (!global.db.data.settings) global.db.data.settings = {};
+    if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {};
+    if (!global.db.data.settings[conn.user.jid].logo) global.db.data.settings[conn.user.jid].logo = {};
 
-
-  if (magicBytes === '47494638') {
-    return true;
-  }
-
-  return false; 
-};
-
-handler.help = ['setbanner'];
-handler.tags = ['tools'];
-handler.command = ['setbanner'];
-handler.rowner = true;
-
-export default handler;
-
-function formatBytes(bytes) {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
+    if (args[0] === "banner" || args[0] === "welcome") {
+        global.db.data.settings[conn.user.jid].logo[args[0]] = link;
+        await conn.sendMessage(m.chat, { 
+            image: { url: link }, 
+            caption: cap, 
+            mentions: conn.parseMention(cap) 
+        }, { quoted: m });
+    } else {
+        return m.reply("No coincide con ninguna opción de la lista.");
+    }
 }
 
+const isImageValid = (buffer) => {
+    const magicBytes = buffer.slice(0, 4).toString('hex');
+
+    // JPEG
+    if (magicBytes === 'ffd8ffe0' || magicBytes === 'ffd8ffe1' || magicBytes === 'ffd8ffe2') {
+        return true;
+    }
+
+    // PNG
+    if (magicBytes === '89504e47') {
+        return true;
+    }
+
+    // GIF
+    if (magicBytes === '47494638') {
+        return true;
+    }
+
+    return false;
+};
+
+handler.tags = ["serbot"];
+handler.help = handler.command = ["setlogo"];
+export default handler;
+
 async function catbox(content) {
-  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
-  const blob = new Blob([content.toArrayBuffer()], { type: mime });
-  const formData = new FormData();
-  const randomBytes = crypto.randomBytes(5).toString("hex");
-  formData.append("reqtype", "fileupload");
-  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+    const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
+    const blob = new Blob([content.toArrayBuffer()], { type: mime });
+    const formData = new FormData();
+    const randomBytes = crypto.randomBytes(5).toString("hex");
+    formData.append("reqtype", "fileupload");
+    formData.append("fileToUpload", blob, randomBytes + "." + ext);
 
-  const response = await fetch("https://catbox.moe/user/api.php", {
-    method: "POST",
-    body: formData,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
-    },
-  });
+    const response = await fetch("https://catbox.moe/user/api.php", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "User-Agent":
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
+        },
+    });
 
-  return await response.text();
+    return await response.text();
 }
