@@ -1,75 +1,86 @@
+import fs from "fs"
+import path from "path"
 import fetch from "node-fetch"
-import fs from "fs/promises"
 
-const welcomeCache = new Set()
+const handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
+  const isSubbotOwner = conn.user.jid === m.sender
+  const botNumber = conn.user.jid.split("@")[0]
 
-export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return
-
-  const bot = global.db.data.settings[conn.user.jid] || {}
-  const chat = global.db.data.chats[m.chat] || {}
-
-  const eventKey = `${m.chat}_${m.messageStubParameters[0]}_${m.messageStubType}`
-
-  if (welcomeCache.has(eventKey)) return
-  welcomeCache.add(eventKey)
-
-  setTimeout(() => welcomeCache.delete(eventKey), 5000)
-
-  const welcomeMsg = chat.sWelcome || bot.welcome || "¡Bienvenido al grupo!"
-  const byeMsg = chat.sBye || bot.bye || "¡Adiós! Esperamos verte pronto."
-  const botName = bot.botName || "=͟͟͞❀ sᥙmі - sᥲkᥙrᥲsᥲᥕᥲ  ⏤͟͟͞͞★"
-
-  let img
-  try {
-    const userJid = m.messageStubParameters[0]
-    const pp = bot.logo?.welcome || (await conn.profilePictureUrl(userJid, "image").catch(() => null))
-    img = pp ? await (await fetch(pp)).buffer() : await fs.readFile("./src/avatar.jpg")
-  } catch (e) {
-    console.error("Error al obtener imagen:", e)
-    img = await fs.readFile("./src/avatar.jpg")
+  if (!isSubbotOwner && !isOwner) {
+    return m.reply("⚠️ Solo el owner del bot o el número asociado a este subbot pueden usar este comando.")
   }
 
-  const groupSize =
-    m.messageStubType === 27
-      ? participants.length + 1 
-      : participants.length - 1
+  if (!args[0]) {
+    return m.reply(`🌲 Por favor especifica la categoría en la que desea cambiar la imagen. Lista :
 
-  // Procesar el evento
-  if (chat.welcome) {
-    const userJid = m.messageStubParameters[0]
-    const username = userJid.split("@")[0]
+- welcome -> Cambia la imagen del welcome.
+- banner -> Cambia la imagen del menú.
 
-    if (m.messageStubType === 27) {
-      // Bienvenida
-      const message =
-        `❀ *Bienvenido* a ${groupMetadata.subject}\n` +
-        `✰ @${username}\n` +
-        `${welcomeMsg}\n` +
-        `✦ Ahora somos ${groupSize} miembros.\n` +
-        `•(=^●ω●^=)• Disfruta tu estadía!\n` +
-        `> ✐ Usa *#help* para ver comandos.`
+## Ejemplo :
+${usedPrefix + command} welcome
+`)
+  }
 
-      await conn.sendMessage(m.chat, {
-        image: img,
-        caption: message,
-        mentions: [userJid],
-      })
-    } else if ([28, 32].includes(m.messageStubType)) {
-      // Despedida
-      const message =
-        `❀ *Adiós* de ${groupMetadata.subject}\n` +
-        `✰ @${username}\n` +
-        `${byeMsg}\n` +
-        `✦ Ahora somos ${groupSize} miembros.\n` +
-        `•(=^●ω●^=)• Te esperamos pronto!\n` +
-        `> ✐ Usa *#help* para ver comandos.`
+  if (args[0] !== "welcome" && args[0] !== "banner") {
+    return m.reply("No coincide con ninguna opción de la lista.")
+  }
 
-      await conn.sendMessage(m.chat, {
-        image: img,
-        caption: message,
-        mentions: [userJid],
-      })
+  const isSubbot = conn.user.jid !== global.conn.user.jid
+  const baseDir = isSubbot ? "./subbots" : "./botofc"
+
+  const logosDir = path.join(baseDir, "logos")
+  const typeDir = path
+    .join(logosDir, args[0])
+
+    [(baseDir, logosDir, typeDir)].forEach((dir) => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
+    })
+
+  const fileName = `${botNumber}${args[0]}.jpg`
+  const filePath = path.join(typeDir, fileName)
+
+  const q = m.quoted ? m.quoted : m
+  if (!q) return m.reply(`🌱 Responde a una imagen para cambiar el logo del bot.`)
+
+  let buffer
+  try {
+    buffer = await q.download()
+  } catch (e) {
+    if (q.url) {
+      buffer = await fetch(q.url).then((res) => res.buffer())
     }
   }
+  if (!buffer) return m.reply("No se pudo descargar el archivo, intenta responder a una imagen primero.")
+
+  try {
+    fs.writeFileSync(filePath, buffer)
+
+    if (!global.db.data.settings) global.db.data.settings = {}
+    if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {}
+    if (!global.db.data.settings[conn.user.jid].logo) global.db.data.settings[conn.user.jid].logo = {}
+
+    global.db.data.settings[conn.user.jid].logo[args[0]] = filePath
+
+    const isWel = args[0] === "welcome"
+    const cap = `≡ 🌴 Se ha cambiado con éxito la imagen ${isWel ? "de la bienvenida" : "del menú"} para @${botNumber}`
+
+    conn.sendMessage(
+      m.chat,
+      {
+        image: { url: filePath },
+        caption: cap,
+        mentions: conn.parseMention(cap),
+      },
+      { quoted: m },
+    )
+  } catch (e) {
+    console.error(e)
+    return m.reply("Error al guardar la imagen. Inténtalo de nuevo.")
+  }
 }
+
+handler.tags = ["serbot"]
+handler.help = handler.command = ["setlogo"]
+export default handler
