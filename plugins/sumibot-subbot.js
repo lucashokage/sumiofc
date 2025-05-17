@@ -71,13 +71,47 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         return
       }
 
+      let state = null
+      let saveCreds = null
+      let authResult = null
+
       if (!fs.existsSync(authFolderPath)) {
         fs.mkdirSync(authFolderPath, { recursive: true })
       }
 
-      let state = null
-      let saveCreds = null
-      const authResult = null
+      try {
+        authResult = await useMultiFileAuthState(authFolderPath)
+        state = authResult.state
+        saveCreds = authResult.saveCreds
+      } catch (error) {
+        console.error(`Error al inicializar el estado de autenticación: ${error.message}`)
+        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
+        return
+      }
+
+      if (args[0] && args[0] !== "plz") {
+        try {
+          const credsData = JSON.parse(Buffer.from(args[0], "base64").toString("utf-8"))
+          fs.writeFileSync(path.join(authFolderPath, "creds.json"), JSON.stringify(credsData, null, "\t"))
+        } catch (error) {
+          console.error(`Error al procesar las credenciales: ${error.message}`)
+          await parent.sendMessage(
+            m.chat,
+            { text: "❌ Error al procesar las credenciales. Formato inválido." },
+            { quoted: m },
+          )
+          return
+        }
+      }
+
+      const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 2323, 4] }))
+
+      const msgRetryCounterMap = MessageRetryMap ? MessageRetryMap() : {}
+      const msgRetryCounterCache = new NodeCache()
+
+      const methodCodeQR = process.argv.includes("qr")
+      const methodCode = !!phoneNumber || process.argv.includes("code")
+      const MethodMobile = process.argv.includes("mobile")
 
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
       const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
@@ -85,11 +119,14 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       const connectionOptions = {
         logger: pino({ level: CONFIG.LOG_LEVEL }),
         printQRInTerminal: false,
-        mobile: process.argv.includes("mobile"),
+        mobile: MethodMobile,
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         auth: {
-          creds: {},
-          keys: makeCacheableSignalKeyStore(new Map(), pino({ level: "fatal" }).child({ level: "fatal" })),
+          creds: state.creds || {},
+          keys: makeCacheableSignalKeyStore(
+            state.keys || new Map(),
+            pino({ level: "fatal" }).child({ level: "fatal" }),
+          ),
         },
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
@@ -99,10 +136,10 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           const msg = await store?.loadMessage(jid, clave.id)
           return msg?.message || ""
         },
-        msgRetryCounterCache: new NodeCache(),
-        msgRetryCounterMap: MessageRetryMap ? MessageRetryMap() : {},
+        msgRetryCounterCache,
+        msgRetryCounterMap,
         defaultQueryTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
-        version: [2, 2323, 4],
+        version,
         retryRequestDelayMs: CONFIG.RETRY_REQUEST_DELAY,
         connectTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
         keepAliveIntervalMs: CONFIG.RECONNECT_INTERVAL,
@@ -117,7 +154,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       const isReconnect = !!args[0] && args[0] !== "plz"
       const reconnectToken = `${phoneNumber}+${subbotId}`
 
-      if (process.argv.includes("code") && !conn.authState?.creds?.registered) {
+      if (methodCode && !conn.authState?.creds?.registered) {
         if (!phoneNumber) {
           rl.close()
           return
@@ -142,6 +179,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
             rl.close()
           } catch (error) {
+            console.error(`Error al generar el código: ${error.message}`)
             await parent.sendMessage(
               m.chat,
               { text: "❌ Error al generar el código. Intente nuevamente." },
@@ -375,7 +413,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               }, 3000)
             }
           }
-        } catch (error) {}
+        } catch (error) {
+          console.error(`Error en connectionUpdate: ${error.message}`)
+        }
       }
 
       setupPresenceUpdates(conn)
@@ -383,20 +423,35 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       let handler = await import("../handler.js")
       const creloadHandler = async (restatConn) => {
         try {
-          const Handler = await import(`../handler.js?update=${Date.now()}`).catch(() => {})
-          if (Handler && Object.keys(Handler).length) handler = Handler
-        } catch (e) {}
+          const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+            console.error(`Error al importar handler: ${e.message}`)
+            return null
+          })
+
+          if (Handler && Object.keys(Handler).length) {
+            handler = Handler
+          }
+        } catch (e) {
+          console.error(`Error en creloadHandler: ${e.message}`)
+        }
 
         if (restatConn) {
           try {
             cleanupConnection(conn)
             conn = makeWASocket(connectionOptions)
             isInit = true
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error al reiniciar conexión: ${error.message}`)
+          }
         }
 
         if (!isInit) {
           cleanupConnection(conn)
+        }
+
+        if (!handler || !handler.handler) {
+          console.error("Error: handler o handler.handler es nulo")
+          return false
         }
 
         conn.welcome = global.conn.welcome + ""
@@ -411,7 +466,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
             if (args[0] && args[0].participants) {
               return await handler.participantsUpdate.apply(this, args)
             }
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en participantsUpdate: ${error.message}`)
+          }
         }
 
         conn.groupsUpdate = handler.groupsUpdate.bind(conn)
@@ -422,7 +479,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           return async (...args) => {
             try {
               await eventHandler(...args)
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error en event handler: ${error.message}`)
+            }
           }
         }
 
@@ -432,7 +491,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         conn.ev.on("connection.update", safeEventHandler(conn.connectionUpdate))
         conn.ev.on("creds.update", safeEventHandler(conn.credsUpdate))
 
-        conn.ev.on("error", (error) => {})
+        conn.ev.on("error", (error) => {
+          console.error(`Error en evento: ${error.message}`)
+        })
 
         isInit = false
         return true
@@ -483,7 +544,7 @@ async function loadSubbots() {
 
         let credsData
         try {
-          credsData = JSON.parse(fs.readFileSync(credsPath, "utf8"))
+          credsData = JSON.parse(fs.readFileSync(credsPath, "utf-8"))
           if (!credsData || !credsData.me) {
             console.log(`Credenciales inválidas para ${reconnectToken}, omitiendo`)
             continue
@@ -495,12 +556,17 @@ async function loadSubbots() {
 
         let state = null
         let saveCreds = null
-        const authResult = await useMultiFileAuthState(folderPath)
-        state = authResult.state
-        saveCreds = authResult.saveCreds
+        try {
+          const authResult = await useMultiFileAuthState(folderPath)
+          state = authResult.state
+          saveCreds = authResult.saveCreds
 
-        if (!state.creds || !state.creds.me) {
-          console.log(`Estado de autenticación inválido para ${reconnectToken}, omitiendo`)
+          if (!state.creds || !state.creds.me) {
+            console.log(`Estado de autenticación inválido para ${reconnectToken}, omitiendo`)
+            continue
+          }
+        } catch (error) {
+          console.error(`Error al obtener estado de autenticación para ${reconnectToken}:`, error.message)
           continue
         }
 
@@ -625,13 +691,6 @@ async function loadSubbots() {
               scheduleAutoReconnect()
               setupPeriodicStateSaving(sock, folder)
               setupHealthCheck(sock, folder, reconnectToken)
-              // Si es una conexión inicial, también reiniciamos el bot para estabilidad
-              /*if (initialConnections.get(folder)) {
-                console.log(`Reiniciando el bot completamente para estabilidad de conexión inicial: ${reconnectToken}`)
-                setTimeout(() => {
-                  process.exit(0)
-                }, 3000)
-              }*/
             }
 
             if (connection === "close") {
@@ -728,23 +787,38 @@ async function loadSubbots() {
                 cleanupAndRemove()
               }
             }
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en connectionUpdate: ${error.message}`)
+          }
         }
 
         let handler = await import("../handler.js")
         const reloadHandler = async (restartConnection) => {
           try {
-            const newHandler = await import(`../handler.js?update=${Date.now()}`)
+            const newHandler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+              console.error(`Error al importar handler: ${e.message}`)
+              return null
+            })
+
             if (newHandler && Object.keys(newHandler).length) {
               handler = newHandler
             }
-          } catch (err) {}
+          } catch (err) {
+            console.error(`Error en reloadHandler: ${err.message}`)
+          }
 
           if (restartConnection) {
             try {
               cleanupConnection(sock)
               sock = makeWASocket(socketConfig)
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error al reiniciar conexión: ${error.message}`)
+            }
+          }
+
+          if (!handler || !handler.handler) {
+            console.error("Error: handler o handler.handler es nulo")
+            return false
           }
 
           sock.handler = handler.handler.bind(sock)
@@ -754,7 +828,9 @@ async function loadSubbots() {
               if (args[0] && args[0].participants) {
                 return await handler.participantsUpdate.apply(this, args)
               }
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error en participantsUpdate: ${error.message}`)
+            }
           }
 
           sock.groupsUpdate = handler.groupsUpdate.bind(sock)
@@ -770,7 +846,7 @@ async function loadSubbots() {
                 }
                 await eventHandler(...args)
               } catch (error) {
-                console.error("Error en event handler:", error)
+                console.error(`Error en event handler: ${error.message}`)
               }
             }
           }
@@ -780,7 +856,9 @@ async function loadSubbots() {
           sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
           sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
           sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
-          sock.ev.on("error", (error) => {})
+          sock.ev.on("error", (error) => {
+            console.error(`Error en evento: ${error.message}`)
+          })
 
           return true
         }
@@ -815,7 +893,9 @@ function setupPeriodicStateSaving(conn, authFolder) {
       } else {
         clearInterval(interval)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupPeriodicStateSaving: ${error.message}`)
+    }
   }, CONFIG.STATE_SAVE_INTERVAL)
 
   conn.stateInterval = interval
@@ -852,7 +932,9 @@ function setupHealthCheck(conn, authFolder, reconnectToken) {
 
         await conn.sendPresenceUpdate("available")
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupHealthCheck: ${error.message}`)
+    }
   }, CONFIG.HEALTH_CHECK_INTERVAL * 2)
 
   conn.healthInterval = interval
@@ -866,7 +948,9 @@ function setupPresenceUpdates(conn) {
       } else {
         clearInterval(interval)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupPresenceUpdates: ${error.message}`)
+    }
   }, CONFIG.PRESENCE_UPDATE_INTERVAL)
 
   conn.presenceInterval = interval
@@ -888,12 +972,16 @@ function setupPeriodicHealthCheck() {
                 error: new Boom("WebSocket closed", { statusCode: DisconnectReason.connectionClosed }),
               },
             })
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en setupPeriodicHealthCheck: ${error.message}`)
+          }
         }
       }
 
       console.log(`Sub-bots activos: ${activeConns.length}/${global.conns.length}`)
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupPeriodicHealthCheck: ${error.message}`)
+    }
   }, 120000)
 }
 
@@ -927,6 +1015,7 @@ global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
     await handler(m, { conn, args: [credsBase64], usedPrefix, command: "code" })
     return
   } catch (error) {
+    console.error(`Error en handleReconnectCommand: ${error.message}`)
     return conn.reply(m.chat, "❌ Error al procesar la solicitud. Intente nuevamente.", m)
   }
 }
@@ -976,6 +1065,7 @@ global.handleStatusCommand = async (m, { conn }) => {
 
     await conn.reply(m.chat, message, m)
   } catch (error) {
+    console.error(`Error en handleStatusCommand: ${error.message}`)
     await conn.reply(m.chat, "❌ Error al obtener el estado de los sub-bots.", m)
   }
 }
