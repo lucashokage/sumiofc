@@ -154,9 +154,9 @@ const connectionOptions = {
   mobile: MethodMobile,
   browser:
     opcion === "1"
-      ? ["Senna", "Safari", "2.0.0"]
+      ? ["Sumi", "Safari", "2.0.0"]
       : methodCodeQR
-        ? ["Senna", "Safari", "2.0.0"]
+        ? ["Sumi", "Safari", "2.0.0"]
         : ["Ubuntu", "Chrome", "20.0.04"],
   auth: {
     creds: state.creds,
@@ -197,33 +197,34 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
       if (!!phoneNumber) {
         addNumber = phoneNumber.replace(/[^0-9]/g, "")
         if (!Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
-          console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Su número debe comenzar  con el codigo de pais")))
+          console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Su número debe comenzar con el codigo de pais")))
           process.exit(0)
         }
       } else {
         let isValidNumber = false
-while (!isValidNumber) {
-  addNumber = await question(
-    chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 5491168xxxx\n\n")),
-  )
-  addNumber = addNumber.replace(/[^0-9]/g, "")
+        while (!isValidNumber) {
+          addNumber = await question(
+            chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 5491168xxxx\n\n")),
+          )
+          addNumber = addNumber.replace(/[^0-9]/g, "")
 
-  if (addNumber.match(/^\d+$/)) {
-    if (PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
-      isValidNumber = true
-    } else {
-      console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Código de país no válido. Ejemplos válidos: 51 , 52 , 54 , etc")))
-    }
-  } else {
-    console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Solo se permiten números")))
-  }
-}
+          if (addNumber.match(/^\d+$/)) {
+            if (PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
+              isValidNumber = true
+            } else {
+              console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Código de país no válido. Ejemplos válidos: 51, 52, 54, etc")))
+            }
+          } else {
+            console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Solo se permiten números")))
+          }
+        }
+      }
 
       setTimeout(async () => {
         let codeBot = await global.conn.requestPairingCode(addNumber)
         codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
         console.log(chalk.yellow("\n\n🍏 introduce el código en WhatsApp."))
-        console.log(chalk.black(chalk.bgGreen(`\n🟣  Su Código es: `)), chalk.black(chalk.red(codeBot)))
+        console.log(chalk.black(chalk.bgGreen(`\n🟣 Su Código es: `)), chalk.black(chalk.red(codeBot)))
       }, 3000)
     }
   }
