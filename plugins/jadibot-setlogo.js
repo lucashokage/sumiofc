@@ -27,14 +27,20 @@ ${usedPrefix + command} welcome
 
   const isSubbot = conn.user.jid !== global.conn.user.jid
   const baseDir = isSubbot ? "./subbots" : "./botofc"
-
   const logosDir = path.join(baseDir, "logos")
   const typeDir = path.join(logosDir, args[0])
-  ;[baseDir, logosDir, typeDir].forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-  })
+
+  if (!fs.existsSync(baseDir)) {
+    fs.mkdirSync(baseDir, { recursive: true })
+  }
+
+  if (!fs.existsSync(logosDir)) {
+    fs.mkdirSync(logosDir, { recursive: true })
+  }
+
+  if (!fs.existsSync(typeDir)) {
+    fs.mkdirSync(typeDir, { recursive: true })
+  }
 
   const fileName = `${botNumber}${args[0]}.jpg`
   const filePath = path.join(typeDir, fileName)
