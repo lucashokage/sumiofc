@@ -9,14 +9,16 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const pluginsCount = Object.keys(global.plugins || {}).length
     const botType = conn.user.jid == global.conn.user.jid ? "official" : "subbot"
 
-    const bot = global.db.data.settings[conn.user.jid] || {}
-
+    // Obtener el nombre correcto para el bot
     let displayBotName
     if (botType === "official") {
       displayBotName = "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦"
     } else {
-      displayBotName = bot.botName || conn.getName(conn.user.jid) || "Bot"
+      // Para subbots, usar el nombre personalizado con .setname o el nombre de WhatsApp
+      displayBotName = user.namebebot || conn.getName(conn.user.jid) || "Bot"
     }
+
+    const bot = global.db.data.settings[conn.user.jid] || {}
 
     const date = new Date()
     const options = {
@@ -31,9 +33,10 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
     const country = getCountryFromNumber(m.sender.split("@")[0])
 
-    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ❀  ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
+    // Construir el menú
+    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
-> _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}  ❨◣_◢❩凸
+> _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
 
 ╭┈ ↷
 │➮ *Tipo ›* ${botType === "official" ? "Principal 🅥" : "Sub Bot 🅑"}
@@ -611,7 +614,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
  ᳯ⃞ 𑪏𑪋ᩧ❀﹕#banchat
 > Banea a cualquier usuario para que no pueda usar el bot.
  ᳯ⃞ 𑪏𑪋ᩧ❀﹕#unbanchat
-> Desbanea a cualquier usuario que no podía usar el bot.
+> Desbanea a cualquier usuario que no podía usar al bot.
  ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ds #fixmsgespera
 > Elimina datos de subbots.
  ᳯ⃞ 𑪏𑪋ᩧ❀﹕#autoadmin
@@ -632,6 +635,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Elimina las sesiones de subbots.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
+    // Función para generar una sección del menú (mantenida para compatibilidad)
     function generateSection(title, commands) {
       let section = `
 
