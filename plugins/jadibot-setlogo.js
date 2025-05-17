@@ -1,94 +1,87 @@
-import fs from "fs"
-import path from "path"
-import fetch from "node-fetch"
+import fs from 'fs';  
+import path from 'path';  
+import fetch from "node-fetch";
+import crypto from "crypto";
+import { FormData, Blob } from "formdata-node";
+import { fileTypeFromBuffer } from "file-type";
 
-const handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
-  const isSubbotOwner = conn.user.jid === m.sender
-  const botNumber = conn.user.jid.split("@")[0]
+let handler = async (m, { conn, isRowner }) => {
 
-  if (!isSubbotOwner && !isOwner) {
-    return m.reply("⚠️ Solo el owner del bot o el número asociado a este subbot pueden usar este comando.")
-  }
+  if (!m.quoted || !/image/.test(m.quoted.mimetype)) return m.reply(`${emoji} Por favor, responde a una imagen con el comando *setbanner* para actualizar la foto del menu.`);
 
-  if (!args[0]) {
-    return m.reply(`🌲 Por favor especifica la categoría en la que desea cambiar la imagen. Lista :
-
-- welcome -> Cambia la imagen del welcome.
-- banner -> Cambia la imagen del menú.
-
-## Ejemplo :
-${usedPrefix + command} welcome
-`)
-  }
-
-  if (args[0] !== "welcome" && args[0] !== "banner") {
-    return m.reply("No coincide con ninguna opción de la lista.")
-  }
-
-  const isSubbot = conn.user.jid !== global.conn.user.jid
-  const baseDir = isSubbot ? "./subbots" : "./botofc"
-  const logosDir = path.join(baseDir, "logos")
-  const typeDir = path.join(logosDir, args[0])
-
-  if (!fs.existsSync(baseDir)) {
-    fs.mkdirSync(baseDir, { recursive: true })
-  }
-
-  if (!fs.existsSync(logosDir)) {
-    fs.mkdirSync(logosDir, { recursive: true })
-  }
-
-  if (!fs.existsSync(typeDir)) {
-    fs.mkdirSync(typeDir, { recursive: true })
-  }
-
-  const fileName = `${botNumber}${args[0]}.jpg`
-  const filePath = path.join(typeDir, fileName)
-
-  const q = m.quoted ? m.quoted : m
-  if (!q) return m.reply(`🌱 Responde a una imagen para cambiar el logo del bot.`)
-
-  let buffer
   try {
-    buffer = await q.download()
-  } catch (e) {
-    if (q.url) {
-      buffer = await fetch(q.url).then((res) => res.buffer())
+
+    const media = await m.quoted.download();
+    let link = await catbox(media);
+
+    if (!isImageValid(media)) {
+      return m.reply(`${emoji2} El archivo enviado no es una imagen válida.`);
     }
+
+    global.banner = `${link}`;  
+
+    await conn.sendFile(m.chat, media, 'banner.jpg', `${emoji} Banner actualizado.`, m);
+
+  } catch (error) {
+    console.error(error);
+    m.reply(`${msm} Hubo un error al intentar cambiar el banner.`);
   }
-  if (!buffer) return m.reply("No se pudo descargar el archivo, intenta responder a una imagen primero.")
+};
 
-  try {
-    fs.writeFileSync(filePath, buffer)
 
-    if (!global.db.data.settings) global.db.data.settings = {}
-    if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {}
-    if (!global.db.data.settings[conn.user.jid].logo) global.db.data.settings[conn.user.jid].logo = {}
+const isImageValid = (buffer) => {
+  const magicBytes = buffer.slice(0, 4).toString('hex');
 
-    // Guardar la ruta completa para que sea accesible desde el sistema de archivos
-    global.db.data.settings[conn.user.jid].logo[args[0]] = filePath
 
-    // Crear una URL para la imagen usando el protocolo file://
-    const fileUrl = `file://${path.resolve(filePath)}`
-
-    const isWel = args[0] === "welcome"
-    const cap = `≡ 🌴 Se ha cambiado con éxito la imagen ${isWel ? "de la bienvenida" : "del menú"} para @${botNumber}`
-
-    conn.sendMessage(
-      m.chat,
-      {
-        image: { url: filePath },
-        caption: cap,
-        mentions: conn.parseMention(cap),
-      },
-      { quoted: m },
-    )
-  } catch (e) {
-    console.error(e)
-    return m.reply("Error al guardar la imagen. Inténtalo de nuevo.")
+  if (magicBytes === 'ffd8ffe0' || magicBytes === 'ffd8ffe1' || magicBytes === 'ffd8ffe2') {
+    return true;
   }
+
+
+  if (magicBytes === '89504e47') {
+    return true;
+  }
+
+
+  if (magicBytes === '47494638') {
+    return true;
+  }
+
+  return false; 
+};
+
+handler.help = ['setbanner'];
+handler.tags = ['tools'];
+handler.command = ['setbanner'];
+handler.rowner = true;
+
+export default handler;
+
+function formatBytes(bytes) {
+  if (bytes === 0) {
+    return "0 B";
+  }
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
 }
 
-handler.tags = ["serbot"]
-handler.help = handler.command = ["setlogo"]
-export default handler
+async function catbox(content) {
+  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
+  const blob = new Blob([content.toArrayBuffer()], { type: mime });
+  const formData = new FormData();
+  const randomBytes = crypto.randomBytes(5).toString("hex");
+  formData.append("reqtype", "fileupload");
+  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+
+  const response = await fetch("https://catbox.moe/user/api.php", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
+    },
+  });
+
+  return await response.text();
+}
