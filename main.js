@@ -207,7 +207,7 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
           )
           addNumber = addNumber.replace(/[^0-9]/g, "")
 
-          if (addNumber.match(/^\d+$/) && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
+          if (addNumber.match(/^\d+$/) && PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
             break
           } else {
             console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Asegúrese de agregar el código de país")))
