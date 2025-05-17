@@ -124,7 +124,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     return conn.reply(m.chat, '⏳ Espera, estoy procesando un archivo pesado.', m);
   }
 
-  await m.react('📀'); // Inicio
+  await m.react('🍁'); // Inicio
   try {
     const { url, title } = await ytdl(text);
     const size = await getSize(url);
@@ -158,7 +158,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     );
 
-    await m.react('🟢'); // Completado
+    await m.react('✅'); // Completado
     isProcessingHeavy = false; // Liberar estado
   } catch (e) {
     await m.react('🔴');
