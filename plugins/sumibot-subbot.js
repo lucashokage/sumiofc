@@ -75,18 +75,39 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       let saveCreds = null
       let authResult = null
 
-      if (!fs.existsSync(authFolderPath)) {
+      const authFolderPathExists = fs.existsSync(authFolderPath)
+      if (!authFolderPathExists) {
         fs.mkdirSync(authFolderPath, { recursive: true })
       }
 
-      try {
-        authResult = await useMultiFileAuthState(authFolderPath)
-        state = authResult.state
-        saveCreds = authResult.saveCreds
-      } catch (error) {
-        console.error(`Error al inicializar el estado de autenticación: ${error.message}`)
-        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
-        return
+      const credsPath = path.join(authFolderPath, "creds.json")
+      const credsPathExists = fs.existsSync(credsPath)
+      if (credsPathExists) {
+        try {
+          const credsData = JSON.parse(fs.readFileSync(credsPath, "utf-8"))
+          if (credsData && credsData.me) {
+            state = { creds: credsData }
+            saveCreds = (creds) => fs.writeFileSync(credsPath, JSON.stringify(creds, null, "\t"))
+          }
+        } catch (error) {
+          console.error(`Error al leer credenciales para ${authFolderPath}:`, error.message)
+        }
+      }
+
+      if (!state || !saveCreds) {
+        try {
+          authResult = await useMultiFileAuthState(authFolderPath)
+          state = authResult.state
+          saveCreds = authResult.saveCreds
+        } catch (error) {
+          console.error(`Error al inicializar el estado de autenticación: ${error.message}`)
+          await parent.sendMessage(
+            m.chat,
+            { text: "❌ Error al inicializar el estado de autenticación." },
+            { quoted: m },
+          )
+          return
+        }
       }
 
       if (args[0] && args[0] !== "plz") {
@@ -397,17 +418,8 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 })
               }
 
-              // Informar que se reiniciará el bot para estabilidad
-              await parent.sendMessage(
-                m.chat,
-                {
-                  text: "「❀」 Reiniciando el bot para establecer la conexión...",
-                },
-                { quoted: m },
-              )
-
               // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
-              console.log(`Reiniciando el bot para estabilidad: ${reconnectToken}`)
+              console.log(`「❀」 Reiniciando el bot para establecer la conexión: ${reconnectToken}`)
               setTimeout(() => {
                 process.exit(0)
               }, 3000)
