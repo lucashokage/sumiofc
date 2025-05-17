@@ -59,7 +59,7 @@ const CONFIG = {
   STATE_SAVE_INTERVAL: 2 * 60 * 1000,
   PRESENCE_UPDATE_INTERVAL: 30 * 1000,
   MAX_SUBBOTS: 120,
-  AUTH_FOLDER: "./sumibots",
+  AUTH_FOLDER: "./sumibots2", // Cambiado a sumibots2 como solicitado
   BACKUP_ENABLED: true,
   CONNECTION_TIMEOUT: 120000,
   RETRY_REQUEST_DELAY: 10000,
@@ -124,21 +124,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         }
       }
 
-      if (!state) {
-        try {
-          authResult = await useMultiFileAuthState(authFolderPath)
-          state = authResult.state
-          saveCreds = authResult.saveCreds
-        } catch (error) {
-          await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
-          return
-        }
-      }
-
       const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 2323, 4] }))
-
-      const msgRetryCounterMap = MessageRetryMap ? MessageRetryMap() : {}
-      const msgRetryCounterCache = new NodeCache()
 
       const connectionOptions = {
         logger: pino({ level: CONFIG.LOG_LEVEL }),
@@ -146,9 +132,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         mobile: false,
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         auth: {
-          creds: state.creds || {},
+          creds: state?.creds || {},
           keys: makeCacheableSignalKeyStore(
-            state.keys || new Map(),
+            state?.keys || new Map(),
             pino({ level: "fatal" }).child({ level: "fatal" }),
           ),
         },
@@ -160,8 +146,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           const msg = await store?.loadMessage(jid, clave.id)
           return msg?.message || ""
         },
-        msgRetryCounterCache,
-        msgRetryCounterMap,
         defaultQueryTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
         version,
         retryRequestDelayMs: CONFIG.RETRY_REQUEST_DELAY,
@@ -169,6 +153,17 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         keepAliveIntervalMs: CONFIG.RECONNECT_INTERVAL,
         fireInitQueries: true,
         syncFullHistory: true,
+      }
+
+      if (!state) {
+        try {
+          authResult = await useMultiFileAuthState(authFolderPath)
+          state = authResult.state
+          saveCreds = authResult.saveCreds
+        } catch (error) {
+          await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
+          return
+        }
       }
 
       let conn = makeWASocket(connectionOptions)
