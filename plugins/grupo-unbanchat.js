@@ -1,62 +1,65 @@
-export async function before(m) {
-  // Ignorar si no es un comando con prefijo
-  if (!m.text || !global.prefix.test(m.text)) {
-    return;
-  }
+// plugins/bot-toggle.js
+// Comando para activar/desactivar el bot en grupos (solo admins)
 
-  const usedPrefix = global.prefix.exec(m.text)[0];
-  const fullCommand = m.text.slice(usedPrefix.length).trim();
-  const command = fullCommand.split(' ')[0].toLowerCase();
-
-  // Función para validar comandos
-  const validCommand = (cmd, plugins) => {
-    for (let plugin of Object.values(plugins)) {
-      if (plugin.command && 
-          (Array.isArray(plugin.command) ? 
-           plugin.command : [plugin.command])
-          .some(c => c.toLowerCase() === cmd)) {
-        return true;
-      }
+let handler = async (m, { conn, usedPrefix, command, args }) => {
+    // Verificar si el chat está en la base de datos
+    if (!(m.chat in global.db.data.chats)) {
+        return conn.reply(m.chat, '❌ Este chat no está registrado en la base de datos.', m);
     }
-    return false;
-  };
 
-  // Permitir siempre el comando 'bot' aunque esté desactivado
-  if (command === "bot") {
-    return;
-  }
+    // Verificar si el usuario es administrador
+    const isAdmin = m.isGroup ? (await conn.groupMetadata(m.chat)).participants.find(p => p.id === m.sender)?.admin === 'admin' : false;
+    if (!isAdmin && m.isGroup) {
+        return conn.reply(m.chat, '⚠️ Solo los administradores pueden usar este comando.', m);
+    }
 
-  // Verificar si el comando existe
-  if (validCommand(command, global.plugins)) {
     let chat = global.db.data.chats[m.chat];
-    let user = global.db.data.users[m.sender];
+    const botName = global.botname || 'este bot';
 
-    // Verificar si el bot está desactivado en este chat
-    if (chat?.isBanned) {
-      const botName = global.botname || 'este bot';
-      const avisoDesactivado = `╭─「 *BOT DESACTIVADO* 」
+    if (command === 'bot') {
+        if (args.length === 0) {
+            const estado = chat.isBanned ? '❌ Desactivado' : '✅ Activado';
+            const info = `
+╭─「 *CONFIGURACIÓN DEL BOT* 」
 │
-│ ✦ El bot *${botName}* está desactivado
-│   en este grupo.
+│ ✦ Estado actual: ${estado}
 │
-│ ╭─「 *INFORMACIÓN* 」
-│ │ • Solo administradores pueden
-│ │   reactivarlo
-│ │ • Usa: *${usedPrefix}bot on*
-│ ╰─────────────────
-╰─────────────────`.trim();
-      
-      await m.reply(avisoDesactivado);
-      return true; // Detener el procesamiento del comando
+│ ╭─「 *OPCIONES* 」
+│ │ • ${usedPrefix}bot on - Activar el bot
+│ │ • ${usedPrefix}bot off - Desactivar el bot
+│ ╰─────────────
+╰─────────────
+`.trim();
+            return conn.reply(m.chat, info, m);
+        }
+
+        const action = args[0].toLowerCase();
+        
+        if (action === 'off' || action === 'desactivar') {
+            if (chat.isBanned) {
+                return conn.reply(m.chat, `ℹ️ ${botName} ya estaba desactivado en este chat.`, m);
+            }
+            chat.isBanned = true;
+            return conn.reply(m.chat, `✅ *${botName} desactivado* correctamente. No responderé a comandos hasta que me actives.`, m);
+        } 
+        
+        if (action === 'on' || action === 'activar') {
+            if (!chat.isBanned) {
+                return conn.reply(m.chat, `ℹ️ ${botName} ya estaba activado en este chat.`, m);
+            }
+            chat.isBanned = false;
+            return conn.reply(m.chat, `✨ ¡${botName} reactivado! Ahora puedo responder a tus comandos.`, m);
+        }
+        
+        // Si el argumento no es válido
+        return conn.reply(m.chat, `❌ Opción no válida. Usa:\n• *${usedPrefix}bot on* para activar\n• *${usedPrefix}bot off* para desactivar`, m);
     }
+};
 
-    // Contabilizar uso de comandos
-    if (!user.commands) user.commands = 0;
-    user.commands += 1;
-  } else {
-    // Comando no reconocido
-    const comando = fullCommand.split(' ')[0];
-    await m.reply(`❌ El comando *${comando}* no existe.\n\nℹ️ Usa *${usedPrefix}help* para ver la lista de comandos disponibles.`);
-    return true;
-  }
-}
+handler.help = ['bot [on/off]'];
+handler.tags = ['group'];
+handler.command = ['bot'];
+handler.admin = true;
+handler.group = true;
+
+export default handler;
