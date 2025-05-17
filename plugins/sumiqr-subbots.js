@@ -1,3 +1,4 @@
+
 const {
   useMultiFileAuthState,
   DisconnectReason,
@@ -107,7 +108,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
-      let authResult = null
+      const authResult = null
 
       const credsPath = path.join(authFolderPath, "creds.json")
       if (fs.existsSync(credsPath)) {
@@ -151,21 +152,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         keepAliveIntervalMs: CONFIG.RECONNECT_INTERVAL,
         fireInitQueries: true,
         syncFullHistory: true,
-      }
-
-      if (!state) {
-        try {
-          authResult = await useMultiFileAuthState(authFolderPath)
-          state = authResult.state
-          saveCreds = authResult.saveCreds
-        } catch (error) {
-          await parent.sendMessage(
-            m.chat,
-            { text: "❌ Error al inicializar el estado de autenticación." },
-            { quoted: m },
-          )
-          return
-        }
       }
 
       let conn = makeWASocket(connectionOptions)
@@ -379,7 +365,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                           connectionUpdate({
                             connection: "close",
                             lastDisconnect: {
-                              error: new Boom("Reconnection failed", { statusCode: DisconnectReason.connectionClosed }),
+                              error: new Boom("Reconnection failed", {
+                                statusCode: DisconnectReason.connectionClosed,
+                              }),
                             },
                           }),
                         10000,
@@ -437,8 +425,24 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                   text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`,
                 })
               }
+
+              // Informar que se reiniciará el bot para estabilidad
+              await parent.sendMessage(
+                m.chat,
+                {
+                  text: "「❀」 Reiniciando el bot para establecer bien la nueva conexión...",
+                },
+                { quoted: m },
+              )
+
+              // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
+              console.log(`Reiniciando el bot completamente para estabilidad: ${reconnectToken}`)
+              setTimeout(() => {
+                process.exit(0)
+              }, 3000)
             }
 
+            // Estas funciones no se ejecutarán debido al reinicio, pero las dejamos por si acaso
             scheduleAutoReconnect()
             setupPeriodicStateSaving(conn, authFolderB)
             setupHealthCheck(conn, authFolderB, reconnectToken)
@@ -561,7 +565,7 @@ async function loadSubbots() {
 
         let credsData
         try {
-          credsData = JSON.parse(fs.readFileSync(credsPath, "utf8"))
+          credsData = JSON.parse(fs.readFileSync(credsPath, "utf-8"))
           if (!credsData || !credsData.me) {
             console.log(`Credenciales inválidas para ${reconnectToken}, omitiendo`)
             continue
@@ -604,6 +608,12 @@ async function loadSubbots() {
           browser: ["Ubuntu", "Chrome", "20.0.04"],
           markOnlineOnConnect: true,
           generateHighQualityLinkPreview: true,
+          getMessage: async (clave) => {
+            if (!clave || !clave.remoteJid) return ""
+            const jid = jidNormalizedUser(clave.remoteJid)
+            const msg = await store?.loadMessage(jid, clave.id)
+            return msg?.message || ""
+          },
           defaultQueryTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
           retryRequestDelayMs: CONFIG.RETRY_REQUEST_DELAY,
           connectTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
@@ -718,6 +728,14 @@ async function loadSubbots() {
               scheduleAutoReconnect()
               setupPeriodicStateSaving(sock, folder)
               setupHealthCheck(sock, folder, reconnectToken)
+
+              // Si es una conexión inicial, también reiniciamos el bot para estabilidad
+              if (initialConnections.get(folder)) {
+                console.log(`Reiniciando el bot completamente para estabilidad de conexión inicial: ${reconnectToken}`)
+                setTimeout(() => {
+                  process.exit(0)
+                }, 3000)
+              }
             }
 
             if (connection === "close") {
@@ -959,7 +977,7 @@ function setupPresenceUpdates(conn) {
 }
 
 function setupPeriodicHealthCheck() {
-  setInterval(async () => {
+  setInterval(() => {
     try {
       const activeConns = global.conns.filter(
         (conn) => conn && conn.user && conn.ws && conn.ws.readyState !== ws.CLOSED,
@@ -974,17 +992,25 @@ function setupPeriodicHealthCheck() {
                 error: new Boom("WebSocket closed", { statusCode: DisconnectReason.connectionClosed }),
               },
             })
-          } catch (error) {}
+          } catch (error) {
+            console.error("Error en setupPeriodicHealthCheck:", error)
+          }
         }
       }
 
       console.log(`Sub-bots activos: ${activeConns.length}/${global.conns.length}`)
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error en setupPeriodicHealthCheck:", error)
+    }
   }, 120000)
 }
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function formatDate(date) {
+  return moment(date).format("DD/MM/YY HH:mm:ss")
 }
 
 global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
@@ -1066,11 +1092,7 @@ global.handleStatusCommand = async (m, { conn }) => {
   }
 }
 
-function formatDate(date) {
-  return moment(date).format("DD/MM/YY HH:mm:ss")
-}
-
-await loadSubbots().catch((error) => {
+loadSubbots().catch((error) => {
   console.error("Error en carga inicial de sub-bots:", error)
 })
 
