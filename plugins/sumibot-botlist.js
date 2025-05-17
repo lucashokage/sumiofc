@@ -38,11 +38,23 @@ async function handler(m, { usedPrefix, args }) {
       return parts.length > 0 ? parts.join(" ") : "0 segundos"
     }
 
+    // Clasificar conexiones por tipo (QR o código)
+    const qrBots = activeConns.filter((conn) => {
+      const authPath = conn.authFolder || ""
+      return authPath.includes("sumibots2")
+    })
+
+    const codeBots = activeConns.filter((conn) => {
+      const authPath = conn.authFolder || ""
+      return authPath.includes("sumibots") && !authPath.includes("sumibots2")
+    })
+
     const infoList = activeConns
       .map((conn, index) => {
         const number = conn.user.jid.replace(/[^0-9]/g, "")
         const time = formatTime(Date.now() - (conn.startTime || Date.now()))
-        return `*${index + 1}.* ➺ Número: ${number} ➺ Tiempo: ${time}`
+        const type = (conn.authFolder || "").includes("sumibots2") ? "QR" : "Código"
+        return `*${index + 1}.* ➺ Número: ${number} ➺ Tipo: ${type} ➺ Tiempo: ${time}`
       })
       .join("\n")
 
@@ -50,6 +62,8 @@ async function handler(m, { usedPrefix, args }) {
 *「✦」LISTA DE SUBBOTS*
 
 ✧ *Sub-Bots conectados:* ${totalSubBots}
+✧ *Por QR:* ${qrBots.length}
+✧ *Por Código:* ${codeBots.length}
 
 ${infoList}
 
@@ -62,7 +76,9 @@ ${infoList}
   const summaryMessage = `
 *「✦」SUBBOTS ACTIVOS*
 
-❀ Para ser un subbot usa el comando *#serbot*
+❀ Para ser un subbot usa:
+   - Por código: *#code*
+   - Por QR: *#qr*
 
 ✧ *Sub-Bots conectados:* ${totalSubBots}
 ❒ *Total de comandos:* ${pluginsCount}
