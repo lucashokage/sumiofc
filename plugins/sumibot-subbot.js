@@ -77,39 +77,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
-      let authResult = null
-
-      try {
-        authResult = await useMultiFileAuthState(authFolderPath)
-        state = authResult.state
-        saveCreds = authResult.saveCreds
-      } catch (error) {
-        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
-        return
-      }
-
-      if (args[0] && args[0] !== "plz") {
-        try {
-          const credsData = JSON.parse(Buffer.from(args[0], "base64").toString("utf-8"))
-          fs.writeFileSync(path.join(authFolderPath, "creds.json"), JSON.stringify(credsData, null, "\t"))
-        } catch (error) {
-          await parent.sendMessage(
-            m.chat,
-            { text: "❌ Error al procesar las credenciales. Formato inválido." },
-            { quoted: m },
-          )
-          return
-        }
-      }
-
-      const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 2323, 4] }))
-
-      const msgRetryCounterMap = MessageRetryMap ? MessageRetryMap() : {}
-      const msgRetryCounterCache = new NodeCache()
-
-      const methodCodeQR = process.argv.includes("qr")
-      const methodCode = !!phoneNumber || process.argv.includes("code")
-      const MethodMobile = process.argv.includes("mobile")
+      const authResult = null
 
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
       const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
@@ -117,14 +85,11 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       const connectionOptions = {
         logger: pino({ level: CONFIG.LOG_LEVEL }),
         printQRInTerminal: false,
-        mobile: MethodMobile,
+        mobile: process.argv.includes("mobile"),
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         auth: {
-          creds: state.creds || {},
-          keys: makeCacheableSignalKeyStore(
-            state.keys || new Map(),
-            pino({ level: "fatal" }).child({ level: "fatal" }),
-          ),
+          creds: {},
+          keys: makeCacheableSignalKeyStore(new Map(), pino({ level: "fatal" }).child({ level: "fatal" })),
         },
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
@@ -134,10 +99,10 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           const msg = await store?.loadMessage(jid, clave.id)
           return msg?.message || ""
         },
-        msgRetryCounterCache,
-        msgRetryCounterMap,
+        msgRetryCounterCache: new NodeCache(),
+        msgRetryCounterMap: MessageRetryMap ? MessageRetryMap() : {},
         defaultQueryTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
-        version,
+        version: [2, 2323, 4],
         retryRequestDelayMs: CONFIG.RETRY_REQUEST_DELAY,
         connectTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
         keepAliveIntervalMs: CONFIG.RECONNECT_INTERVAL,
@@ -152,7 +117,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       const isReconnect = !!args[0] && args[0] !== "plz"
       const reconnectToken = `${phoneNumber}+${subbotId}`
 
-      if (methodCode && !conn.authState?.creds?.registered) {
+      if (process.argv.includes("code") && !conn.authState?.creds?.registered) {
         if (!phoneNumber) {
           rl.close()
           return
@@ -394,15 +359,20 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 })
               }
 
-              // Reiniciar el bot para dar estabilidad a la nueva conexión
-              try {
-                cleanupConnection(conn)
-                conn = makeWASocket(connectionOptions)
-                await creloadHandler(true)
-                console.log(`Bot reiniciado para estabilidad: ${reconnectToken}`)
-              } catch (error) {
-                console.error("Error al reiniciar el bot:", error)
-              }
+              // Informar que se reiniciará el bot para estabilidad
+              await parent.sendMessage(
+                m.chat,
+                {
+                  text: "「❀」 Reiniciando el bot para establecer bien la nueva conexión...",
+                },
+                { quoted: m },
+              )
+
+              // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
+              console.log(`Reiniciando el bot completamente para estabilidad: ${reconnectToken}`)
+              setTimeout(() => {
+                process.exit(0)
+              }, 3000)
             }
           }
         } catch (error) {}
@@ -660,6 +630,13 @@ async function loadSubbots() {
               scheduleAutoReconnect()
               setupPeriodicStateSaving(sock, folder)
               setupHealthCheck(sock, folder, reconnectToken)
+              // Si es una conexión inicial, también reiniciamos el bot para estabilidad
+              if (initialConnections.get(folder)) {
+                console.log(`Reiniciando el bot completamente para estabilidad de conexión inicial: ${reconnectToken}`)
+                setTimeout(() => {
+                  process.exit(0)
+                }, 3000)
+              }
             }
 
             if (connection === "close") {
