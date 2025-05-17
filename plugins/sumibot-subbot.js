@@ -372,6 +372,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               global.conns.push(conn)
             }
 
+            // Guardar referencia del directorio de autenticación
+            conn.authFolder = authFolderB
+
             if (!activeConnections.has(reconnectToken)) {
               activeConnections.add(reconnectToken)
 
@@ -389,6 +392,16 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 await parent.sendMessage(conn.user.jid, {
                   text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`,
                 })
+              }
+
+              // Reiniciar el bot para dar estabilidad a la nueva conexión
+              try {
+                cleanupConnection(conn)
+                conn = makeWASocket(connectionOptions)
+                await creloadHandler(true)
+                console.log(`Bot reiniciado para estabilidad: ${reconnectToken}`)
+              } catch (error) {
+                console.error("Error al reiniciar el bot:", error)
               }
             }
           }
