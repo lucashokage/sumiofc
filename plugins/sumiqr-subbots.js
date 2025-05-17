@@ -57,7 +57,7 @@ const CONFIG = {
   STATE_SAVE_INTERVAL: 2 * 60 * 1000,
   PRESENCE_UPDATE_INTERVAL: 30 * 1000,
   MAX_SUBBOTS: 120,
-  AUTH_FOLDER: "./sumibots2", // Cambiado a sumibots2 como solicitado
+  AUTH_FOLDER: "./sumibots2", // Directorio para QR
   BACKUP_ENABLED: true,
   CONNECTION_TIMEOUT: 120000,
   RETRY_REQUEST_DELAY: 10000,
@@ -204,7 +204,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           if (connection.presenceInterval) clearInterval(connection.presenceInterval)
 
           connection.ev.removeAllListeners()
-        } catch (error) {}
+        } catch (error) {
+          console.error(`Error en cleanupConnection: ${error.message}`)
+        }
       }
 
       function cleanupAndRemove() {
@@ -236,7 +238,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
             clearTimeout(qrTimeout)
             qrTimeout = null
           }
-        } catch (error) {}
+        } catch (error) {
+          console.error(`Error en cleanupAndRemove: ${error.message}`)
+        }
       }
 
       async function connectionUpdate(update) {
@@ -277,6 +281,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 }
               }, CONFIG.QR_TIMEOUT)
             } catch (error) {
+              console.error(`Error al generar QR: ${error.message}`)
               await parent.sendMessage(
                 m.chat,
                 { text: "❌ Error al generar el código QR. Intente nuevamente." },
@@ -290,7 +295,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
           if (connection === "close") {
             const i = global.conns.indexOf(conn)
-            if (i < 0) return console.log(await creloadHandler(true).catch(() => {}))
+            if (i < 0) return console.log(await creloadHandler(true).catch((e) => console.error(e)))
 
             if (code !== DisconnectReason.loggedOut) {
               if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
@@ -340,6 +345,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                         status: "reconnecting",
                       })
                     } catch (error) {
+                      console.error(`Error al reconectar: ${error.message}`)
                       if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                         setTimeout(
                           () =>
@@ -358,6 +364,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                       }
                     }
                   } catch (err) {
+                    console.error(`Error en timer de reconexión: ${err.message}`)
                     if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                       setTimeout(
                         () =>
@@ -424,17 +431,8 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                   text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`,
                 })
 
-                // Informar que se reiniciará el bot para estabilidad
-                await parent.sendMessage(
-                  m.chat,
-                  {
-                    text: "「❀」 Reiniciando el bot para establecer la conexión...",
-                  },
-                  { quoted: m },
-                )
-
                 // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
-                console.log(`Reiniciando el bot para estabilidad: ${reconnectToken}`)
+                console.log(`「❀」 Reiniciando el bot para establecer la conexión: ${reconnectToken}`)
                 setTimeout(() => {
                   process.exit(0)
                 }, 3000)
@@ -456,28 +454,50 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               global.conns.push(conn)
             }
           }
-        } catch (error) {}
+        } catch (error) {
+          console.error(`Error en connectionUpdate: ${error.message}`)
+        }
       }
 
       setupPresenceUpdates(conn)
 
-      let handler = await import("../handler.js")
+      let handler = await import("../handler.js").catch((e) => {
+        console.error(`Error al importar handler inicial: ${e.message}`)
+        return null
+      })
+
       const creloadHandler = async (restatConn) => {
         try {
-          const Handler = await import(`../handler.js?update=${Date.now()}`).catch(() => {})
-          if (Handler && Object.keys(Handler).length) handler = Handler
-        } catch (e) {}
+          const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+            console.error(`Error al importar handler: ${e.message}`)
+            return null
+          })
+
+          if (Handler && Object.keys(Handler).length) {
+            handler = Handler
+          }
+        } catch (e) {
+          console.error(`Error en creloadHandler: ${e.message}`)
+        }
 
         if (restatConn) {
           try {
             cleanupConnection(conn)
             conn = makeWASocket(connectionOptions)
             isInit = true
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error al reiniciar conexión: ${error.message}`)
+          }
         }
 
         if (!isInit) {
           cleanupConnection(conn)
+        }
+
+        // Verificar que handler y handler.handler no sean nulos
+        if (!handler || !handler.handler) {
+          console.error("Error: handler o handler.handler es nulo")
+          return false
         }
 
         conn.welcome = global.conn.welcome + ""
@@ -492,7 +512,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
             if (args[0] && args[0].participants) {
               return await handler.participantsUpdate.apply(this, args)
             }
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en participantsUpdate: ${error.message}`)
+          }
         }
 
         conn.groupsUpdate = handler.groupsUpdate.bind(conn)
@@ -503,7 +525,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           return async (...args) => {
             try {
               await eventHandler(...args)
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error en event handler: ${error.message}`)
+            }
           }
         }
 
@@ -513,7 +537,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         conn.ev.on("connection.update", safeEventHandler(conn.connectionUpdate))
         conn.ev.on("creds.update", safeEventHandler(conn.credsUpdate))
 
-        conn.ev.on("error", (error) => {})
+        conn.ev.on("error", (error) => {
+          console.error(`Error en evento: ${error.message}`)
+        })
 
         isInit = false
         return true
@@ -660,7 +686,9 @@ async function loadSubbots() {
             if (connection.presenceInterval) clearInterval(connection.presenceInterval)
 
             connection.ev.removeAllListeners()
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en cleanupConnection: ${error.message}`)
+          }
         }
 
         function cleanupAndRemove() {
@@ -687,7 +715,9 @@ async function loadSubbots() {
               clearTimeout(reconnectTimers.get(reconnectToken))
               reconnectTimers.delete(reconnectToken)
             }
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en cleanupAndRemove: ${error.message}`)
+          }
         }
 
         async function connectionUpdate(update) {
@@ -778,6 +808,7 @@ async function loadSubbots() {
                           status: "reconnecting",
                         })
                       } catch (error) {
+                        console.error(`Error al reconectar: ${error.message}`)
                         if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                           setTimeout(
                             () =>
@@ -796,6 +827,7 @@ async function loadSubbots() {
                         }
                       }
                     } catch (err) {
+                      console.error(`Error en timer de reconexión: ${err.message}`)
                       if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                         setTimeout(
                           () =>
@@ -823,23 +855,43 @@ async function loadSubbots() {
                 cleanupAndRemove()
               }
             }
-          } catch (error) {}
+          } catch (error) {
+            console.error(`Error en connectionUpdate: ${error.message}`)
+          }
         }
 
-        let handler = await import("../handler.js")
+        let handler = await import("../handler.js").catch((e) => {
+          console.error(`Error al importar handler inicial: ${e.message}`)
+          return null
+        })
+
         const reloadHandler = async (restartConnection) => {
           try {
-            const newHandler = await import(`../handler.js?update=${Date.now()}`)
+            const newHandler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+              console.error(`Error al importar handler: ${e.message}`)
+              return null
+            })
+
             if (newHandler && Object.keys(newHandler).length) {
               handler = newHandler
             }
-          } catch (err) {}
+          } catch (err) {
+            console.error(`Error en reloadHandler: ${err.message}`)
+          }
 
           if (restartConnection) {
             try {
               cleanupConnection(sock)
               sock = makeWASocket(socketConfig)
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error al reiniciar conexión: ${error.message}`)
+            }
+          }
+
+          // Verificar que handler y handler.handler no sean nulos
+          if (!handler || !handler.handler) {
+            console.error("Error: handler o handler.handler es nulo")
+            return false
           }
 
           sock.handler = handler.handler.bind(sock)
@@ -849,7 +901,9 @@ async function loadSubbots() {
               if (args[0] && args[0].participants) {
                 return await handler.participantsUpdate.apply(this, args)
               }
-            } catch (error) {}
+            } catch (error) {
+              console.error(`Error en participantsUpdate: ${error.message}`)
+            }
           }
 
           sock.groupsUpdate = handler.groupsUpdate.bind(sock)
@@ -865,7 +919,7 @@ async function loadSubbots() {
                 }
                 await eventHandler(...args)
               } catch (error) {
-                console.error("Error en event handler:", error)
+                console.error(`Error en event handler: ${error.message}`)
               }
             }
           }
@@ -875,7 +929,9 @@ async function loadSubbots() {
           sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
           sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
           sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
-          sock.ev.on("error", (error) => {})
+          sock.ev.on("error", (error) => {
+            console.error(`Error en evento: ${error.message}`)
+          })
 
           return true
         }
@@ -910,7 +966,9 @@ function setupPeriodicStateSaving(conn, authFolder) {
       } else {
         clearInterval(interval)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupPeriodicStateSaving: ${error.message}`)
+    }
   }, CONFIG.STATE_SAVE_INTERVAL)
 
   conn.stateInterval = interval
@@ -947,7 +1005,9 @@ function setupHealthCheck(conn, authFolder, reconnectToken) {
 
         await conn.sendPresenceUpdate("available")
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupHealthCheck: ${error.message}`)
+    }
   }, CONFIG.HEALTH_CHECK_INTERVAL * 2)
 
   conn.healthInterval = interval
@@ -961,7 +1021,9 @@ function setupPresenceUpdates(conn) {
       } else {
         clearInterval(interval)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Error en setupPresenceUpdates: ${error.message}`)
+    }
   }, CONFIG.PRESENCE_UPDATE_INTERVAL)
 
   conn.presenceInterval = interval
@@ -1030,6 +1092,7 @@ global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
     await handler(m, { conn, args: [credsBase64], usedPrefix, command: "qr" })
     return
   } catch (error) {
+    console.error(`Error en handleReconnectCommand: ${error.message}`)
     return conn.reply(m.chat, "❌ Error al procesar la solicitud. Intente nuevamente.", m)
   }
 }
@@ -1079,6 +1142,7 @@ global.handleStatusCommand = async (m, { conn }) => {
 
     await conn.reply(m.chat, message, m)
   } catch (error) {
+    console.error(`Error en handleStatusCommand: ${error.message}`)
     await conn.reply(m.chat, "❌ Error al obtener el estado de los sub-bots.", m)
   }
 }
