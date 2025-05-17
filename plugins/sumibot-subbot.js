@@ -19,35 +19,6 @@ const { CONNECTING, CLOSED } = ws
 import { Boom } from "@hapi/boom"
 import { makeWASocket } from "../lib/simple.js"
 
-const connectionManager = {
-  connections: new Map(),
-  
-  addConnection(id, connection) {
-    this.connections.set(id, connection);
-    return true;
-  },
-  
-  getConnection(id) {
-    return this.connections.get(id);
-  },
-  
-  hasConnection(id) {
-    return this.connections.has(id);
-  },
-  
-  removeConnection(id) {
-    if (this.connections.has(id)) {
-      this.connections.delete(id);
-      return true;
-    }
-    return false;
-  },
-  
-  getAllConnections() {
-    return Array.from(this.connections.values());
-  }
-};
-
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 
@@ -108,16 +79,13 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       let saveCreds = null
       let authResult = null
 
-      const authFolderPathExists = fs.existsSync(authFolderPath)
-      if (authFolderPathExists) {
-        try {
-          authResult = await useMultiFileAuthState(authFolderPath)
-          state = authResult.state
-          saveCreds = authResult.saveCreds
-        } catch (error) {
-          await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
-          return
-        }
+      try {
+        authResult = await useMultiFileAuthState(authFolderPath)
+        state = authResult.state
+        saveCreds = authResult.saveCreds
+      } catch (error) {
+        await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
+        return
       }
 
       if (args[0] && args[0] !== "plz") {
@@ -257,8 +225,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       function cleanupAndRemove() {
         try {
-          connectionManager.removeConnection(reconnectToken)
-          
           const i = global.conns.indexOf(conn)
           if (i >= 0) {
             delete global.conns[i]
@@ -392,13 +358,21 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               status: "connected",
             })
 
-            if (!connectionManager.hasConnection(reconnectToken)) {
-              connectionManager.addConnection(reconnectToken, conn)
-              
-              if (!global.conns.includes(conn)) {
-                global.conns.push(conn)
-              }
-              
+            scheduleAutoReconnect()
+            setupPeriodicStateSaving(conn, authFolderB)
+            setupHealthCheck(conn, authFolderB, reconnectToken)
+          }
+
+          if (global.db && global.db.data == null) loadDatabase()
+
+          if (connection == "open") {
+            conn.isInit = true
+
+            if (!global.conns.includes(conn)) {
+              global.conns.push(conn)
+            }
+
+            if (!activeConnections.has(reconnectToken)) {
               activeConnections.add(reconnectToken)
 
               await parent.sendMessage(
@@ -416,20 +390,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                   text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`,
                 })
               }
-            }
-
-            scheduleAutoReconnect()
-            setupPeriodicStateSaving(conn, authFolderB)
-            setupHealthCheck(conn, authFolderB, reconnectToken)
-          }
-
-          if (global.db && global.db.data == null) loadDatabase()
-
-          if (connection == "open") {
-            conn.isInit = true
-
-            if (!global.conns.includes(conn)) {
-              global.conns.push(conn)
             }
           }
         } catch (error) {}
@@ -540,7 +500,7 @@ async function loadSubbots() {
 
         let credsData
         try {
-          credsData = JSON.parse(fs.readFileSync(credsPath, "utf-8"))
+          credsData = JSON.parse(fs.readFileSync(credsPath, "utf8"))
           if (!credsData || !credsData.me) {
             console.log(`Credenciales inválidas para ${reconnectToken}, omitiendo`)
             continue
@@ -635,8 +595,6 @@ async function loadSubbots() {
 
         function cleanupAndRemove() {
           try {
-            connectionManager.removeConnection(reconnectToken)
-            
             const i = global.conns.indexOf(sock)
             if (i >= 0) {
               delete global.conns[i]
@@ -674,12 +632,8 @@ async function loadSubbots() {
               sock.uptime = new Date()
               sock.isInit = true
 
-              if (!connectionManager.hasConnection(reconnectToken)) {
-                connectionManager.addConnection(reconnectToken, sock)
-                
-                if (!global.conns.includes(sock)) {
-                  global.conns.push(sock)
-                }
+              if (!global.conns.includes(sock)) {
+                global.conns.push(sock)
               }
 
               reconnectAttempts = 0
