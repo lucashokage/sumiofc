@@ -8,8 +8,6 @@ const {
   generateWAMessageFromContent,
 } = await import("@whiskeysockets/baileys")
 import moment from "moment-timezone"
-import NodeCache from "node-cache"
-import readline from "readline"
 import crypto from "crypto"
 import fs from "fs"
 import pino from "pino"
@@ -22,32 +20,32 @@ import { makeWASocket } from "../lib/simple.js"
 
 const connectionManager = {
   connections: new Map(),
-  
+
   addConnection(id, connection) {
-    this.connections.set(id, connection);
-    return true;
+    this.connections.set(id, connection)
+    return true
   },
-  
+
   getConnection(id) {
-    return this.connections.get(id);
+    return this.connections.get(id)
   },
-  
+
   hasConnection(id) {
-    return this.connections.has(id);
+    return this.connections.has(id)
   },
-  
+
   removeConnection(id) {
     if (this.connections.has(id)) {
-      this.connections.delete(id);
-      return true;
+      this.connections.delete(id)
+      return true
     }
-    return false;
+    return false
   },
-  
+
   getAllConnections() {
-    return Array.from(this.connections.values());
-  }
-};
+    return Array.from(this.connections.values())
+  },
+}
 
 if (global.conns instanceof Array) console.log()
 else global.conns = []
@@ -161,7 +159,11 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           state = authResult.state
           saveCreds = authResult.saveCreds
         } catch (error) {
-          await parent.sendMessage(m.chat, { text: "❌ Error al inicializar el estado de autenticación." }, { quoted: m })
+          await parent.sendMessage(
+            m.chat,
+            { text: "❌ Error al inicializar el estado de autenticación." },
+            { quoted: m },
+          )
           return
         }
       }
@@ -223,7 +225,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       function cleanupAndRemove() {
         try {
           connectionManager.removeConnection(reconnectToken)
-          
+
           const i = global.conns.indexOf(conn)
           if (i >= 0) {
             delete global.conns[i]
@@ -244,7 +246,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
             clearTimeout(reconnectTimers.get(reconnectToken))
             reconnectTimers.delete(reconnectToken)
           }
-          
+
           if (qrTimeout) {
             clearTimeout(qrTimeout)
             qrTimeout = null
@@ -255,19 +257,19 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       async function connectionUpdate(update) {
         try {
           const { connection, lastDisconnect, isNewLogin, qr } = update || {}
-          
+
           if (isNewLogin) conn.isInit = true
 
           // Manejar el código QR
           if (qr && !qrSent) {
             qrSent = true
             qrCodeCache.set(reconnectToken, qr)
-            
+
             try {
               // Generar imagen QR
               const qrImage = await qrcode.toDataURL(qr, { scale: 8 })
-              const qrBuffer = Buffer.from(qrImage.split(',')[1], 'base64')
-              
+              const qrBuffer = Buffer.from(qrImage.split(",")[1], "base64")
+
               // Enviar imagen QR con instrucciones
               await parent.sendMessage(
                 m.chat,
@@ -277,14 +279,14 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 },
                 { quoted: m },
               )
-              
+
               // Establecer un tiempo límite para escanear el QR
               qrTimeout = setTimeout(async () => {
                 if (!conn.user) {
                   await parent.sendMessage(
                     m.chat,
                     { text: "⌛ El código QR ha expirado. Por favor, intenta nuevamente con .qr" },
-                    { quoted: m }
+                    { quoted: m },
                   )
                   cleanupAndRemove()
                 }
@@ -293,7 +295,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               await parent.sendMessage(
                 m.chat,
                 { text: "❌ Error al generar el código QR. Intente nuevamente." },
-                { quoted: m }
+                { quoted: m },
               )
               cleanupAndRemove()
             }
@@ -401,7 +403,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               clearTimeout(qrTimeout)
               qrTimeout = null
             }
-            
+
             reconnectAttempts = 0
             conn.uptime = new Date()
 
@@ -413,11 +415,11 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
             if (!connectionManager.hasConnection(reconnectToken)) {
               connectionManager.addConnection(reconnectToken, conn)
-              
+
               if (!global.conns.includes(conn)) {
                 global.conns.push(conn)
               }
-              
+
               activeConnections.add(reconnectToken)
 
               await parent.sendMessage(
@@ -655,7 +657,7 @@ async function loadSubbots() {
         function cleanupAndRemove() {
           try {
             connectionManager.removeConnection(reconnectToken)
-            
+
             const i = global.conns.indexOf(sock)
             if (i >= 0) {
               delete global.conns[i]
@@ -696,11 +698,14 @@ async function loadSubbots() {
 
               if (!connectionManager.hasConnection(reconnectToken)) {
                 connectionManager.addConnection(reconnectToken, sock)
-                
+
                 if (!global.conns.includes(sock)) {
                   global.conns.push(sock)
                 }
               }
+
+              // Guardar referencia del directorio de autenticación
+              sock.authFolder = folder
 
               reconnectAttempts = 0
 
