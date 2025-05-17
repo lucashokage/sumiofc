@@ -282,11 +282,32 @@ async function _quickTest() {
     spawn("convert"),
     spawn("magick"),
     spawn("gm"),
-    spawn("find", ["--version"]),
-  ].map((p) => Promise.race([new Promise((resolve) => { p.on("close", (code) => { resolve(code !== 127) }) }), new Promise((resolve) => { p.on("error", (_) => resolve(false) })])))
+    spawn("find", ["--version"])
+  ].map((p) => {
+    return Promise.race([
+      new Promise((resolve) => {
+        p.on("close", (code) => {
+          resolve(code !== 127)
+        })
+      }),
+      new Promise((resolve) => {
+        p.on("error", (_) => resolve(false))
+      })
+    ])
+  }))
+  
   const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test
-  const s = (global.support = { ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find })
+  const s = (global.support = {
+    ffmpeg,
+    ffprobe,
+    ffmpegWebp,
+    convert,
+    magick,
+    gm,
+    find
+  })
   Object.freeze(global.support)
+  
   if (!s.ffmpeg) conn.logger.warn("Please install ffmpeg for sending videos (pkg install ffmpeg)")
   if (s.ffmpeg && !s.ffmpegWebp) conn.logger.warn("Stickers may not animated without libwebp on ffmpeg (--enable-ibwebp while compiling ffmpeg)")
   if (!s.convert && !s.magick && !s.gm) conn.logger.warn("Stickers may not work without imagemagick if libwebp on ffmpeg doesnt isntalled (pkg install imagemagick)")
