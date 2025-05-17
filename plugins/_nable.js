@@ -218,4 +218,4 @@ handler.help = ['welcome', 'bienvenida', 'antiprivado', 'antiprivate', 'restrict
 handler.tags = ['nable'];
 handler.command = ['welcome', 'bienvenida', 'antiprivado', 'antiprivate', 'restrict', 'restringir', 'autolevelup', 'autonivel', 'antibot', 'antibots', 'autoaceptar', 'aceptarauto', 'autorechazar', 'rechazarauto', 'autoresponder', 'autorespond', 'antisubbots', 'antibot2', 'modoadmin', 'soloadmin', 'reaction', 'reaccion', 'nsfw', 'modohorny', 'antispam', 'jadibotmd', 'modejadibot', 'subbots', 'detect', 'avisos', 'antilink', 'antifake', 'antilag', 'antiLag']
 
-export default handler , has que el .bot on active  los bots nuevamente
+export default handler
