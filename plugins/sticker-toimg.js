@@ -19,7 +19,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
         im.on('exit', () => {
             conn.sendFile(m.chat, Buffer.concat(bufs), 'img.png', `*✅ tu imagen*`, m)
         })
-    } else throw ``
+    } else throw `eror`
 }
 handler.help = ['toimg <sticker>']
 handler.tags = ['sticker']
