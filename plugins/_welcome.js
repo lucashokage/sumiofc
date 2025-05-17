@@ -1,75 +1,48 @@
-import fetch from "node-fetch"
-import fs from "fs/promises"
+import { sticker } from "../lib/sticker.js"
 
-const welcomeCache = new Set()
-
-export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return
-
-  const bot = global.db.data.settings[conn.user.jid] || {}
-  const chat = global.db.data.chats[m.chat] || {}
-
-  const eventKey = `${m.chat}_${m.messageStubParameters[0]}_${m.messageStubType}`
-
-  if (welcomeCache.has(eventKey)) return
-  welcomeCache.add(eventKey)
-
-  setTimeout(() => welcomeCache.delete(eventKey), 5000)
-
-  const welcomeMsg = chat.sWelcome || bot.welcome || "¡Bienvenido al grupo!"
-  const byeMsg = chat.sBye || bot.bye || "¡Adiós! Esperamos verte pronto."
-  const botName = bot.botName || "=͟͟͞❀ sᥙmі - sᥲkᥙrᥲsᥲᥕᥲ  ⏤͟͟͞͞★"
-
-  let img
-  try {
-    const userJid = m.messageStubParameters[0]
-    const pp = bot.logo?.welcome || (await conn.profilePictureUrl(userJid, "image").catch(() => null))
-    img = pp ? await (await fetch(pp)).buffer() : await fs.readFile("./src/avatar.jpg")
-  } catch (e) {
-    console.error("Error al obtener imagen:", e)
-    img = await fs.readFile("./src/avatar.jpg")
-  }
-
-  const groupSize =
-    m.messageStubType === 27
-      ? participants.length + 1 
-      : participants.length - 1
-
-  // Procesar el evento
-  if (chat.welcome) {
-    const userJid = m.messageStubParameters[0]
-    const username = userJid.split("@")[0]
-
-    if (m.messageStubType === 27) {
-      // Bienvenida
-      const message =
-        `❀ *Bienvenido* a ${groupMetadata.subject}\n` +
-        `✰ @${username}\n` +
-        `${welcomeMsg}\n` +
-        `✦ Ahora somos ${groupSize} miembros.\n` +
-        `•(=^●ω●^=)• Disfruta tu estadía!\n` +
-        `> ✐ Usa *#help* para ver comandos.`
-
-      await conn.sendMessage(m.chat, {
-        image: img,
-        caption: message,
-        mentions: [userJid],
-      })
-    } else if ([28, 32].includes(m.messageStubType)) {
-      // Despedida
-      const message =
-        `❀ *Adiós* de ${groupMetadata.subject}\n` +
-        `✰ @${username}\n` +
-        `${byeMsg}\n` +
-        `✦ Ahora somos ${groupSize} miembros.\n` +
-        `•(=^●ω●^=)• Te esperamos pronto!\n` +
-        `> ✐ Usa *#help* para ver comandos.`
-
-      await conn.sendMessage(m.chat, {
-        image: img,
-        caption: message,
-        mentions: [userJid],
-      })
+const handler = async (m, { conn, args, usedPrefix, command, text }) => {
+  const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+  if (who) {
+    try {
+      const pp = await conn.profilePictureUrl(who, "image")
+      const str = `https://api.lolhuman.xyz/api/welcomeimage?img=${pp}&text=${text}&apikey=${lolhuman}`
+      const stiker = await sticker(null, str, global.packname, global.author)
+      conn.sendFile(m.chat, stiker, "sticker.webp", "", m)
+    } catch (e) {
+      console.log(e)
     }
   }
 }
+
+handler.before = async (m, { conn, participants, groupMetadata, bot }) => {
+  const isWelcome = global.db.data.chats[m.chat].welcome
+  if (!isWelcome) return
+  const welcomeMsg = global.welcome
+  const groupSize = participants.length
+  const username = m.sender.split("@")[0]
+  const user = m.sender
+  const botName = bot.botName || "=͟͟͞❀ sᥙmі - sᥲkᥙrᥲsᥲᥕᥲ  ⏤͟͟͞͞★"
+  if (m.mtype == "groupInviteMessage") {
+    const gcname = (await conn.getName(m.msg.groupInviteMessage.groupJid)) || "Grupo"
+    const pp = await conn.profilePictureUrl(m.sender, "image").catch((_) => "https://i.imgur.com/whjlJSf.png")
+    const str = `https://api.lolhuman.xyz/api/welcomeimage?img=${pp}&text=Bienvenido a ${gcname}&apikey=${lolhuman}`
+    const stiker = await sticker(null, str, global.packname, global.author)
+    conn.sendFile(m.chat, stiker, "sticker.webp", "", m)
+  }
+  if (m.mtype == "group_participant_add") {
+    const pp = await conn.profilePictureUrl(user, "image").catch((_) => "https://i.imgur.com/whjlJSf.png")
+    const str = `https://api.lolhuman.xyz/api/welcomeimage?img=${pp}&text=Bienvenido a ${groupMetadata.subject}&apikey=${lolhuman}`
+    const stiker = await sticker(null, str, global.packname, global.author)
+    const message =
+      `❀ *Bienvenido* a ${groupMetadata.subject}\n` +
+      `✰ @${username}\n` +
+      `${welcomeMsg}\n` +
+      `✦ Ahora somos ${groupSize} miembros.\n` +
+      `•(=^●ω●^=)• Disfruta tu estadía!\n` +
+      `> ✐ Usa *#help* para ver comandos de ${botName}.`
+    conn.sendFile(m.chat, stiker, "sticker.webp", "", m, { mentions: [user] })
+    conn.sendMessage(m.chat, { text: message, mentions: [user] }, { quoted: m })
+  }
+}
+
+export default handler
