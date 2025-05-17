@@ -3,8 +3,8 @@ let handler = async (m, { isPrems, conn }) => {
   let time = user.lastmonthly + 2592000000
   if (new Date - user.lastmonthly < 2592000000) return m.reply(`${global.emoji2} Ya reclamaste tu recompensa mensual\n\nVuelve en *${msToTime(time - new Date())}*`)
   
-  let reward = 50000
-  let premReward = 100000
+  let reward = 5000
+  let premReward = 10000
   let finalReward = isPrems ? premReward : reward
   
   user.coin += finalReward
