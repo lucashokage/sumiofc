@@ -363,13 +363,13 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               await parent.sendMessage(
                 m.chat,
                 {
-                  text: "「❀」 Reiniciando el bot para establecer bien la nueva conexión...",
+                  text: "「❀」 Reiniciando el bot para establecer la conexión...",
                 },
                 { quoted: m },
               )
 
               // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
-              console.log(`Reiniciando el bot completamente para estabilidad: ${reconnectToken}`)
+              console.log(`Reiniciando el bot para estabilidad: ${reconnectToken}`)
               setTimeout(() => {
                 process.exit(0)
               }, 3000)
@@ -495,17 +495,12 @@ async function loadSubbots() {
 
         let state = null
         let saveCreds = null
-        try {
-          const authResult = await useMultiFileAuthState(folderPath)
-          state = authResult.state
-          saveCreds = authResult.saveCreds
+        const authResult = await useMultiFileAuthState(folderPath)
+        state = authResult.state
+        saveCreds = authResult.saveCreds
 
-          if (!state.creds || !state.creds.me) {
-            console.log(`Estado de autenticación inválido para ${reconnectToken}, omitiendo`)
-            continue
-          }
-        } catch (error) {
-          console.error(`Error al obtener estado de autenticación para ${reconnectToken}:`, error.message)
+        if (!state.creds || !state.creds.me) {
+          console.log(`Estado de autenticación inválido para ${reconnectToken}, omitiendo`)
           continue
         }
 
@@ -631,12 +626,12 @@ async function loadSubbots() {
               setupPeriodicStateSaving(sock, folder)
               setupHealthCheck(sock, folder, reconnectToken)
               // Si es una conexión inicial, también reiniciamos el bot para estabilidad
-              if (initialConnections.get(folder)) {
+              /*if (initialConnections.get(folder)) {
                 console.log(`Reiniciando el bot completamente para estabilidad de conexión inicial: ${reconnectToken}`)
                 setTimeout(() => {
                   process.exit(0)
                 }, 3000)
-              }
+              }*/
             }
 
             if (connection === "close") {
