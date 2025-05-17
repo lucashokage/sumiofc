@@ -201,20 +201,23 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
           process.exit(0)
         }
       } else {
-        while (true) {
-          addNumber = await question(
-            chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 5491168xxxx\n\n")),
-          )
-          addNumber = addNumber.replace(/[^0-9]/g, "")
+        let isValidNumber = false
+while (!isValidNumber) {
+  addNumber = await question(
+    chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 5491168xxxx\n\n")),
+  )
+  addNumber = addNumber.replace(/[^0-9]/g, "")
 
-          if (addNumber.match(/^\d+$/) && PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
-            break
-          } else {
-            console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Asegúrese de agregar el código de país")))
-          }
-        }
-        rl.close()
-      }
+  if (addNumber.match(/^\d+$/)) {
+    if (PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).some((v) => addNumber.startsWith(v))) {
+      isValidNumber = true
+    } else {
+      console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Código de país no válido. Ejemplos válidos: 51 , 52 , 54 , etc")))
+    }
+  } else {
+    console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Solo se permiten números")))
+  }
+}
 
       setTimeout(async () => {
         let codeBot = await global.conn.requestPairingCode(addNumber)
