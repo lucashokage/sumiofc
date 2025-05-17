@@ -1,31 +1,17 @@
-let handler = async (m, { conn, usedPrefix, command, args, isAdmin, isOwner }) => {
+let handler = async (m, { conn, usedPrefix, command, args }) => {
   if (!(m.chat in global.db.data.chats)) {
     global.db.data.chats[m.chat] = {
       isBanned: false,
       welcome: false,
       detect: true,
-      sWelcome: "",
-      sBye: "",
-      sPromote: "",
-      sDemote: "",
-      delete: false,
       antiLink: false,
-      viewonce: false,
-      captcha: false,
-      antiBotClone: false,
       nsfw: false,
-      expired: 0,
-      rules: "",
-      antiLag: true
+      antiBot: false
     }
   }
 
   let chat = global.db.data.chats[m.chat]
   const botName = conn.getName(conn.user.jid) || 'el bot'
-
-  if (!isAdmin && !isOwner) {
-    return conn.reply(m.chat, `《✧》Solo los administradores pueden usar este comando.`, m)
-  }
 
   if (args.length === 0) {
     const estado = chat.isBanned ? '✗ Desactivado' : '✓ Activado'
@@ -48,15 +34,11 @@ let handler = async (m, { conn, usedPrefix, command, args, isAdmin, isOwner }) =
     chat.isBanned = true
     return conn.reply(m.chat, `❌ *${botName} desactivado* en este grupo.`, m)
   }
-  else {
-    return conn.reply(m.chat, `Uso correcto:\n${usedPrefix}bot on\n${usedPrefix}bot off`, m)
-  }
 }
 
 handler.help = ['bot [on/off]']
 handler.tags = ['group']
-handler.command = /^bot$/i
-handler.group = true
+handler.command = ['bot']
 handler.admin = true
 
 export default handler
