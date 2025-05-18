@@ -90,7 +90,7 @@ const handler = async (m, { conn, args, text }) => {
 
 handler.help = ["retirar <nombre>"]
 handler.tags = ["gacha"]
-handler.command = ["sacarrw", "withdraw"]
+handler.command = ["sacarrw", "rt", "withdraw"]
 handler.group = true
 handler.register = true
 
