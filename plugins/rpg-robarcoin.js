@@ -2,13 +2,13 @@ let cooldowns = {}
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   let who = m.mentionedJid[0]
-  if (!who) return m.reply(`${global.emoji2} Menciona al usuario al que quieres robar.\n\nEjemplo: *${usedPrefix + command} @usuario*`)
+  if (!who) return m.reply(`《✧》 Menciona al usuario al que quieres robar.\n\nEjemplo: *${usedPrefix + command} @usuario*`)
   if (who === m.sender) return m.reply(`${global.emoji2} No puedes robarte a ti mismo.`)
   
   let user = global.db.data.users[m.sender]
   let target = global.db.data.users[who]
   
-  if (!target) return m.reply(`${global.emoji2} El usuario no está registrado en la base de datos.`)
+  if (!target) return m.reply(`《✧》 El usuario no está registrado en la base de datos.`)
   
   let tiempoEspera = 10 * 60 * 1000
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera) {
