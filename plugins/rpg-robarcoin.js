@@ -35,7 +35,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     user.coin += stolenAmount
     target.coin -= stolenAmount
     
-    conn.reply(m.chat, `${global.emoji} Has robado *${stolenAmount} ${global.moneda}⛀* a @${who.split('@')[0]}.`, m, { mentions: [who] })
+    conn.reply(m.chat, `❀ Has robado *${stolenAmount} ${global.moneda}⛀* a @${who.split('@')[0]}.`, m, { mentions: [who] })
   } else {
     let penalty = Math.floor(Math.random() * 500) + 200
     if (penalty > user.coin) penalty = user.coin
