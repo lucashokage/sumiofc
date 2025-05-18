@@ -61,7 +61,7 @@ const CONFIG = {
   STATE_SAVE_INTERVAL: 2 * 60 * 1000,
   PRESENCE_UPDATE_INTERVAL: 30 * 1000,
   MAX_SUBBOTS: 120,
-  AUTH_FOLDER: "sumibots",
+  AUTH_FOLDER: "sumibots", // Directorio para las sesiones
   BACKUP_ENABLED: true,
   CONNECTION_TIMEOUT: 120000,
   RETRY_REQUEST_DELAY: 10000,
@@ -107,7 +107,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
-      const authResult = null
 
       const authFolderPathExists = fs.existsSync(authFolderPath)
       if (!authFolderPathExists) {
@@ -539,7 +538,13 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       setupPresenceUpdates(conn)
 
-      let handlerModule = await import("../handler.js")
+      let handlerModule = null
+      try {
+        handlerModule = await import("../handler.js")
+      } catch (e) {
+        console.error(`Error al importar handler: ${e.message}`)
+      }
+
       const creloadHandler = async (restatConn) => {
         try {
           const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
@@ -568,8 +573,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           cleanupConnection(conn)
         }
 
+        // Verificar si handlerModule existe y tiene la propiedad handler
         if (!handlerModule || !handlerModule.handler) {
-          console.error("Error: handler o handler.handler es nulo")
+          console.error("Error: handlerModule o handlerModule.handler es nulo")
           return false
         }
 
@@ -933,7 +939,13 @@ async function loadSubbots() {
           }
         }
 
-        let handlerModule = await import("../handler.js")
+        let handlerModule = null
+        try {
+          handlerModule = await import("../handler.js")
+        } catch (e) {
+          console.error(`Error al importar handler: ${e.message}`)
+        }
+
         const reloadHandler = async (restartConnection) => {
           try {
             const newHandler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
@@ -958,7 +970,7 @@ async function loadSubbots() {
           }
 
           if (!handlerModule || !handlerModule.handler) {
-            console.error("Error: handler o handler.handler es nulo")
+            console.error("Error: handlerModule o handlerModule.handler es nulo")
             return false
           }
 
