@@ -23,7 +23,7 @@ import {
   cleanSession,
   startPeriodicPing,
 } from "./connection-stack.js"
-import { cloudDBAdapter } from "./lib/cloudDBAdapter.js" // Declare cloudDBAdapter
+import { cloudDBAdapter } from "./lib/cloudDBAdapter.js" 
 
 const {
   useMultiFileAuthState,
@@ -420,14 +420,11 @@ _quickTest()
   .then(() => global.conn.logger.info("✅ Prueba rápida realizado!"))
   .catch(console.error)
 
-// Manejo de errores no capturados
 process.on("uncaughtException", (err) => {
   console.error("Error no capturado:", err)
 
-  // Verificar si es el error específico de setupHealthCheck
   if (err.message && (err.message.includes("setupHealthCheck") || err.message.includes("Connection Closed"))) {
     console.log("[ERROR] Detectado error de setupHealthCheck en excepción no capturada")
-    // Intentar limpiar sesión si el error persiste
     cleanSession().then(() => {
       console.log("[SISTEMA] Reiniciando en 10 segundos...")
       setTimeout(() => process.exit(1), 10000)
@@ -435,11 +432,9 @@ process.on("uncaughtException", (err) => {
   }
 })
 
-// Manejo de promesas rechazadas
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Promesa rechazada no manejada:", reason)
 
-  // Verificar si es el error específico de setupHealthCheck
   if (
     reason &&
     reason.message &&
