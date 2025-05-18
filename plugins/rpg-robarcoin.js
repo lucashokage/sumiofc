@@ -3,7 +3,7 @@ let cooldowns = {}
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   let who = m.mentionedJid[0]
   if (!who) return m.reply(`《✧》 Menciona al usuario al que quieres robar.\n\nEjemplo: *${usedPrefix + command} @usuario*`)
-  if (who === m.sender) return m.reply(`${global.emoji2} No puedes robarte a ti mismo.`)
+  if (who === m.sender) return m.reply(`《✧》 No puedes robarte a ti mismo.`)
   
   let user = global.db.data.users[m.sender]
   let target = global.db.data.users[who]
@@ -18,7 +18,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   
   cooldowns[m.sender] = Date.now()
   
-  if (target.coin < 100) return m.reply(`${global.emoji2} El usuario tiene menos de 100 ${global.moneda}, no vale la pena robarle.`)
+  if (target.coin < 100) return m.reply(`${global.emoji2} El usuario tiene menos de 100 ${global.moneda}⛀, no vale la pena robarle.`)
   if (target.bank > 0) {
     let bankPercentage = Math.random()
     if (bankPercentage < 0.7) { // 70% de probabilidad de que el dinero esté protegido en el banco
@@ -35,14 +35,14 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     user.coin += stolenAmount
     target.coin -= stolenAmount
     
-    conn.reply(m.chat, `${global.emoji} Has robado *${stolenAmount} ${global.moneda}* a @${who.split('@')[0]}.`, m, { mentions: [who] })
+    conn.reply(m.chat, `${global.emoji} Has robado *${stolenAmount} ${global.moneda}⛀* a @${who.split('@')[0]}.`, m, { mentions: [who] })
   } else {
     let penalty = Math.floor(Math.random() * 500) + 200
     if (penalty > user.coin) penalty = user.coin
     
     user.coin -= penalty
     
-    conn.reply(m.chat, `${global.emoji2} @${who.split('@')[0]} te descubrió intentando robar y has perdido *${penalty} ${global.moneda}* como multa.`, m, { mentions: [who] })
+    conn.reply(m.chat, `${global.emoji2} @${who.split('@')[0]} te descubrió intentando robar y has perdido *${penalty} ${global.moneda}⛀* como multa.`, m, { mentions: [who] })
   }
 }
 
