@@ -17,13 +17,6 @@ import { Low, JSONFile } from "lowdb"
 import pino from "pino"
 import { mongoDB, mongoDBV2 } from "./lib/mongoDB.js"
 import store from "./lib/store.js"
-import {
-  getEnhancedConnectionOptions,
-  handleSetupHealthCheckError,
-  cleanSession,
-  startPeriodicPing,
-} from "./connection-stack.js"
-
 const {
   useMultiFileAuthState,
   DisconnectReason,
@@ -56,17 +49,7 @@ global.__require = function require(dir = import.meta.url) {
 global.API = (name, path = "/", query = {}, apikeyqueryname) =>
   (name in global.APIs ? global.APIs[name] : name) +
   path +
-  (query || apikeyqueryname
-    ? "?" +
-      new URLSearchParams(
-        Object.entries({
-          ...query,
-          ...(apikeyqueryname
-            ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] }
-            : {}),
-        }),
-      )
-    : "")
+  (query || apikeyqueryname ? "?" + new URLSearchParams(Object.entries({ ...query, ...(apikeyqueryname ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {}) })) : "")
 
 global.timestamp = {
   start: new Date(),
@@ -75,34 +58,13 @@ global.timestamp = {
 const __dirname = global.__dirname(import.meta.url)
 
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
-global.prefix = new RegExp(
-  "^[" + (global.opts["prefix"] || "‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-").replace(/[|\\{}()[\]^$+*?.\-^]/g, "\\$&") + "]",
-)
+global.prefix = new RegExp("^[" + (global.opts["prefix"] || "‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-").replace(/[|\\{}()[\]^$+*?.\-^]/g, "\\$&") + "]")
 
-// Importar correctamente CloudDBAdapter
-import CloudDBAdapter from "./lib/cloudDBAdapter.js"
-
-global.db = new Low(
-  /https?:\/\//.test(global.opts["db"] || "")
-    ? new CloudDBAdapter(global.opts["db"])
-    : /mongodb(\+srv)?:\/\//i.test(global.opts["db"])
-      ? global.opts["mongodbv2"]
-        ? new mongoDBV2(global.opts["db"])
-        : new mongoDB(global.opts["db"])
-      : new JSONFile(`${global.opts._[0] ? global.opts._[0] + "_" : ""}database.json`),
-)
+global.db = new Low(/https?:\/\//.test(global.opts["db"] || "") ? new cloudDBAdapter(global.opts["db"]) : /mongodb(\+srv)?:\/\//i.test(global.opts["db"]) ? global.opts["mongodbv2"] ? new mongoDBV2(global.opts["db"]) : new mongoDB(global.opts["db"]) : new JSONFile(`${global.opts._[0] ? global.opts._[0] + "_" : ""}database.json`))
 
 global.DATABASE = global.db
 global.loadDatabase = async function loadDatabase() {
-  if (global.db.READ)
-    return new Promise((resolve) =>
-      setInterval(async function () {
-        if (!global.db.READ) {
-          clearInterval(this)
-          resolve(global.db.data == null ? global.loadDatabase() : global.db.data)
-        }
-      }, 1 * 1000),
-    )
+  if (global.db.READ) return new Promise((resolve) => setInterval(async function () { if (!global.db.READ) { clearInterval(this); resolve(global.db.data == null ? global.loadDatabase() : global.db.data) } }, 1 * 1000))
   if (global.db.data !== null) return
   global.db.READ = true
   await global.db.read().catch(console.error)
@@ -110,8 +72,6 @@ global.loadDatabase = async function loadDatabase() {
   global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) }
   global.db.chain = chain(global.db.data)
 }
-const loadDatabase = global.loadDatabase // Declare the variable before using it
-
 loadDatabase()
 
 global.authFile = `sessions`
@@ -133,44 +93,24 @@ let opcion
 if (methodCodeQR) opcion = "1"
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.json`)) {
   do {
-    opcion = await question(
-      "\n\n\n✳️ Ingrese el metodo de conexion\n\n\n🔺 1 : por código QR\n🔺 2 : por CÓDIGO de 8 dígitos\n\n\n\n",
-    )
+    opcion = await question("\n\n\n✳️ Ingrese el metodo de conexion\n\n\n🔺 1 : por código QR\n🔺 2 : por CÓDIGO de 8 dígitos\n\n\n\n")
     if (!/^[1-2]$/.test(opcion)) console.log("\n\n🔴 Ingrese solo una opción \n\n 1 o 2\n\n")
   } while ((opcion !== "1" && opcion !== "2") || fs.existsSync(`./${global.authFile}/creds.json`))
 }
 
 console.info = () => {}
 
-// Aplicar opciones mejoradas de conexión
-const baseConnectionOptions = {
+const connectionOptions = {
   logger: pino({ level: "silent" }),
   printQRInTerminal: opcion === "1" || methodCodeQR,
   mobile: MethodMobile,
-  browser:
-    opcion === "1"
-      ? ["Senna", "Safari", "2.0.0"]
-      : methodCodeQR
-        ? ["Senna", "Safari", "2.0.0"]
-        : ["Ubuntu", "Chrome", "20.0.04"],
-  auth: {
-    creds: state.creds,
-    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-  },
+  browser: opcion === "1" ? ["Senna", "Safari", "2.0.0"] : methodCodeQR ? ["Senna", "Safari", "2.0.0"] : ["Ubuntu", "Chrome", "20.0.04"],
+  auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })) },
   waWebSocketUrl: "wss://web.whatsapp.com/ws/chat?ED=CAIICA",
   markOnlineOnConnect: true,
   generateHighQualityLinkPreview: true,
-  getMessage: async (key) => {
-    const jid = jidNormalizedUser(key.remoteJid)
-    const msg = await store.loadMessage(jid, key.id)
-    return msg?.message || ""
-  },
-  patchMessageBeforeSending: (message) => {
-    let messages = 0
-    global.conn.uploadPreKeysToServerIfRequired()
-    messages++
-    return message
-  },
+  getMessage: async (key) => { const jid = jidNormalizedUser(key.remoteJid); const msg = await store.loadMessage(jid, key.id); return msg?.message || "" },
+  patchMessageBeforeSending: async (message) => { let messages = 0; global.conn.uploadPreKeysToServerIfRequired(); messages++; return message },
   msgRetryCounterCache: msgRetryCounterCache,
   userDevicesCache: userDevicesCache,
   defaultQueryTimeoutMs: undefined,
@@ -178,12 +118,9 @@ const baseConnectionOptions = {
   version: [2, 3000, 1015901307],
 }
 
-const connectionOptions = getEnhancedConnectionOptions(baseConnectionOptions)
-
 global.conn = makeWASocket(connectionOptions)
-startPeriodicPing(global.conn)
 
-if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
+if (!fs.existsSync(`./${authFile}/creds.json`)) {
   if (opcion === "2" || methodCode) {
     opcion = "2"
     if (!global.conn.authState.creds.registered) {
@@ -192,22 +129,16 @@ if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
       let addNumber
       if (!!phoneNumber) {
         addNumber = phoneNumber.replace(/[^0-9]/g, "")
-        if (!Object.keys({ ...PHONENUMBER_MCC, 234: true }).some((v) => addNumber.startsWith(v))) {
+        if (!Object.keys({...PHONENUMBER_MCC, '234': true}).some((v) => addNumber.startsWith(v))) {
           console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Su número debe comenzar con el codigo de pais")))
           process.exit(0)
         }
       } else {
         while (true) {
-          addNumber = await question(
-            chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 2348030943459\n\n")),
-          )
+          addNumber = await question(chalk.bgBlack(chalk.bold.greenBright("\n\n✳️ Escriba su numero\n\nEjemplo: 2348030943459\n\n")))
           addNumber = addNumber.replace(/[^0-9]/g, "")
 
-          if (
-            addNumber.match(/^\d+$/) &&
-            Object.keys({ ...PHONENUMBER_MCC, 234: true }).some((v) => addNumber.startsWith(v))
-          )
-            break
+          if (addNumber.match(/^\d+$/) && Object.keys({...PHONENUMBER_MCC, '234': true}).some((v) => addNumber.startsWith(v))) break
           else console.log(chalk.bgBlack(chalk.bold.redBright("\n\n✴️ Número inválido. Ejemplo: 2348030943459")))
         }
       }
@@ -226,12 +157,7 @@ global.conn.isInit = false
 if (!global.opts["test"]) {
   setInterval(async () => {
     if (global.db.data) await global.db.write().catch(console.error)
-    if (global.opts["autocleartmp"])
-      try {
-        clearTmp()
-      } catch (e) {
-        console.error(e)
-      }
+    if (global.opts["autocleartmp"]) try { clearTmp() } catch (e) { console.error(e) }
   }, 60 * 1000)
 }
 
@@ -241,59 +167,23 @@ async function clearTmp() {
   const tmp = [tmpdir(), join(__dirname, "./tmp")]
   const filename = []
   tmp.forEach((dirname) => readdirSync(dirname).forEach((file) => filename.push(join(dirname, file))))
-  return filename.map((file) => {
-    const stats = statSync(file)
-    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 1) return unlinkSync(file)
-    return false
-  })
+  return filename.map((file) => { const stats = statSync(file); if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 1) return unlinkSync(file); return false })
 }
 
-setInterval(async () => {
-  await clearTmp()
-}, 60000)
-
-const reloadHandlerWrapper = async (restart) => {
-  try {
-    if (typeof global.reloadHandler === 'function') {
-      return await global.reloadHandler(restart);
-    }
-    console.warn('⚠️ global.reloadHandler no es una función, usando alternativa');
-    return true;
-  } catch (e) {
-    console.error('❌ Error en reloadHandler:', e);
-    return false;
-  }
-};
-
-const setupHealthCheckError = await handleSetupHealthCheckError(global.conn, reloadHandlerWrapper);
+setInterval(async () => { await clearTmp() }, 60000)
 
 async function connectionUpdate(update) {
-  await setupHealthCheckError(update)
+  const { connection, lastDisconnect, isNewLogin } = update
+  if (isNewLogin) global.conn.isInit = true
+  const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
+  if (code && code !== DisconnectReason.loggedOut && global.conn?.ws.socket == null) {
+    console.log(await global.reloadHandler(true).catch(console.error))
+    global.timestamp.connect = new Date()
+  }
+  if (global.db.data == null) loadDatabase()
 }
 
-process.on("uncaughtException", (err) => {
-  console.error("Error no capturado:", err)
-
-  if (err.message && (err.message.includes("setupHealthCheck") || err.message.includes("Connection Closed"))) {
-    console.log("[ERROR] Detectado error de setupHealthCheck en excepción no capturada")
-    cleanSession().then(() => {
-      console.log("[SISTEMA] Reiniciando en 10 segundos...")
-      setTimeout(() => process.exit(1), 10000)
-    })
-  }
-})
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Promesa rechazada no manejada:", reason)
-
-  if (
-    reason &&
-    reason.message &&
-    (reason.message.includes("setupHealthCheck") || reason.message.includes("Connection Closed"))
-  ) {
-    console.log("[ERROR] Detectado error de setupHealthCheck en promesa rechazada")
-  }
-})
+process.on("uncaughtException", console.error)
 
 let isInit = true
 let handler = await import("./handler.js")
@@ -302,14 +192,10 @@ global.reloadHandler = async (restatConn) => {
   try {
     const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error)
     if (Object.keys(Handler || {}).length) handler = Handler
-  } catch (e) {
-    console.error(e)
-  }
+  } catch (e) { console.error(e) }
   if (restatConn) {
     const oldChats = global.conn.chats
-    try {
-      global.conn.ws.close()
-    } catch {}
+    try { global.conn.ws.close() } catch {}
     global.conn.ev.removeAllListeners()
     global.conn = makeWASocket(connectionOptions, { chats: oldChats })
     isInit = true
@@ -323,7 +209,6 @@ global.reloadHandler = async (restatConn) => {
     global.conn.ev.off("creds.update", global.conn.credsUpdate)
   }
 
-  const conn = global.conn
   conn.welcome = "Hola, @user\nBienvenido a @group"
   conn.bye = "adiós @user"
   conn.spromote = "@user promovió a admin"
@@ -361,36 +246,28 @@ async function filesInit() {
       const module = await import(file)
       global.plugins[filename] = module.default || module
     } catch (e) {
-      global.conn.logger.error(e)
+      conn.logger.error(e)
       delete global.plugins[filename]
     }
   }
 }
-filesInit()
-  .then((_) => console.log(Object.keys(global.plugins)))
-  .catch(console.error)
+filesInit().then((_) => console.log(Object.keys(global.plugins))).catch(console.error)
 
 global.reload = async (_ev, filename) => {
   if (pluginFilter(filename)) {
     const dir = global.__filename(join(pluginFolder, filename), true)
     if (filename in global.plugins) {
-      if (existsSync(dir)) global.conn.logger.info(`🌟 Plugin Actualizado - '${filename}'`)
-      else {
-        global.conn.logger.warn(`🗑️ Plugin Eliminado - '${filename}'`)
-        return delete global.plugins[filename]
-      }
-    } else global.conn.logger.info(`✨ Nuevo plugin - '${filename}'`)
+      if (existsSync(dir)) conn.logger.info(`🌟 Plugin Actualizado - '${filename}'`)
+      else { conn.logger.warn(`🗑️ Plugin Eliminado - '${filename}'`); return delete global.plugins[filename] }
+    } else conn.logger.info(`✨ Nuevo plugin - '${filename}'`)
     const err = syntaxerror(readFileSync(dir), filename, { sourceType: "module", allowAwaitOutsideFunction: true })
-    if (err) global.conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`)
-    else
-      try {
-        const module = await import(`${global.__filename(dir)}?update=${Date.now()}`)
-        global.plugins[filename] = module.default || module
-      } catch (e) {
-        global.conn.logger.error(`error require plugin '${filename}\n${format(e)}'`)
-      } finally {
-        global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
-      }
+    if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`)
+    else try {
+      const module = await import(`${global.__filename(dir)}?update=${Date.now()}`)
+      global.plugins[filename] = module.default || module
+    } catch (e) { conn.logger.error(`error require plugin '${filename}\n${format(e)}'`) } finally {
+      global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
+    }
   }
 }
 Object.freeze(global.reload)
@@ -398,40 +275,27 @@ watch(pluginFolder, global.reload)
 await global.reloadHandler()
 
 async function _quickTest() {
-  const test = await Promise.all(
-    [
-      spawn("ffmpeg"),
-      spawn("ffprobe"),
-      spawn("ffmpeg", [
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-filter_complex",
-        "color",
-        "-frames:v",
-        "1",
-        "-f",
-        "webp",
-        "-",
-      ]),
-      spawn("convert"),
-      spawn("magick"),
-      spawn("gm"),
-      spawn("find", ["--version"]),
-    ].map((p) => {
-      return Promise.race([
-        new Promise((resolve) => {
-          p.on("close", (code) => {
-            resolve(code !== 127)
-          })
-        }),
-        new Promise((resolve) => {
-          p.on("error", (_) => resolve(false))
-        }),
-      ])
-    }),
-  )
-
+  const test = await Promise.all([
+    spawn("ffmpeg"),
+    spawn("ffprobe"),
+    spawn("ffmpeg", ["-hide_banner", "-loglevel", "error", "-filter_complex", "color", "-frames:v", "1", "-f", "webp", "-"]),
+    spawn("convert"),
+    spawn("magick"),
+    spawn("gm"),
+    spawn("find", ["--version"])
+  ].map((p) => {
+    return Promise.race([
+      new Promise((resolve) => {
+        p.on("close", (code) => {
+          resolve(code !== 127)
+        })
+      }),
+      new Promise((resolve) => {
+        p.on("error", (_) => resolve(false))
+      })
+    ])
+  }))
+  
   const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test
   const s = (global.support = {
     ffmpeg,
@@ -440,21 +304,13 @@ async function _quickTest() {
     convert,
     magick,
     gm,
-    find,
+    find
   })
   Object.freeze(global.support)
-
-  if (!s.ffmpeg) global.conn.logger.warn("Please install ffmpeg for sending videos (pkg install ffmpeg)")
-  if (s.ffmpeg && !s.ffmpegWebp)
-    global.conn.logger.warn(
-      "Stickers may not animated without libwebp on ffmpeg (--enable-libwebp while compiling ffmpeg)",
-    )
-  if (!s.convert && !s.magick && !s.gm)
-    global.conn.logger.warn(
-      "Stickers may not work without imagemagick if libwebp on ffmpeg doesnt isntalled (pkg install imagemagick)",
-    )
+  
+  if (!s.ffmpeg) conn.logger.warn("Please install ffmpeg for sending videos (pkg install ffmpeg)")
+  if (s.ffmpeg && !s.ffmpegWebp) conn.logger.warn("Stickers may not animated without libwebp on ffmpeg (--enable-ibwebp while compiling ffmpeg)")
+  if (!s.convert && !s.magick && !s.gm) conn.logger.warn("Stickers may not work without imagemagick if libwebp on ffmpeg doesnt isntalled (pkg install imagemagick)")
 }
 
-_quickTest()
-  .then(() => global.conn.logger.info("✅ Prueba rápida realizado!"))
-  .catch(console.error)
+_quickTest().then(() => conn.logger.info("✅ Prueba rápida realizado!")).catch(console.error)
