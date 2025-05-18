@@ -22,7 +22,7 @@ import {
   handleSetupHealthCheckError,
   cleanSession,
   startPeriodicPing,
-} from "./connection-stact.js"
+} from "./connection-stack.js"
 import { cloudDBAdapter } from "./lib/cloudDBAdapter.js" // Declare cloudDBAdapter
 
 const {
