@@ -85,7 +85,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
     throw `📌 No puedes usar este bot como sub-bot\n\n wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix + command}`
   }
 
-  async function bbts() {
+  async function sumibots() {
     try {
       const phoneNumber = m.sender.split("@")[0]
       const subbotId = crypto.randomBytes(4).toString("hex")
@@ -107,7 +107,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
-      let authResult = null
+      const authResult = null
 
       const authFolderPathExists = fs.existsSync(authFolderPath)
       if (!authFolderPathExists) {
@@ -364,7 +364,14 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
           if (connection === "close") {
             const i = global.conns.indexOf(conn)
-            if (i < 0) return console.log(await creloadHandler(true).catch(() => {}))
+            if (i < 0) {
+              try {
+                return console.log(await creloadHandler(true))
+              } catch (e) {
+                console.error("Error en creloadHandler:", e)
+                return false
+              }
+            }
 
             if (code !== DisconnectReason.loggedOut) {
               if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
@@ -440,7 +447,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                           connectionUpdate({
                             connection: "close",
                             lastDisconnect: {
-                              error: new Boom("Reconnection failed", { statusCode: DisconnectReason.connectionClosed }),
+                              error: new Boom("Reconnection failed", {
+                                statusCode: DisconnectReason.connectionClosed,
+                              }),
                             },
                           }),
                         10000,
@@ -611,7 +620,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       await creloadHandler(false)
     } catch (error) {
-      console.error("Error en bbts:", error)
+      console.error("Error en sumibots:", error)
       await parent.sendMessage(
         m.chat,
         { text: "❌ Ocurrió un error al iniciar el sub-bot. Intente nuevamente." },
@@ -620,7 +629,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
     }
   }
 
-  await bbts()
+  await sumibots()
 }
 
 async function loadSubbots() {
@@ -898,7 +907,9 @@ async function loadSubbots() {
                             connectionUpdate({
                               connection: "close",
                               lastDisconnect: {
-                                error: new Boom("Reconnection failed", { statusCode: DisconnectReason.connectionClosed }),
+                                error: new Boom("Reconnection failed", {
+                                  statusCode: DisconnectReason.connectionClosed,
+                                }),
                               },
                             }),
                           10000,
