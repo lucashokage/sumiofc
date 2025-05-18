@@ -23,10 +23,10 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     const videoComments = videoData.comment    || 0;
     let txt = `*「✦」Título:* ${videoTitle}
 
-*> ✦ Autor:* » ${videoAuthor}
-*> ⴵ Duración:* » ${videoDuration}
-*> 🜸 Likes:* » ${videoLikes}
-*> ✎ Comentarios:* » ${videoComments}`
+> *✦ Autor:* » ${videoAuthor}
+> *ⴵ Duración:* » ${videoDuration}
+> *🜸 Likes:* » ${videoLikes}
+> *✎ Comentarios:* » ${videoComments}`
 m.react('✅');
 await conn.sendFile(m.chat, videoUrl, 'tiktok.mp4', txt, m)
 }
