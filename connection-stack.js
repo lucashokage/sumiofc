@@ -1,6 +1,7 @@
-import lodash from "lodash"
-import { DisconnectReason } from "@whiskeysockets/baileys"
-const { chain } = lodash
+import lodash from "lodash";
+import { DisconnectReason } from "@whiskeysockets/baileys";
+
+const { chain } = lodash;
 
 export function getEnhancedConnectionOptions(originalOptions) {
   return {
@@ -9,10 +10,9 @@ export function getEnhancedConnectionOptions(originalOptions) {
     keepAliveIntervalMs: 25000,
     retryRequestDelayMs: 3000,
     patchMessageBeforeSending: (message) => {
-      const requiresPatch = !!(message.buttonsMessage || message.templateMessage || message.listMessage)
-
+      const requiresPatch = !!(message.buttonsMessage || message.templateMessage || message.listMessage);
       if (requiresPatch) {
-        message = {
+        return {
           viewOnceMessage: {
             message: {
               messageContextInfo: {
@@ -22,105 +22,107 @@ export function getEnhancedConnectionOptions(originalOptions) {
               ...message,
             },
           },
-        }
+        };
       }
-
-      return message
+      return message;
     },
     version: [2, 3000, 1015901307],
-  }
+  };
 }
 
-export async function handleSetupHealthCheckError(conn, reloadHandler) {
-  let reconnectAttempts = 0
-  const maxReconnectAttempts = 5
+export function createConnectionHandler(conn, reloadHandler) {
+  if (typeof reloadHandler !== 'function') {
+    throw new TypeError('reloadHandler debe ser una función válida');
+  }
 
-  return async function enhancedConnectionUpdate(update) {
-    const { connection, lastDisconnect, isNewLogin } = update
+  let reconnectAttempts = 0;
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const BASE_RECONNECT_DELAY = 10000;
 
-    if (isNewLogin) conn.isInit = true
+  return async function handleConnectionUpdate(update) {
+    const { connection, lastDisconnect, isNewLogin } = update || {};
+    
+    if (isNewLogin && conn) {
+      conn.isInit = true;
+    }
 
-    const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
+    const disconnectCode = lastDisconnect?.error?.output?.statusCode || 
+                         lastDisconnect?.error?.output?.payload?.statusCode;
 
-    if (
-      lastDisconnect?.error?.message?.includes("setupHealthCheck") ||
-      lastDisconnect?.error?.message?.includes("Connection Closed")
-    ) {
-      console.log("\n[CONEXIÓN] Error detectado en setupHealthCheck")
+    if (lastDisconnect?.error) {
+      const shouldReconnect = [
+        "setupHealthCheck",
+        "Connection Closed",
+        "Timed Out"
+      ].some(msg => lastDisconnect.error.message?.includes(msg));
 
-      reconnectAttempts++
+      if (shouldReconnect) {
+        reconnectAttempts++;
+        
+        if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+          const delay = BASE_RECONNECT_DELAY + (reconnectAttempts * 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          await reloadHandler(true);
+          if (conn?.timestamp) conn.timestamp.connect = new Date();
+          return;
+        }
 
-      if (reconnectAttempts <= maxReconnectAttempts) {
-        const waitTime = 10000 + reconnectAttempts * 5000
-        console.log(
-          `\n[RECONEXIÓN] Esperando ${waitTime / 1000} segundos antes de reconectar (intento ${reconnectAttempts}/${maxReconnectAttempts})...`,
-        )
-
-        await new Promise((resolve) => setTimeout(resolve, waitTime))
-
-        console.log("\n[RECONEXIÓN] Intentando reconectar...")
-        await reloadHandler(true).catch(console.error)
-        conn.timestamp.connect = new Date()
-      } else {
-        console.log("\n[RECONEXIÓN] Máximo de intentos alcanzado. Limpiando sesión...")
-        await cleanSession()
-        process.exit(1)
+        await cleanSession();
+        process.exit(1);
       }
-      return
     }
 
     if (connection === "open") {
-      reconnectAttempts = 0
-      console.log("\n[CONEXIÓN] Conexión establecida correctamente")
-
-      startPeriodicPing(conn)
+      reconnectAttempts = 0;
+      if (conn) startHeartbeat(conn);
     }
 
-    if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
-      console.log(await reloadHandler(true).catch(console.error))
-      conn.timestamp.connect = new Date()
+    if (disconnectCode && disconnectCode !== DisconnectReason.loggedOut && !conn?.ws?.socket) {
+      await reloadHandler(true);
+      if (conn?.timestamp) conn.timestamp.connect = new Date();
     }
 
-    if (global.db.data == null) global.loadDatabase()
+    if (global.db?.data == null) global.loadDatabase?.();
+  };
+}
+
+export function startHeartbeat(conn) {
+  if (global.heartbeatInterval) {
+    clearInterval(global.heartbeatInterval);
   }
+
+  global.heartbeatInterval = setInterval(() => {
+    try {
+      if (!conn?.user || conn.ws.socket?.readyState !== 1) {
+        clearInterval(global.heartbeatInterval);
+        return;
+      }
+      
+      conn.sendPresenceUpdate("available");
+      conn.ws.send(JSON.stringify(["admin", "test"]));
+    } catch (error) {
+      clearInterval(global.heartbeatInterval);
+    }
+  }, 25000);
 }
 
 export async function cleanSession() {
-  const authDir = global.authFile
-  const fs = await import("fs")
-  const path = await import("path")
-
   try {
-    if (fs.existsSync(authDir)) {
-      console.log("\n[SESIÓN] Limpiando archivos de sesión...")
+    if (!global.authFile) return;
 
-      const problematicFiles = ["app-state-sync-key", "app-state-sync-version"]
+    const fs = await import("fs");
+    const path = await import("path");
 
-      fs.readdirSync(authDir).forEach((file) => {
-        if (problematicFiles.some((pf) => file.includes(pf))) {
-          fs.unlinkSync(path.join(authDir, file))
-          console.log(`[SESIÓN] Archivo eliminado: ${file}`)
-        }
-      })
+    if (!fs.existsSync(global.authFile)) return;
 
-      console.log("[SESIÓN] Limpieza completada")
-    }
+    const SESSION_FILES = ["app-state-sync-key", "app-state-sync-version"];
+    
+    fs.readdirSync(global.authFile)
+      .filter(file => SESSION_FILES.some(pattern => file.includes(pattern)))
+      .forEach(file => {
+        fs.unlinkSync(path.join(global.authFile, file));
+      });
   } catch (error) {
-    console.error("[ERROR] Error al limpiar sesión:", error)
+    console.error("Cleanup error:", error);
   }
-}
-
-export function startPeriodicPing(conn) {
-  if (global.pingInterval) clearInterval(global.pingInterval)
-
-  global.pingInterval = setInterval(() => {
-    if (conn.user) {
-      conn.sendPresenceUpdate("available")
-      conn.ws.send(JSON.stringify(["admin", "test"]))
-    } else {
-      clearInterval(global.pingInterval)
-    }
-  }, 25000)
-
-  return global.pingInterval
 }
