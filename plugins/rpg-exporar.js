@@ -6,7 +6,7 @@ let handler = async (m, { conn }) => {
   let tiempoEspera = 5 * 60 * 1000
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera) {
     let tiempoRestante = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempoEspera - Date.now()) / 1000))
-    return conn.reply(m.chat, `⏱️ Debes esperar *${tiempoRestante}* antes de volver a explorar.`, m)
+    return conn.reply(m.chat, `《✧》 Debes esperar *ⴵ${tiempoRestante}* antes de volver a explorar.`, m)
   }
   
   cooldowns[m.sender] = Date.now()
@@ -57,7 +57,7 @@ let handler = async (m, { conn }) => {
   
   let mensaje = `
 ╭━━━━━━━━━⬣
-┃ 🔍 *EXPLORACIÓN*
+┃  *❀EXPLORACIÓN❀*
 ┃ Has explorado: ${location.name}
 ┃ -${healthLoss} ❤️ Salud
 ┃ +${expReward} ⚡ XP
