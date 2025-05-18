@@ -945,75 +945,83 @@ async function loadSubbots() {
           console.error(`Error al importar handler: ${e.message}`)
         }
 
-        const reloadHandler = async (restartConnection) => {
-          try {
-            const newHandler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
-              console.error(`Error al importar handler: ${e.message}`)
-              return null
-            })
+        const creloadHandler = async (restatConn) => {
+  try {
+    const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+      console.error(`Error al importar handler: ${e.message}`)
+      return null
+    })
 
-            if (newHandler && Object.keys(newHandler).length) {
-              handlerModule = newHandler
-            }
-          } catch (err) {
-            console.error(`Error en reloadHandler: ${err.message}`)
-          }
+    if (Handler && Object.keys(Handler).length) {
+      handlerModule = Handler
+    }
+  } catch (e) {
+    console.error(`Error en creloadHandler: ${e.message}`)
+  }
 
-          if (restartConnection) {
-            try {
-              cleanupConnection(sock)
-              sock = makeWASocket(socketConfig)
-            } catch (error) {
-              console.error(`Error al reiniciar conexión: ${error.message}`)
-            }
-          }
+  if (restatConn) {
+    try {
+      cleanupConnection(conn)
+      conn = makeWASocket(connectionOptions)
+      isInit = true
+    } catch (error) {
+      console.error(`Error al reiniciar conexión: ${error.message}`)
+    }
+  }
 
-          if (!handlerModule || !handlerModule.handler) {
-            console.error("Error: handlerModule o handlerModule.handler es nulo")
-            return false
-          }
+  if (!isInit) {
+    cleanupConnection(conn)
+  }
 
-          sock.handler = handlerModule.handler.bind(sock)
+  if (!handlerModule || !handlerModule.handler) {
+    console.error("Error: handlerModule o handlerModule.handler es nulo")
+    return false
+  }
 
-          sock.participantsUpdate = async function participantsUpdate(...args) {
-            try {
-              if (args[0] && args[0].participants) {
-                return await handlerModule.participantsUpdate.apply(this, args)
-              }
-            } catch (error) {
-              console.error(`Error en participantsUpdate: ${error.message}`)
-            }
-          }
+  conn.welcome = global.conn.welcome + ""
+  conn.bye = global.conn.bye + ""
+  conn.spromote = global.conn.spromote + ""
+  conn.sdemote = global.conn.sdemote + ""
 
-          sock.groupsUpdate = handlerModule.groupsUpdate.bind(sock)
-          sock.connectionUpdate = connectionUpdate.bind(sock)
-          sock.credsUpdate = saveCreds.bind(sock, true)
+  conn.handler = handlerModule.handler.bind(conn)
 
-          const safeEventHandler = (eventHandler) => {
-            return async (...args) => {
-              try {
-                if (!sock || !sock.user || !sock.user.jid) {
-                  console.error("Error: Conexión no válida en event handler")
-                  return
-                }
-                await eventHandler(...args)
-              } catch (error) {
-                console.error(`Error en event handler: ${error.message}`)
-              }
-            }
-          }
+  conn.participantsUpdate = async function participantsUpdate(...args) {
+    try {
+      if (args[0] && args[0].participants) {
+        return await handlerModule.participantsUpdate.apply(this, args)
+      }
+    } catch (error) {
+      console.error(`Error en participantsUpdate: ${error.message}`)
+    }
+  }
 
-          sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
-          sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
-          sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
-          sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
-          sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
-          sock.ev.on("error", (error) => {
-            console.error(`Error en evento: ${error.message}`)
-          })
+  conn.groupsUpdate = handlerModule.groupsUpdate.bind(conn)
+  conn.connectionUpdate = connectionUpdate.bind(conn)
+  conn.credsUpdate = saveCreds.bind(conn, true)
 
-          return true
-        }
+  const safeEventHandler = (eventHandler) => {
+    return async (...args) => {
+      try {
+        await eventHandler(...args)
+      } catch (error) {
+        console.error(`Error en event handler: ${error.message}`)
+      }
+    }
+  }
+
+  conn.ev.on("messages.upsert", safeEventHandler(conn.handler))
+  conn.ev.on("group-participants.update", safeEventHandler(conn.participantsUpdate))
+  conn.ev.on("groups.update", safeEventHandler(conn.groupsUpdate))
+  conn.ev.on("connection.update", safeEventHandler(conn.connectionUpdate))
+  conn.ev.on("creds.update", safeEventHandler(conn.credsUpdate))
+
+  conn.ev.on("error", (error) => {
+    console.error(`Error en evento: ${error.message}`)
+  })
+
+  isInit = false
+  return true
+}
 
         await reloadHandler(false)
         setupPresenceUpdates(sock)
