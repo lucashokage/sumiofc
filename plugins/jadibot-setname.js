@@ -1,25 +1,22 @@
-const handler = async (m, { conn, args, text, command, usedPrefix, isOwner }) => {
-  const isSubbotOwner = conn.user.jid === m.sender
-  if (!isSubbotOwner && !isOwner) {
-    return m.reply("⚠️ Solo el owner del bot o el número asociado a este subbot pueden usar este comando.")
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+  const name = text
+  if (!name) throw `Usa: ${usedPrefix + command} <nombre>\nEjemplo: ${usedPrefix + command} bot`
+  try {
+    global.db.data.settings[conn.user.jid].botName = text
+
+    if (global.db.data.users && global.db.data.users[conn.user.jid]) {
+      global.db.data.users[conn.user.jid].namebebot = text
+    }
+    m.reply(` ◈ nombre del bot actualizado a: ${text}`)
+  } catch (e) {
+    console.error(e)
+    throw "Error"
   }
-
-  if (!text) {
-    return m.reply(`🌲 Por favor especifica el nuevo nombre del bot.`)
-  }
-
-  if (!global.db.data.settings) global.db.data.settings = {}
-  if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {}
-
-  global.db.data.settings[conn.user.jid].botName = text
-
-  const cap = `≡ 🌴 Se ha cambiado con éxito el nombre para @${conn.user.jid.split("@")[0]}
-
-🌿 Nuevo nombre : ${text}`
-
-  conn.reply(m.chat, cap, m, { mentions: conn.parseMention(cap) })
 }
+handler.help = ["setname <nombre>"]
+handler.tags = ["owner"]
+handler.command = /^setname$/i
+handler.owner = true
 
-handler.tags = ["serbot"]
-handler.help = handler.command = ["setname"]
 export default handler
