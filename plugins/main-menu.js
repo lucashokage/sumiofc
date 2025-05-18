@@ -9,17 +9,14 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const pluginsCount = Object.keys(global.plugins || {}).length
     const botType = conn.user.jid == global.conn.user.jid ? "official" : "subbot"
 
-    // Obtener el nombre correcto para el bot
     let displayBotName
+    const botType = process.env.BOT_TYPE || "sub-bot"
     if (botType === "official") {
       displayBotName = "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦"
     } else {
-      // Para subbots, usar el nombre personalizado con .setname o el nombre de WhatsApp
-      displayBotName = user.namebebot || conn.getName(conn.user.jid) || "Bot"
+      const botSettings = global.db.data.settings[conn.user.jid] || {}
+      displayBotName = botSettings.botName || user.namebebot || conn.getName(conn.user.jid) || "Bot"
     }
-
-    const bot = global.db.data.settings[conn.user.jid] || {}
-
     const date = new Date()
     const options = {
       day: "2-digit",
