@@ -1,5 +1,5 @@
 import lodash from "lodash"
-import { DisconnectReason } from "some-module"
+import { DisconnectReason } from "@whiskeysockets/baileys"
 const { chain } = lodash
 
 export function getEnhancedConnectionOptions(originalOptions) {
@@ -81,7 +81,7 @@ export async function handleSetupHealthCheckError(conn, reloadHandler) {
       conn.timestamp.connect = new Date()
     }
 
-    if (global.db.data == null) loadDatabase()
+    if (global.db.data == null) global.loadDatabase()
   }
 }
 
@@ -123,22 +123,4 @@ export function startPeriodicPing(conn) {
   }, 25000)
 
   return global.pingInterval
-}
-
-function loadDatabase() {
-  if (global.db.READ)
-    return new Promise((resolve) =>
-      setInterval(async function () {
-        if (!global.db.READ) {
-          clearInterval(this)
-          resolve(global.db.data == null ? global.loadDatabase() : global.db.data)
-        }
-      }, 1 * 1000),
-    )
-  if (global.db.data !== null) return
-  global.db.READ = true
-  global.db.read().catch(console.error)
-  global.db.READ = null
-  global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) }
-  global.db.chain = chain(global.db.data)
 }
