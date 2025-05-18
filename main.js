@@ -22,8 +22,7 @@ import {
   handleSetupHealthCheckError,
   cleanSession,
   startPeriodicPing,
-} from "./connection-stack.js"
-import { cloudDBAdapter } from "./lib/cloudDBAdapter.js" 
+} from "./connection-fix.js"
 
 const {
   useMultiFileAuthState,
@@ -80,9 +79,12 @@ global.prefix = new RegExp(
   "^[" + (global.opts["prefix"] || "‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-").replace(/[|\\{}()[\]^$+*?.\-^]/g, "\\$&") + "]",
 )
 
+// Importar correctamente CloudDBAdapter
+import CloudDBAdapter from "./lib/cloudDBAdapter.js"
+
 global.db = new Low(
   /https?:\/\//.test(global.opts["db"] || "")
-    ? new cloudDBAdapter(global.opts["db"])
+    ? new CloudDBAdapter(global.opts["db"])
     : /mongodb(\+srv)?:\/\//i.test(global.opts["db"])
       ? global.opts["mongodbv2"]
         ? new mongoDBV2(global.opts["db"])
@@ -91,10 +93,7 @@ global.db = new Low(
 )
 
 global.DATABASE = global.db
-let isInit = false // Declare isInit
-let handler = {} // Declare handler
-
-async function loadDatabase() {
+global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
     return new Promise((resolve) =>
       setInterval(async function () {
@@ -111,6 +110,8 @@ async function loadDatabase() {
   global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) }
   global.db.chain = chain(global.db.data)
 }
+const loadDatabase = global.loadDatabase // Declare the variable before using it
+
 loadDatabase()
 
 global.authFile = `sessions`
@@ -141,6 +142,7 @@ if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.j
 
 console.info = () => {}
 
+// Aplicar opciones mejoradas de conexión
 const baseConnectionOptions = {
   logger: pino({ level: "silent" }),
   printQRInTerminal: opcion === "1" || methodCodeQR,
@@ -163,18 +165,22 @@ const baseConnectionOptions = {
     const msg = await store.loadMessage(jid, key.id)
     return msg?.message || ""
   },
+  patchMessageBeforeSending: (message) => {
+    let messages = 0
+    global.conn.uploadPreKeysToServerIfRequired()
+    messages++
+    return message
+  },
   msgRetryCounterCache: msgRetryCounterCache,
   userDevicesCache: userDevicesCache,
   defaultQueryTimeoutMs: undefined,
   cachedGroupMetadata: (jid) => global.conn.chats[jid] ?? {},
+  version: [2, 3000, 1015901307],
 }
 
-// Aplicar mejoras a las opciones de conexión
 const connectionOptions = getEnhancedConnectionOptions(baseConnectionOptions)
 
 global.conn = makeWASocket(connectionOptions)
-
-// Añade esta línea:
 startPeriodicPing(global.conn)
 
 if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
@@ -246,19 +252,39 @@ setInterval(async () => {
   await clearTmp()
 }, 60000)
 
-// Usar la función mejorada para manejar errores de setupHealthCheck
+// Implementar manejo mejorado de conexión
 const setupHealthCheckError = await handleSetupHealthCheckError(global.conn, global.reloadHandler)
 
 async function connectionUpdate(update) {
-  const { connection, lastDisconnect, isNewLogin } = update
-  if (isNewLogin) global.conn.isInit = true
-  const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
-  if (code && code !== DisconnectReason.loggedOut && global.conn?.ws.socket == null) {
-    console.log(await global.reloadHandler(true).catch(console.error))
-    global.timestamp.connect = new Date()
-  }
-  if (global.db.data == null) loadDatabase()
+  await setupHealthCheckError(update)
 }
+
+process.on("uncaughtException", (err) => {
+  console.error("Error no capturado:", err)
+
+  if (err.message && (err.message.includes("setupHealthCheck") || err.message.includes("Connection Closed"))) {
+    console.log("[ERROR] Detectado error de setupHealthCheck en excepción no capturada")
+    cleanSession().then(() => {
+      console.log("[SISTEMA] Reiniciando en 10 segundos...")
+      setTimeout(() => process.exit(1), 10000)
+    })
+  }
+})
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Promesa rechazada no manejada:", reason)
+
+  if (
+    reason &&
+    reason.message &&
+    (reason.message.includes("setupHealthCheck") || reason.message.includes("Connection Closed"))
+  ) {
+    console.log("[ERROR] Detectado error de setupHealthCheck en promesa rechazada")
+  }
+})
+
+let isInit = true
+let handler = await import("./handler.js")
 
 global.reloadHandler = async (restatConn) => {
   try {
@@ -285,14 +311,15 @@ global.reloadHandler = async (restatConn) => {
     global.conn.ev.off("creds.update", global.conn.credsUpdate)
   }
 
-  global.conn.welcome = "Hola, @user\nBienvenido a @group"
-  global.conn.bye = "adiós @user"
-  global.conn.spromote = "@user promovió a admin"
-  global.conn.sdemote = "@user degradado"
-  global.conn.sDesc = "La descripción ha sido cambiada a \n@desc"
-  global.conn.sSubject = "El nombre del grupo ha sido cambiado a \n@group"
-  global.conn.sIcon = "El icono del grupo ha sido cambiado"
-  global.conn.sRevoke = "El enlace del grupo ha sido cambiado a \n@revoke"
+  const conn = global.conn
+  conn.welcome = "Hola, @user\nBienvenido a @group"
+  conn.bye = "adiós @user"
+  conn.spromote = "@user promovió a admin"
+  conn.sdemote = "@user degradado"
+  conn.sDesc = "La descripción ha sido cambiada a \n@desc"
+  conn.sSubject = "El nombre del grupo ha sido cambiado a \n@group"
+  conn.sIcon = "El icono del grupo ha sido cambiado"
+  conn.sRevoke = "El enlace del grupo ha sido cambiado a \n@revoke"
 
   if (handler.handler) global.conn.handler = handler.handler.bind(global.conn)
   if (handler.participantsUpdate) global.conn.participantsUpdate = handler.participantsUpdate.bind(global.conn)
@@ -408,7 +435,7 @@ async function _quickTest() {
   if (!s.ffmpeg) global.conn.logger.warn("Please install ffmpeg for sending videos (pkg install ffmpeg)")
   if (s.ffmpeg && !s.ffmpegWebp)
     global.conn.logger.warn(
-      "Stickers may not animated without libwebp on ffmpeg (--enable-ibwebp while compiling ffmpeg)",
+      "Stickers may not animated without libwebp on ffmpeg (--enable-libwebp while compiling ffmpeg)",
     )
   if (!s.convert && !s.magick && !s.gm)
     global.conn.logger.warn(
@@ -419,27 +446,3 @@ async function _quickTest() {
 _quickTest()
   .then(() => global.conn.logger.info("✅ Prueba rápida realizado!"))
   .catch(console.error)
-
-process.on("uncaughtException", (err) => {
-  console.error("Error no capturado:", err)
-
-  if (err.message && (err.message.includes("setupHealthCheck") || err.message.includes("Connection Closed"))) {
-    console.log("[ERROR] Detectado error de setupHealthCheck en excepción no capturada")
-    cleanSession().then(() => {
-      console.log("[SISTEMA] Reiniciando en 10 segundos...")
-      setTimeout(() => process.exit(1), 10000)
-    })
-  }
-})
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Promesa rechazada no manejada:", reason)
-
-  if (
-    reason &&
-    reason.message &&
-    (reason.message.includes("setupHealthCheck") || reason.message.includes("Connection Closed"))
-  ) {
-    console.log("[ERROR] Detectado error de setupHealthCheck en promesa rechazada")
-  }
-})
