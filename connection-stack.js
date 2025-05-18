@@ -126,3 +126,6 @@ export async function cleanSession() {
     console.error("Cleanup error:", error);
   }
 }
+
+export const handleSetupHealthCheckError = createConnectionHandler;
+export const startPeriodicPing = startHeartbeat;
