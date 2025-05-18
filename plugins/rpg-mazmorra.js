@@ -6,12 +6,12 @@ let handler = async (m, { conn }) => {
   let tiempoEspera = 10 * 60 * 1000
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera) {
     let tiempoRestante = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempoEspera - Date.now()) / 1000))
-    return conn.reply(m.chat, `⏱️ Debes esperar *${tiempoRestante}* antes de volver a entrar a la mazmorra.`, m)
+    return conn.reply(m.chat, `《✧》 Debes esperar *ⴵ${tiempoRestante}* antes de volver a entrar a la mazmorra.`, m)
   }
   
   cooldowns[m.sender] = Date.now()
   
-  if (user.health < 50) return m.reply(`${global.emoji2} Necesitas al menos 50 de salud para entrar a la mazmorra. Usa *#heal* para recuperar salud.`)
+  if (user.health < 50) return m.reply(`《✧》 Necesitas al menos 50 de salud para entrar a la mazmorra. Usa *#heal* para recuperar salud.`)
   
   let enemies = ['Esqueleto', 'Zombie', 'Fantasma', 'Vampiro', 'Hombre Lobo', 'Gárgola', 'Demonio', 'Goblin', 'Orco']
   let enemy = enemies[Math.floor(Math.random() * enemies.length)]
@@ -30,7 +30,7 @@ let handler = async (m, { conn }) => {
     
     let mensaje = `
 ╭━━━━━━━━━⬣
-┃ ✅ *MAZMORRA COMPLETADA*
+┃  *❀MAZMORRA COMPLETADA❀*
 ┃ Derrotaste a un ${enemy}
 ┃ *${coinReward}* ${global.moneda}
 ┃ *${expReward}* ⚡ XP
