@@ -1,7 +1,4 @@
-import lodash from "lodash";
 import { DisconnectReason } from "@whiskeysockets/baileys";
-
-const { chain } = lodash;
 
 export function getEnhancedConnectionOptions(originalOptions) {
   return {
@@ -32,7 +29,11 @@ export function getEnhancedConnectionOptions(originalOptions) {
 
 export function createConnectionHandler(conn, reloadHandler) {
   if (typeof reloadHandler !== 'function') {
-    throw new TypeError('reloadHandler debe ser una función válida');
+    console.error('⚠️ Error: reloadHandler no es una función. Se usará función por defecto');
+    reloadHandler = async () => {
+      console.log('🔁 Función de recarga por defecto ejecutada');
+      return true;
+    };
   }
 
   let reconnectAttempts = 0;
@@ -40,56 +41,59 @@ export function createConnectionHandler(conn, reloadHandler) {
   const BASE_RECONNECT_DELAY = 10000;
 
   return async function handleConnectionUpdate(update) {
-    const { connection, lastDisconnect, isNewLogin } = update || {};
-    
-    if (isNewLogin && conn) {
-      conn.isInit = true;
-    }
+    try {
+      const { connection, lastDisconnect, isNewLogin } = update || {};
+      
+      if (isNewLogin && conn) conn.isInit = true;
 
-    const disconnectCode = lastDisconnect?.error?.output?.statusCode || 
-                         lastDisconnect?.error?.output?.payload?.statusCode;
+      const disconnectCode = lastDisconnect?.error?.output?.statusCode || 
+                           lastDisconnect?.error?.output?.payload?.statusCode;
 
-    if (lastDisconnect?.error) {
-      const shouldReconnect = [
-        "setupHealthCheck",
-        "Connection Closed",
-        "Timed Out"
-      ].some(msg => lastDisconnect.error.message?.includes(msg));
+      if (lastDisconnect?.error) {
+        const shouldReconnect = [
+          "setupHealthCheck",
+          "Connection Closed",
+          "Timed Out"
+        ].some(msg => lastDisconnect.error.message?.includes(msg));
 
-      if (shouldReconnect) {
-        reconnectAttempts++;
-        
-        if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
-          const delay = BASE_RECONNECT_DELAY + (reconnectAttempts * 5000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          await reloadHandler(true);
-          if (conn?.timestamp) conn.timestamp.connect = new Date();
-          return;
+        if (shouldReconnect) {
+          reconnectAttempts++;
+          
+          if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+            const delay = BASE_RECONNECT_DELAY + (reconnectAttempts * 5000);
+            console.log(`⏳ Esperando ${delay/1000} segundos antes de reconectar...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            await reloadHandler(true);
+            if (conn?.timestamp) conn.timestamp.connect = new Date();
+            return;
+          }
+
+          console.error('❌ Máximo de intentos de reconexión alcanzado');
+          await cleanSession();
+          process.exit(1);
         }
-
-        await cleanSession();
-        process.exit(1);
       }
-    }
 
-    if (connection === "open") {
-      reconnectAttempts = 0;
-      if (conn) startHeartbeat(conn);
-    }
+      if (connection === "open") {
+        reconnectAttempts = 0;
+        console.log('✅ Conexión establecida correctamente');
+        if (conn) startHeartbeat(conn);
+      }
 
-    if (disconnectCode && disconnectCode !== DisconnectReason.loggedOut && !conn?.ws?.socket) {
-      await reloadHandler(true);
-      if (conn?.timestamp) conn.timestamp.connect = new Date();
-    }
+      if (disconnectCode && disconnectCode !== DisconnectReason.loggedOut && !conn?.ws?.socket) {
+        await reloadHandler(true);
+        if (conn?.timestamp) conn.timestamp.connect = new Date();
+      }
 
-    if (global.db?.data == null) global.loadDatabase?.();
+      if (global.db?.data == null) global.loadDatabase?.();
+    } catch (error) {
+      console.error('🔥 Error en handleConnectionUpdate:', error);
+    }
   };
 }
 
-export function startHeartbeat(conn) {
-  if (global.heartbeatInterval) {
-    clearInterval(global.heartbeatInterval);
-  }
+function startHeartbeat(conn) {
+  if (global.heartbeatInterval) clearInterval(global.heartbeatInterval);
 
   global.heartbeatInterval = setInterval(() => {
     try {
@@ -98,15 +102,18 @@ export function startHeartbeat(conn) {
         return;
       }
       
-      conn.sendPresenceUpdate("available");
-      conn.ws.send(JSON.stringify(["admin", "test"]));
+      conn.sendPresenceUpdate("available").catch(console.error);
+      if (conn.ws.socket.readyState === 1) {
+        conn.ws.send(JSON.stringify(["admin", "test"]));
+      }
     } catch (error) {
+      console.error('💔 Error en heartbeat:', error);
       clearInterval(global.heartbeatInterval);
     }
   }, 25000);
 }
 
-export async function cleanSession() {
+async function cleanSession() {
   try {
     if (!global.authFile) return;
 
@@ -120,12 +127,18 @@ export async function cleanSession() {
     fs.readdirSync(global.authFile)
       .filter(file => SESSION_FILES.some(pattern => file.includes(pattern)))
       .forEach(file => {
-        fs.unlinkSync(path.join(global.authFile, file));
+        try {
+          fs.unlinkSync(path.join(global.authFile, file));
+          console.log(`🗑️ Eliminado: ${file}`);
+        } catch (e) {
+          console.error(`⚠️ No se pudo eliminar ${file}:`, e);
+        }
       });
   } catch (error) {
-    console.error("Cleanup error:", error);
+    console.error('🧹 Error limpiando sesión:', error);
   }
 }
 
+// Exportaciones para compatibilidad
 export const handleSetupHealthCheckError = createConnectionHandler;
 export const startPeriodicPing = startHeartbeat;
