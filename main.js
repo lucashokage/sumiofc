@@ -252,8 +252,20 @@ setInterval(async () => {
   await clearTmp()
 }, 60000)
 
-// Implementar manejo mejorado de conexión
-const setupHealthCheckError = await handleSetupHealthCheckError(global.conn, global.reloadHandler)
+const reloadHandlerWrapper = async (restart) => {
+  try {
+    if (typeof global.reloadHandler === 'function') {
+      return await global.reloadHandler(restart);
+    }
+    console.warn('⚠️ global.reloadHandler no es una función, usando alternativa');
+    return true;
+  } catch (e) {
+    console.error('❌ Error en reloadHandler:', e);
+    return false;
+  }
+};
+
+const setupHealthCheckError = await handleSetupHealthCheckError(global.conn, reloadHandlerWrapper);
 
 async function connectionUpdate(update) {
   await setupHealthCheckError(update)
