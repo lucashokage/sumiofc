@@ -1,7 +1,7 @@
 let handler = async (m, { isPrems, conn }) => {
   let user = global.db.data.users[m.sender]
   let time = user.lastmonthly + 2592000000
-  if (new Date - user.lastmonthly < 2592000000) return m.reply(`${global.emoji2} Ya reclamaste tu recompensa mensual\n\nVuelve en *${msToTime(time - new Date())}*`)
+  if (new Date - user.lastmonthly < 2592000000) return m.reply(`《✧》 Ya reclamaste tu recompensa mensual\n\nVuelve en *ⴵ${msToTime(time - new Date())}*`)
   
   let reward = 5000
   let premReward = 10000
