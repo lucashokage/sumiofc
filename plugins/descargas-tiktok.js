@@ -1,43 +1,34 @@
 import fetch from 'node-fetch';
-
-var handler = async (m, { conn, args, usedPrefix, command }) => {
-    if (!args[0]) {
-        return conn.reply(m.chat, `${emoji} Por favor, ingresa un enlace de TikTok.`, m);
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) {
+    return conn.reply(m.chat, `❀ Ingese una url de tiktok`, m);
+  }
+  const urlPattern = /^https?:\/\/(www\.)?tiktok\.com\/.+|https?:\/\/vm\.tiktok\.com\/.+/i;
+  if (!urlPattern.test(text)) {
+    return conn.reply(m.chat, `Url no válido para tiktok `, m);
+  }
+ m.react('🕒');
+    const apiUrl = `https://api.dorratz.com/v2/tiktok-dl?url=${encodeURIComponent(text)}`;
+    const res = await fetch(apiUrl);
+    const json = await res.json();
+    if (!json.data || !json.data.media || !json.data.media.org) {
+      throw new Error('La API no devolvió un video válido.');
     }
-
-    try {
-        await conn.reply(m.chat, `${emoji} Espere un momento, estoy descargando su video...`, m);
-
-        const tiktokData = await tiktokdl(args[0]);
-
-        if (!tiktokData || !tiktokData.data || !tiktokData.data.play) {
-            return conn.reply(m.chat, "Error: No se pudo obtener el video.", m);
-        }
-
-        const videoURL = tiktokData.data.play;
-
-        if (videoURL) {
-            await conn.sendFile(m.chat, videoURL, "tiktok.mp4", `${emoji} Aquí tienes ฅ^•ﻌ•^ฅ`, m);
-        } else {
-            return conn.reply(m.chat, "No se pudo descargar.", m);
-        }
-    } catch (error1) {
-        return conn.reply(m.chat, `Error: ${error1.message}`, m);
-    }
-};
-
-handler.help = ['tiktok'].map((v) => v + ' *<link>*');
-handler.tags = ['descargas'];
-handler.command = ['tiktok', 'tt'];
-handler.group = true;
-handler.register = true;
-handler.coin = 2;
-handler.limit = true;
-
-export default handler;
-
-async function tiktokdl(url) {
-    let tikwm = `https://www.tikwm.com/api/?url=${url}?hd=1`;
-    let response = await (await fetch(tikwm)).json();
-    return response;
+    const videoData     = json.data;
+    const videoUrl      = videoData.media.org;
+    const videoTitle    = videoData.title      || 'Sin título';
+    const videoAuthor   = videoData.author?.nickname || 'Desconocido';
+    const videoDuration = videoData.duration   ? `${videoData.duration} segundos` : 'No especificado';
+    const videoLikes    = videoData.like       || 0;
+    const videoComments = videoData.comment    || 0;
+    let txt = `*Título:* ${videoTitle}
+*Autor:* ${videoAuthor}
+*Duración:* ${videoDuration}
+*Likes:* ${videoLikes}
+*Comentarios:* ${videoComments}`
+m.react('✅');
+await conn.sendFile(m.chat, videoUrl, 'tiktok.mp4', txt, m)
 }
+
+handler.command = ['tt', 'tiktok'];
+export default handler;
