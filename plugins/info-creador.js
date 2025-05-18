@@ -28,8 +28,8 @@ let handler = async (m, { conn, usedPrefix, text, args, command }) => {
         contextInfo: {
             externalAdReply: {
                 showAdAttribution: true,
-                title: 'contacto owner',
-                body: 'leonel',
+                title: '「✦」contacto⏤͟͟͞͞✦ owner',
+                body: '𓆩‌۫᷼ ִֶָღܾ݉͢𝕷͢𝖊𝖔፝֟፝֟፝֟፝֟፝֟፝֟𝖓𝖊𝖑ܾ݉ ִֶָ𓆪‌‹࣭݊𓂃ⷪ ִֶָ ᷫ‹ ⷭ.࣭𓆩‌۫᷼Ⴕ۫͜𓆪‌',
                 thumbnailUrl: imageUrl,
                 sourceUrl: 'https://github.com/WillZek',
                 mediaType: 1,
