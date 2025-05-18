@@ -21,7 +21,6 @@ const { CONNECTING, CLOSED } = ws
 import { Boom } from "@hapi/boom"
 import { makeWASocket } from "../lib/simple.js"
 
-// Gestor de conexiones centralizado
 const connectionManager = {
   connections: new Map(),
 
@@ -61,12 +60,12 @@ const CONFIG = {
   STATE_SAVE_INTERVAL: 2 * 60 * 1000,
   PRESENCE_UPDATE_INTERVAL: 30 * 1000,
   MAX_SUBBOTS: 120,
-  AUTH_FOLDER: "sumibots", // Directorio para las sesiones
+  AUTH_FOLDER: "sumibots",
   BACKUP_ENABLED: true,
   CONNECTION_TIMEOUT: 120000,
   RETRY_REQUEST_DELAY: 10000,
   LOG_LEVEL: "silent",
-  QR_TIMEOUT: 60000, // 1 minuto para escanear el QR
+  QR_TIMEOUT: 60000, //
 }
 
 const initialConnections = new Map()
