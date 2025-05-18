@@ -13,10 +13,10 @@ let handler = async (m, { isPrems, conn }) => {
   
   m.reply(`
 ╭━━━━━━━━━⬣
-┃ ✅ *RECOMPENSA MENSUAL*
+┃  *❀RECOMPENSA MENSUAL❀*
 ┃ *${finalReward}* ${global.moneda}
-┃ *10* 💎 Diamantes
-┃ *5000* ⚡ XP
+┃ *10* ⛀ coin 
+┃ *5000*  XP
 ╰━━━━━━━━━⬣`)
   
   user.lastmonthly = new Date() * 1
