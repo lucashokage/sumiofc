@@ -13,7 +13,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   let tiempoEspera = 10 * 60 * 1000
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera) {
     let tiempoRestante = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempoEspera - Date.now()) / 1000))
-    return conn.reply(m.chat, `⏱️ Debes esperar *${tiempoRestante}* antes de volver a intentar robar.`, m)
+    return conn.reply(m.chat, `ⴵ Debes esperar *${tiempoRestante}* antes de volver a intentar robar.`, m)
   }
   
   cooldowns[m.sender] = Date.now()
@@ -22,7 +22,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (target.bank > 0) {
     let bankPercentage = Math.random()
     if (bankPercentage < 0.7) { // 70% de probabilidad de que el dinero esté protegido en el banco
-      return m.reply(`${global.emoji2} El usuario tiene su dinero protegido en el banco.`)
+      return m.reply(`《✧》 El usuario tiene su dinero protegido en el banco.`)
     }
   }
   
