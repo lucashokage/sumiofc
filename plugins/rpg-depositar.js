@@ -1,6 +1,6 @@
 let handler = async (m, { args }) => {
 let user = global.db.data.users[m.sender]
-if (!args[0]) return m.reply(`${global.emoji} Ingresa la cantidad de *${global.moneda}⛀* que deseas Depositar.`)
+if (!args[0]) return m.reply(`❀ Ingresa la cantidad de *${global.moneda}⛀* que deseas Depositar.`)
 if (args[0] == 'all') {
 let count = parseInt(user.coin)
 user.coin -= count * 1
@@ -8,7 +8,7 @@ user.bank += count * 1
 await m.reply(`${global.emoji} Depositaste *${count} ${global.moneda}⛀* en el banco, ahora estarán seguros y no podrán robartelos.`)
 return !0
 }
-if (!Number(args[0])) return m.reply(`${global.emoji2} Debes depositar una cantidad válida.
+if (!Number(args[0])) return m.reply(`《✧》 Debes depositar una cantidad válida.
 > Ejemplo 1 » *#depositar 25000*
 > Ejemplo 2 » *#depositar all*`)
 let count = parseInt(args[0])
