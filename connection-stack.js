@@ -1,5 +1,6 @@
-import { DisconnectReason } from "@whiskeysockets/baileys"
-import { chain } from "lodash" 
+import lodash from "lodash"
+import { DisconnectReason } from "some-module"
+const { chain } = lodash
 
 export function getEnhancedConnectionOptions(originalOptions) {
   return {
@@ -139,5 +140,5 @@ function loadDatabase() {
   global.db.read().catch(console.error)
   global.db.READ = null
   global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) }
-  global.db.chain = chain(global.db.data) // Use chain from lodash
+  global.db.chain = chain(global.db.data)
 }
