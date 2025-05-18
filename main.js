@@ -22,7 +22,7 @@ import {
   handleSetupHealthCheckError,
   cleanSession,
   startPeriodicPing,
-} from "./connection-fix.js"
+} from "./connection-stack.js"
 
 const {
   useMultiFileAuthState,
