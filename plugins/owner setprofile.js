@@ -33,10 +33,10 @@ function _0x1221() {
         '594288LQFcOX',
         '8TdzEOM',
         'quoted',
-        '🍬\x20Por\x20favor,\x20responde\x20a\x20una\x20imagen\x20con\x20el\x20comando\x20*setprofile*\x20para\x20actualizar\x20la\x20foto\x20de\x20perfil\x20de\x20WhatsApp.',
+        '❀\x20Por\x20favor,\x20responde\x20a\x20una\x20imagen\x20con\x20el\x20comando\x20*setprofile*\x20para\x20actualizar\x20la\x20foto\x20de\x20perfil\x20de\x20WhatsApp.',
         'tags',
         'help',
-        '🍬\x20Foto\x20de\x20perfil\x20actualizada.'
+        '❀\x20Foto\x20de\x20perfil\x20actualizada.'
     ];
     _0x1221 = function () {
         return _0x63973d;
