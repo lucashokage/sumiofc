@@ -1,5 +1,5 @@
-import { DisconnectReason } from "@adiwajshing/baileys"
-import { chain } from "lodash" // Import chain from lodash
+import { DisconnectReason } from "@whiskeysockets/baileys"
+import { chain } from "lodash" 
 
 export function getEnhancedConnectionOptions(originalOptions) {
   return {
