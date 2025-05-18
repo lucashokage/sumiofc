@@ -6,7 +6,6 @@ const {
   makeCacheableSignalKeyStore,
   jidNormalizedUser,
   PHONENUMBER_MCC,
-  generateWAMessageFromContent,
 } = await import("@whiskeysockets/baileys")
 import moment from "moment-timezone"
 import NodeCache from "node-cache"
@@ -16,39 +15,9 @@ import fs from "fs"
 import pino from "pino"
 import * as ws from "ws"
 import path from "path"
-import qrcode from "qrcode"
 const { CONNECTING, CLOSED } = ws
 import { Boom } from "@hapi/boom"
 import { makeWASocket } from "../lib/simple.js"
-
-const connectionManager = {
-  connections: new Map(),
-
-  addConnection(id, connection) {
-    this.connections.set(id, connection)
-    return true
-  },
-
-  getConnection(id) {
-    return this.connections.get(id)
-  },
-
-  hasConnection(id) {
-    return this.connections.has(id)
-  },
-
-  removeConnection(id) {
-    if (this.connections.has(id)) {
-      this.connections.delete(id)
-      return true
-    }
-    return false
-  },
-
-  getAllConnections() {
-    return Array.from(this.connections.values())
-  },
-}
 
 if (global.conns instanceof Array) console.log()
 else global.conns = []
@@ -60,12 +29,11 @@ const CONFIG = {
   STATE_SAVE_INTERVAL: 2 * 60 * 1000,
   PRESENCE_UPDATE_INTERVAL: 30 * 1000,
   MAX_SUBBOTS: 120,
-  AUTH_FOLDER: "sumibots",
+  AUTH_FOLDER: "./sumibots",
   BACKUP_ENABLED: true,
   CONNECTION_TIMEOUT: 120000,
   RETRY_REQUEST_DELAY: 10000,
   LOG_LEVEL: "silent",
-  QR_TIMEOUT: 60000, //
 }
 
 const initialConnections = new Map()
@@ -73,7 +41,6 @@ const reconnectTimers = new Map()
 const activeConnections = new Set()
 const connectionStats = new Map()
 const userSubbotCount = new Map()
-const qrCodeCache = new Map()
 
 let store
 let loadDatabase
@@ -81,10 +48,10 @@ let loadDatabase
 const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => {
   const parent = args[0] && args[0] == "plz" ? _conn : await global.conn
   if (!((args[0] && args[0] == "plz") || (await global.conn).user.jid == _conn.user.jid)) {
-    throw `📌 No puedes usar este bot como sub-bot\n\n wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix + command}`
+    throw `📌 No puedes usar este bot como sub-bot\n\n wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix}.code`
   }
 
-  async function sumibots() {
+  async function bbts() {
     try {
       const phoneNumber = m.sender.split("@")[0]
       const subbotId = crypto.randomBytes(4).toString("hex")
@@ -106,6 +73,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       let state = null
       let saveCreds = null
+      let authResult = null
 
       const authFolderPathExists = fs.existsSync(authFolderPath)
       if (!authFolderPathExists) {
@@ -126,13 +94,44 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         }
       }
 
+      if (!state || !saveCreds) {
+        try {
+          authResult = await useMultiFileAuthState(authFolderPath)
+          state = authResult.state
+          saveCreds = authResult.saveCreds
+        } catch (error) {
+          console.error(`Error al inicializar el estado de autenticación: ${error.message}`)
+          await parent.sendMessage(
+            m.chat,
+            { text: "❌ Error al inicializar el estado de autenticación." },
+            { quoted: m },
+          )
+          return
+        }
+      }
+
+      if (args[0] && args[0] !== "plz") {
+        try {
+          const credsData = JSON.parse(Buffer.from(args[0], "base64").toString("utf-8"))
+          fs.writeFileSync(path.join(authFolderPath, "creds.json"), JSON.stringify(credsData, null, "\t"))
+        } catch (error) {
+          console.error(`Error al procesar las credenciales: ${error.message}`)
+          await parent.sendMessage(
+            m.chat,
+            { text: "❌ Error al procesar las credenciales. Formato inválido." },
+            { quoted: m },
+          )
+          return
+        }
+      }
+
       const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 2323, 4] }))
 
       const msgRetryCounterMap = MessageRetryMap ? MessageRetryMap() : {}
       const msgRetryCounterCache = new NodeCache()
 
-      const methodCodeQR = command === "qr" || process.argv.includes("qr")
-      const methodCode = command === "code" || !!phoneNumber || process.argv.includes("code")
+      const methodCodeQR = process.argv.includes("qr")
+      const methodCode = !!phoneNumber || process.argv.includes("code")
       const MethodMobile = process.argv.includes("mobile")
 
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -144,9 +143,9 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         mobile: MethodMobile,
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         auth: {
-          creds: state?.creds || {},
+          creds: state.creds || {},
           keys: makeCacheableSignalKeyStore(
-            state?.keys || new Map(),
+            state.keys || new Map(),
             pino({ level: "fatal" }).child({ level: "fatal" }),
           ),
         },
@@ -172,21 +171,44 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
       let conn = makeWASocket(connectionOptions)
       let reconnectAttempts = 0
       let autoReconnectTimer = null
-      let qrSent = false
-      let qrTimeout = null
 
       const isReconnect = !!args[0] && args[0] !== "plz"
       const reconnectToken = `${phoneNumber}+${subbotId}`
 
-      // Mensaje inicial según el método
-      if (methodCodeQR) {
-        await parent.sendMessage(
-          m.chat,
-          {
-            text: "⏳ Generando código QR para la conexión del sub-bot...",
-          },
-          { quoted: m },
-        )
+      if (methodCode && !conn.authState?.creds?.registered) {
+        if (!phoneNumber) {
+          rl.close()
+          return
+        }
+
+        const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "")
+
+        setTimeout(async () => {
+          try {
+            let codeBot = await conn.requestPairingCode(cleanedNumber)
+            codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
+
+            await parent.sendFile(
+              m.chat,
+              "https://i.ibb.co/SKKdvRb/code.jpg",
+              "qrcode.png",
+              `❀ CODE DE VINCULACION ❀\n\n❍ Conexion Sub-Bot Mode Code\n\n ✿ Usa este Código para convertirte en un Sub-Bot Temporal.\n\n1 » Haga clic en los tres puntos en la esquina superior derecha\n\n2 » Toque dispositivos vinculados\n\n3 » Selecciona Vincular con el número de teléfono\n\n4 » Escriba el Código para iniciar sesion con el bot\n\n❏  No es recomendable usar tu cuenta principal.`,
+              m,
+            )
+
+            await parent.sendMessage(m.chat, { text: codeBot }, { quoted: m })
+
+            rl.close()
+          } catch (error) {
+            console.error(`Error al generar el código: ${error.message}`)
+            await parent.sendMessage(
+              m.chat,
+              { text: "❌ Error al generar el código. Intente nuevamente." },
+              { quoted: m },
+            )
+            rl.close()
+          }
+        }, 3000)
       }
 
       conn.isInit = false
@@ -222,15 +244,11 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           if (connection.presenceInterval) clearInterval(connection.presenceInterval)
 
           connection.ev.removeAllListeners()
-        } catch (error) {
-          console.error(`Error en cleanupConnection: ${error.message}`)
-        }
+        } catch (error) {}
       }
 
       function cleanupAndRemove() {
         try {
-          connectionManager.removeConnection(reconnectToken)
-
           const i = global.conns.indexOf(conn)
           if (i >= 0) {
             delete global.conns[i]
@@ -245,20 +263,12 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
           activeConnections.delete(reconnectToken)
           connectionStats.delete(reconnectToken)
-          qrCodeCache.delete(reconnectToken)
 
           if (reconnectTimers.has(reconnectToken)) {
             clearTimeout(reconnectTimers.get(reconnectToken))
             reconnectTimers.delete(reconnectToken)
           }
-
-          if (qrTimeout) {
-            clearTimeout(qrTimeout)
-            qrTimeout = null
-          }
-        } catch (error) {
-          console.error(`Error en cleanupAndRemove: ${error.message}`)
-        }
+        } catch (error) {}
       }
 
       async function connectionUpdate(update) {
@@ -266,110 +276,11 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           const { connection, lastDisconnect, isNewLogin, qr } = update || {}
           if (isNewLogin) conn.isInit = true
 
-          // Manejar el código QR si estamos en modo QR
-          if (qr && methodCodeQR && !qrSent) {
-            qrSent = true
-            qrCodeCache.set(reconnectToken, qr)
-
-            try {
-              // Generar imagen QR
-              const qrImage = await qrcode.toDataURL(qr, { scale: 8 })
-              const qrBuffer = Buffer.from(qrImage.split(",")[1], "base64")
-
-              // Enviar imagen QR con instrucciones
-              await parent.sendMessage(
-                m.chat,
-                {
-                  image: qrBuffer,
-                  caption: `❀ CÓDIGO QR DE VINCULACIÓN ❀\n\n❍ Conexión Sub-Bot Modo QR\n\n✿ Escanea este código QR para convertirte en un Sub-Bot Temporal.\n\n1 » Abre WhatsApp en tu teléfono\n\n2 » Toca los tres puntos en la esquina superior derecha\n\n3 » Selecciona Dispositivos Vinculados\n\n4 » Toca en Vincular un Dispositivo\n\n5 » Escanea este código QR\n\n❏ Este código expirará en 60 segundos\n❏ No es recomendable usar tu cuenta principal.`,
-                },
-                { quoted: m },
-              )
-
-              // Establecer un tiempo límite para escanear el QR
-              qrTimeout = setTimeout(async () => {
-                if (!conn.user) {
-                  await parent.sendMessage(
-                    m.chat,
-                    { text: "⌛ El código QR ha expirado. Por favor, intenta nuevamente con .qr" },
-                    { quoted: m },
-                  )
-                  cleanupAndRemove()
-                }
-              }, CONFIG.QR_TIMEOUT)
-            } catch (error) {
-              console.error(`Error al generar QR: ${error.message}`)
-              await parent.sendMessage(
-                m.chat,
-                { text: "❌ Error al generar el código QR. Intente nuevamente." },
-                { quoted: m },
-              )
-              cleanupAndRemove()
-            }
-          }
-
-          // Manejar el código de vinculación si estamos en modo código
-          if (methodCode && !conn.authState?.creds?.registered && !qrSent) {
-            if (!phoneNumber) {
-              rl.close()
-              return
-            }
-
-            const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "")
-
-            setTimeout(async () => {
-              try {
-                let codeBot = await conn.requestPairingCode(cleanedNumber)
-                codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
-                qrSent = true
-
-                await parent.sendFile(
-                  m.chat,
-                  "https://i.ibb.co/SKKdvRb/code.jpg",
-                  "qrcode.png",
-                  `❀ CODE DE VINCULACION ❀\n\n❍ Conexion Sub-Bot Mode Code\n\n ✿ Usa este Código para convertirte en un Sub-Bot Temporal.\n\n1 » Haga clic en los tres puntos en la esquina superior derecha\n\n2 » Toque dispositivos vinculados\n\n3 » Selecciona Vincular con el número de teléfono\n\n4 » Escriba el Código para iniciar sesion con el bot\n\n❏  No es recomendable usar tu cuenta principal.`,
-                  m,
-                )
-
-                await parent.sendMessage(m.chat, { text: codeBot }, { quoted: m })
-
-                // Establecer un tiempo límite para usar el código
-                qrTimeout = setTimeout(async () => {
-                  if (!conn.user) {
-                    await parent.sendMessage(
-                      m.chat,
-                      { text: "⌛ El código ha expirado. Por favor, intenta nuevamente con .code" },
-                      { quoted: m },
-                    )
-                    cleanupAndRemove()
-                  }
-                }, CONFIG.QR_TIMEOUT)
-
-                rl.close()
-              } catch (error) {
-                console.error(`Error al generar el código: ${error.message}`)
-                await parent.sendMessage(
-                  m.chat,
-                  { text: "❌ Error al generar el código. Intente nuevamente." },
-                  { quoted: m },
-                )
-                rl.close()
-              }
-            }, 3000)
-          }
-
           const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 
           if (connection === "close") {
             const i = global.conns.indexOf(conn)
-            if (i < 0) {
-              try {
-                return console.log(await creloadHandler(true))
-              } catch (e) {
-                console.error("Error en creloadHandler:", e)
-                return false
-              }
-            }
+            if (i < 0) return console.log(await creloadHandler(true).catch(() => {}))
 
             if (code !== DisconnectReason.loggedOut) {
               if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
@@ -419,7 +330,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                         status: "reconnecting",
                       })
                     } catch (error) {
-                      console.error(`Error al reconectar: ${error.message}`)
                       if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                         setTimeout(
                           () =>
@@ -438,16 +348,13 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                       }
                     }
                   } catch (err) {
-                    console.error(`Error en timer de reconexión: ${err.message}`)
                     if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                       setTimeout(
                         () =>
                           connectionUpdate({
                             connection: "close",
                             lastDisconnect: {
-                              error: new Boom("Reconnection failed", {
-                                statusCode: DisconnectReason.connectionClosed,
-                              }),
+                              error: new Boom("Reconnection failed", { statusCode: DisconnectReason.connectionClosed }),
                             },
                           }),
                         10000,
@@ -466,12 +373,6 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               cleanupAndRemove()
             }
           } else if (connection === "open") {
-            // Limpiar el timeout del QR si existe
-            if (qrTimeout) {
-              clearTimeout(qrTimeout)
-              qrTimeout = null
-            }
-
             reconnectAttempts = 0
             conn.uptime = new Date()
 
@@ -481,16 +382,24 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
               status: "connected",
             })
 
-            if (!connectionManager.hasConnection(reconnectToken)) {
-              connectionManager.addConnection(reconnectToken, conn)
+            scheduleAutoReconnect()
+            setupPeriodicStateSaving(conn, authFolderB)
+            setupHealthCheck(conn, authFolderB, reconnectToken)
+          }
 
-              if (!global.conns.includes(conn)) {
-                global.conns.push(conn)
-              }
+          if (global.db && global.db.data == null) loadDatabase()
 
-              // Guardar referencia del directorio de autenticación
-              conn.authFolder = authFolderB
+          if (connection == "open") {
+            conn.isInit = true
 
+            if (!global.conns.includes(conn)) {
+              global.conns.push(conn)
+            }
+
+            // Guardar referencia del directorio de autenticación
+            conn.authFolder = authFolderB
+
+            if (!activeConnections.has(reconnectToken)) {
               activeConnections.add(reconnectToken)
 
               await parent.sendMessage(
@@ -507,27 +416,13 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
                 await parent.sendMessage(conn.user.jid, {
                   text: `*✅ ¡Conectado exitosamente!*\n\nPara reconectarte usa: .rconect ${reconnectToken}`,
                 })
-
-                // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
-                console.log(`「❀」 Reiniciando el bot para establecer la conexión: ${reconnectToken}`)
-                setTimeout(() => {
-                  process.exit(0)
-                }, 3000)
               }
-            }
 
-            scheduleAutoReconnect()
-            setupPeriodicStateSaving(conn, authFolderB)
-            setupHealthCheck(conn, authFolderB, reconnectToken)
-          }
-
-          if (global.db && global.db.data == null) loadDatabase()
-
-          if (connection == "open") {
-            conn.isInit = true
-
-            if (!global.conns.includes(conn)) {
-              global.conns.push(conn)
+              // Reiniciar completamente el bot para dar estabilidad a la nueva conexión
+              console.log(`「❀」 Reiniciando el bot para establecer la conexión: ${reconnectToken}`)
+              setTimeout(() => {
+                process.exit(0)
+              }, 3000)
             }
           }
         } catch (error) {
@@ -537,13 +432,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       setupPresenceUpdates(conn)
 
-      let handlerModule = null
-      try {
-        handlerModule = await import("../handler.js")
-      } catch (e) {
-        console.error(`Error al importar handler: ${e.message}`)
-      }
-
+      let handler = await import("../handler.js")
       const creloadHandler = async (restatConn) => {
         try {
           const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
@@ -552,7 +441,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           })
 
           if (Handler && Object.keys(Handler).length) {
-            handlerModule = Handler
+            handler = Handler
           }
         } catch (e) {
           console.error(`Error en creloadHandler: ${e.message}`)
@@ -572,9 +461,8 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
           cleanupConnection(conn)
         }
 
-        // Verificar si handlerModule existe y tiene la propiedad handler
-        if (!handlerModule || !handlerModule.handler) {
-          console.error("Error: handlerModule o handlerModule.handler es nulo")
+        if (!handler || !handler.handler) {
+          console.error("Error: handler o handler.handler es nulo")
           return false
         }
 
@@ -583,19 +471,19 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
         conn.spromote = global.conn.spromote + ""
         conn.sdemote = global.conn.sdemote + ""
 
-        conn.handler = handlerModule.handler.bind(conn)
+        conn.handler = handler.handler.bind(conn)
 
         conn.participantsUpdate = async function participantsUpdate(...args) {
           try {
             if (args[0] && args[0].participants) {
-              return await handlerModule.participantsUpdate.apply(this, args)
+              return await handler.participantsUpdate.apply(this, args)
             }
           } catch (error) {
             console.error(`Error en participantsUpdate: ${error.message}`)
           }
         }
 
-        conn.groupsUpdate = handlerModule.groupsUpdate.bind(conn)
+        conn.groupsUpdate = handler.groupsUpdate.bind(conn)
         conn.connectionUpdate = connectionUpdate.bind(conn)
         conn.credsUpdate = saveCreds.bind(conn, true)
 
@@ -625,7 +513,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
 
       await creloadHandler(false)
     } catch (error) {
-      console.error("Error en sumibots:", error)
+      console.error("Error en bbts:", error)
       await parent.sendMessage(
         m.chat,
         { text: "❌ Ocurrió un error al iniciar el sub-bot. Intente nuevamente." },
@@ -634,7 +522,7 @@ const handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) =
     }
   }
 
-  await sumibots()
+  await bbts()
 }
 
 async function loadSubbots() {
@@ -711,12 +599,6 @@ async function loadSubbots() {
           browser: ["Ubuntu", "Chrome", "20.0.04"],
           markOnlineOnConnect: true,
           generateHighQualityLinkPreview: true,
-          getMessage: async (clave) => {
-            if (!clave || !clave.remoteJid) return ""
-            const jid = jidNormalizedUser(clave.remoteJid)
-            const msg = await store?.loadMessage(jid, clave.id)
-            return msg?.message || ""
-          },
           defaultQueryTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
           retryRequestDelayMs: CONFIG.RETRY_REQUEST_DELAY,
           connectTimeoutMs: CONFIG.CONNECTION_TIMEOUT,
@@ -764,15 +646,11 @@ async function loadSubbots() {
             if (connection.presenceInterval) clearInterval(connection.presenceInterval)
 
             connection.ev.removeAllListeners()
-          } catch (error) {
-            console.error(`Error en cleanupConnection: ${error.message}`)
-          }
+          } catch (error) {}
         }
 
         function cleanupAndRemove() {
           try {
-            connectionManager.removeConnection(reconnectToken)
-
             const i = global.conns.indexOf(sock)
             if (i >= 0) {
               delete global.conns[i]
@@ -787,15 +665,12 @@ async function loadSubbots() {
 
             activeConnections.delete(reconnectToken)
             connectionStats.delete(reconnectToken)
-            qrCodeCache.delete(reconnectToken)
 
             if (reconnectTimers.has(reconnectToken)) {
               clearTimeout(reconnectTimers.get(reconnectToken))
               reconnectTimers.delete(reconnectToken)
             }
-          } catch (error) {
-            console.error(`Error en cleanupAndRemove: ${error.message}`)
-          }
+          } catch (error) {}
         }
 
         async function connectionUpdate(update) {
@@ -813,16 +688,9 @@ async function loadSubbots() {
               sock.uptime = new Date()
               sock.isInit = true
 
-              if (!connectionManager.hasConnection(reconnectToken)) {
-                connectionManager.addConnection(reconnectToken, sock)
-
-                if (!global.conns.includes(sock)) {
-                  global.conns.push(sock)
-                }
+              if (!global.conns.includes(sock)) {
+                global.conns.push(sock)
               }
-
-              // Guardar referencia del directorio de autenticación
-              sock.authFolder = folder
 
               reconnectAttempts = 0
 
@@ -832,9 +700,13 @@ async function loadSubbots() {
                 status: "connected",
               })
 
-              scheduleAutoReconnect()
-              setupPeriodicStateSaving(sock, folder)
-              setupHealthCheck(sock, folder, reconnectToken)
+              try {
+                scheduleAutoReconnect()
+                setupPeriodicStateSaving(sock, folder)
+                setupHealthCheck(sock, folder, reconnectToken)
+              } catch (e) {
+                console.error("Error scheduling tasks after connection open", e)
+              }
             }
 
             if (connection === "close") {
@@ -886,7 +758,6 @@ async function loadSubbots() {
                           status: "reconnecting",
                         })
                       } catch (error) {
-                        console.error(`Error al reconectar: ${error.message}`)
                         if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                           setTimeout(
                             () =>
@@ -905,7 +776,6 @@ async function loadSubbots() {
                         }
                       }
                     } catch (err) {
-                      console.error(`Error en timer de reconexión: ${err.message}`)
                       if (reconnectAttempts < CONFIG.MAX_RECONNECT_ATTEMPTS) {
                         setTimeout(
                           () =>
@@ -938,90 +808,76 @@ async function loadSubbots() {
           }
         }
 
-        let handlerModule = null
-        try {
-          handlerModule = await import("../handler.js")
-        } catch (e) {
-          console.error(`Error al importar handler: ${e.message}`)
+        let handler = await import("../handler.js")
+        const reloadHandler = async (restartConnection) => {
+          try {
+            const newHandler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
+              console.error(`Error al importar handler: ${e.message}`)
+              return null
+            })
+
+            if (newHandler && Object.keys(newHandler).length) {
+              handler = newHandler
+            }
+          } catch (err) {
+            console.error(`Error en reloadHandler: ${err.message}`)
+          }
+
+          if (restartConnection) {
+            try {
+              cleanupConnection(sock)
+              sock = makeWASocket(socketConfig)
+            } catch (error) {
+              console.error(`Error al reiniciar conexión: ${error.message}`)
+            }
+          }
+
+          if (!handler || !handler.handler) {
+            console.error("Error: handler o handler.handler es nulo")
+            return false
+          }
+
+          sock.handler = handler.handler.bind(sock)
+
+          sock.participantsUpdate = async function participantsUpdate(...args) {
+            try {
+              if (args[0] && args[0].participants) {
+                return await handler.participantsUpdate.apply(this, args)
+              }
+            } catch (error) {
+              console.error(`Error en participantsUpdate: ${error.message}`)
+            }
+          }
+
+          sock.groupsUpdate = handler.groupsUpdate.bind(sock)
+          sock.connectionUpdate = connectionUpdate.bind(sock)
+          sock.credsUpdate = saveCreds.bind(sock, true)
+
+          const safeEventHandler = (eventHandler) => {
+            return async (...args) => {
+              try {
+                if (!sock || !sock.user || !sock.user.jid) {
+                  console.error("Error: Conexión no válida en event handler")
+                  return
+                }
+                await eventHandler(...args)
+              } catch (error) {
+                console.error(`Error en event handler: ${error.message}`)
+              }
+            }
+          }
+
+          sock.ev.on("messages.upsert", safeEventHandler(sock.handler))
+          sock.ev.on("group-participants.update", safeEventHandler(sock.participantsUpdate))
+          sock.ev.on("groups.update", safeEventHandler(sock.groupsUpdate))
+          sock.ev.on("connection.update", safeEventHandler(sock.connectionUpdate))
+          sock.ev.on("creds.update", safeEventHandler(sock.credsUpdate))
+          sock.ev.on("error", (error) => {
+            console.error(`Error en evento: ${error.message}`)
+          })
+
+          return true
         }
-
-        const creloadHandler = async (restatConn) => {
-  try {
-    const Handler = await import(`../handler.js?update=${Date.now()}`).catch((e) => {
-      console.error(`Error al importar handler: ${e.message}`)
-      return null
-    })
-
-    if (Handler && Object.keys(Handler).length) {
-      handlerModule = Handler
-    }
-  } catch (e) {
-    console.error(`Error en creloadHandler: ${e.message}`)
-  }
-
-  if (restatConn) {
-    try {
-      cleanupConnection(conn)
-      conn = makeWASocket(connectionOptions)
-      isInit = true
-    } catch (error) {
-      console.error(`Error al reiniciar conexión: ${error.message}`)
-    }
-  }
-
-  if (!isInit) {
-    cleanupConnection(conn)
-  }
-
-  if (!handlerModule || !handlerModule.handler) {
-    console.error("Error: handlerModule o handlerModule.handler es nulo")
-    return false
-  }
-
-  conn.welcome = global.conn.welcome + ""
-  conn.bye = global.conn.bye + ""
-  conn.spromote = global.conn.spromote + ""
-  conn.sdemote = global.conn.sdemote + ""
-
-  conn.handler = handlerModule.handler.bind(conn)
-
-  conn.participantsUpdate = async function participantsUpdate(...args) {
-    try {
-      if (args[0] && args[0].participants) {
-        return await handlerModule.participantsUpdate.apply(this, args)
-      }
-    } catch (error) {
-      console.error(`Error en participantsUpdate: ${error.message}`)
-    }
-  }
-
-  conn.groupsUpdate = handlerModule.groupsUpdate.bind(conn)
-  conn.connectionUpdate = connectionUpdate.bind(conn)
-  conn.credsUpdate = saveCreds.bind(conn, true)
-
-  const safeEventHandler = (eventHandler) => {
-    return async (...args) => {
-      try {
-        await eventHandler(...args)
-      } catch (error) {
-        console.error(`Error en event handler: ${error.message}`)
-      }
-    }
-  }
-
-  conn.ev.on("messages.upsert", safeEventHandler(conn.handler))
-  conn.ev.on("group-participants.update", safeEventHandler(conn.participantsUpdate))
-  conn.ev.on("groups.update", safeEventHandler(conn.groupsUpdate))
-  conn.ev.on("connection.update", safeEventHandler(conn.connectionUpdate))
-  conn.ev.on("creds.update", safeEventHandler(conn.credsUpdate))
-
-  conn.ev.on("error", (error) => {
-    console.error(`Error en evento: ${error.message}`)
-  })
-
-  isInit = false
-  return true
-}
 
         await reloadHandler(false)
         setupPresenceUpdates(sock)
@@ -1066,18 +922,22 @@ function setupHealthCheck(conn, authFolder, reconnectToken) {
     try {
       if (!conn.ws) {
         clearInterval(interval)
+        console.warn(`Health check stopped: WebSocket is null for ${reconnectToken}`)
         return
       }
 
       if (conn.ws.readyState !== ws.OPEN) {
         if (conn.ws.readyState === ws.CLOSED) {
           clearInterval(interval)
+          console.warn(`Connection closed: WebSocket is closed for ${reconnectToken}`)
           conn.ev.emit("connection.update", {
             connection: "close",
             lastDisconnect: {
               error: new Boom("WebSocket closed", { statusCode: DisconnectReason.connectionClosed }),
             },
           })
+        } else {
+          console.warn(`WebSocket state is not OPEN for ${reconnectToken}: ${conn.ws.readyState}`)
         }
       } else {
         const stats = connectionStats.get(reconnectToken) || {}
@@ -1090,12 +950,16 @@ function setupHealthCheck(conn, authFolder, reconnectToken) {
           })
         }
 
-        await conn.sendPresenceUpdate("available")
+        try {
+          await conn.sendPresenceUpdate("available")
+        } catch (presenceError) {
+          console.error(`Error sending presence update for ${reconnectToken}: ${presenceError.message}`)
+        }
       }
     } catch (error) {
       console.error(`Error en setupHealthCheck: ${error.message}`)
     }
-  }, CONFIG.HEALTH_CHECK_INTERVAL)
+  }, CONFIG.HEALTH_CHECK_INTERVAL * 2)
 
   conn.healthInterval = interval
 }
@@ -1172,9 +1036,7 @@ global.handleReconnectCommand = async (m, { conn, args, usedPrefix }) => {
   try {
     const credsBase64 = Buffer.from(fs.readFileSync(path.join(folderPath, "creds.json"), "utf-8")).toString("base64")
 
-    // Determinar qué comando usar para reconectar (code o qr)
-    const command = "code" // Por defecto usamos code para reconectar
-    await handler(m, { conn, args: [credsBase64], usedPrefix, command })
+    await handler(m, { conn, args: [credsBase64], usedPrefix, command: "code" })
     return
   } catch (error) {
     console.error(`Error en handleReconnectCommand: ${error.message}`)
@@ -1244,7 +1106,7 @@ setupPeriodicHealthCheck()
 
 handler.help = ["botclone"]
 handler.tags = ["subbot"]
-handler.command = ["code", "qr"]
+handler.command = ["code"]
 handler.rowner = false
 
 export default handler
