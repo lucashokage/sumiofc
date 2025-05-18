@@ -2,7 +2,7 @@ let cooldowns = {}
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   let who = m.mentionedJid[0]
-  if (!who) return m.reply(`《✧》 Menciona al usuario al que quieres robar.\n\nEjemplo: *${usedPrefix + command} @usuario*`)
+  if (!who) return m.reply(`❀ Menciona al usuario al que quieres robar.\n\nEjemplo: *${usedPrefix + command} @usuario*`)
   if (who === m.sender) return m.reply(`《✧》 No puedes robarte a ti mismo.`)
   
   let user = global.db.data.users[m.sender]
