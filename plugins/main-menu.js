@@ -734,7 +734,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
     const channelId = "120363324350463849@newsletter"
     const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─"
-    await conn.sendMessage(
+    await conn.reply(
       m.chat,
       {
         text: menu,
