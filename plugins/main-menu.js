@@ -1,5 +1,6 @@
 const handler = async (m, { conn, usedPrefix, command }) => {
   try {
+    // Función para obtener el país a partir del número de teléfono
     function getCountryFromNumber(phoneNumber) {
       try {
         if (!phoneNumber || typeof phoneNumber !== "string") return "Desconocido"
@@ -684,19 +685,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Elimina las sesiones de subbots.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
-    conn.reply(m.chat, menu, m, {
-      mentions: [userId],
-      contextInfo: {
-        externalAdReply: {
-          title: `${displayBotName} | Menu`,
-          body: "Lista de comandos disponibles",
-          thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
-          sourceUrl: "https://bit.ly/sumioficial",
-          mediaType: 1,
-          renderLargerThumbnail: true,
-        },
-      },
-    })
+    const imageUrl = bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg"
+
+    await conn.sendFile(m.chat, imageUrl, "menu.jpg", menu, m, false, { mentions: [userId] })
   } catch (error) {
     console.error("Error en el comando menu:", error)
     m.reply("❌ Ocurrió un error al procesar el comando")
