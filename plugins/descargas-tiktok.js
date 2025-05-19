@@ -1,5 +1,5 @@
 import axios from 'axios';
-import cheerio from 'cheieio';
+import cheerio from 'cheerio';
 import { tiktokdl } from '@bochilteam/scraper';
 import { tiktok } from "@xct007/frieren-scraper";
 
