@@ -587,6 +587,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Si hay algún SubBot de M500 ULTRA BOT, sale del grupo automáticamente para evitar el spam.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 `
+    const channelId = "120363324350463849@newsletter"
+    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─"
+
     const channelForwardedMessage = {
       key: {
         remoteJid: "120363324350463849@newsletter",
@@ -621,5 +624,9 @@ function getCountryFromNumber(number) {
   // Implement country detection logic here
   return "Unknown"
 }
+
+handler.help = ["menu", "help", "comandos"]
+handler.tags = ["main"]
+handler.command = /^(menu|help|comandos|cmd)$/i
 
 export default handler
