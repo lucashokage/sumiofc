@@ -708,8 +708,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
   }
 }
 
+handler.help = ["menu", "help", "comandos"]
+handler.tags = ["main"]
 handler.command = /^(menu|menú|help|comandos|commands|cmd|cmds)$/i
 handler.exp = 50
-handler.fail = null
-\
+
 export default handler
