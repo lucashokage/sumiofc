@@ -732,17 +732,34 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       return `${hours}h ${minutes}m ${seconds}s`
     }
 
-    const thumbnailUrl = bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg";
-
+    const channelId = "120363324350463849@newsletter"
+    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─"
     await conn.reply(
       m.chat,
       {
-        image: { url: thumbnailUrl },
-        caption: menu,
-        mentionedJid: [m.sender, userId],
+        text: menu,
+        contextInfo: {
+          mentionedJid: [m.sender, userId],
+          isForwarded: true,
+          forwardingScore: 999,
+          forwardedFromChannel: true,
+          channelId: channelId,
+          channelName: channelName,
+          viewOnceMessage: true,
+          viewOnce: true,
+          externalAdReply: {
+            title: displayBotName,
+            body: "Menú general",
+            thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
+            sourceUrl: `https://bit.ly/sumioficial`,
+            mediaType: 1,
+            showAdAttribution: true,
+            renderLargerThumbnail: true,
+          },
+        },
       },
-      { quoted: m }
-    );
+      { quoted: m },
+    )
   } catch (error) {
     console.error("Error en el comando menu:", error)
     m.reply("❌ Ocurrió un error al procesar el comando")
