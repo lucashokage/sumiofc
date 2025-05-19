@@ -83,7 +83,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Ver el estado actual del bot.
  ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#sug* #newcomand
 > Suguierenos un comando para añadirlo al bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#sitema #system
+ ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#sitema #system*
 > Ver el estado del sistema del bot
  ᳯ⃞ 𑪏𑪋ᩧ❀  *#funciones#totalfunciones*
 > Ver cuanto comandos ne el bot.
@@ -172,601 +172,454 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Trabaja como prostituta para ganar Diamantes.
  ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#cf #suerte 
 > Apuesta tus Diamantes en cara o cruz.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#crime #crimen
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#crime #crimen
 > Comete un crimen y gana Diamantes.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#ruleta #roulette #rt
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ruleta #roulette #rt
 > Apuesta tus diamantes al color rojo o azul.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#casino #apostar
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#casino #apostar
 > Apuesta tus Diamantes en el casino.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#slot
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#slot
 > Apuesta tus Diamantes en la ruleta y prueba tu suerte.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#cartera #wallet
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cartera #wallet
 > Ver tus diamantes en la cartera.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#bank #banco
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bank #banco
 > Ver tus diamantes en el banco.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#deposit #depositar #d [cantidad]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#deposit #depositar #d [cantidad]
 > Deposita tus diamantes al banco.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#with #retirar #withdraw
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#with #retirar #withdraw
 > Retira tus diamantes del banco.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#transfer #pay
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#transfer #pay
 > Transfiere tus Diamantes a un usuario [ Solo en grupos ]
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#miming #minar #mine
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#miming #minar #mine
 > Mina para ganar recursos con el bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#buyall #buy
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#buyall #buy
 > Cambia tu XP por dinero.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#daily #diario
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#daily #diario
 > Reclama tu recompensa diaria.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#cofre
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cofre
 > Reclama un cofre diario lleno de recursos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#weekly #semanal
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#weekly #semanal
 > Reclama tu recompensa semanal
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#monthly #mensual
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#monthly #mensual
 > Reclama tu recompensa mensual.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#steal #robar #rob
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#steal #robar #rob
 > Intenta robarle diamantes a otros usuarios.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#robarxp #robxp
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#robarxp #robxp
 > Robale el XP a otros usuarios.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#eboard #baltop
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#eboard #baltop
 > Ver el ranking de usuarios con más Diamantes.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#aventura #adventure
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#aventura #adventure
 > Aventúrate en un nuevo reino y reclama Diamantes.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#curar #heal
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#curar #heal
 > Cura tu salud para volverte a aventurar.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#cazar #hunt #berburu
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cazar #hunt #berburu
 > Aventúrate en una caza de animales.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#inv #inventario #bal
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#inv #inventario #bal
 > Ver tu inventario y todos tus intems.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#halloween
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#halloween
 > Reclama tu dulce o truco [ Solo en Halloween ]
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#christmas #navidad 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#christmas #navidad 
 > Reclama tu regalo navideño [ Solo en navidad ]
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ *GACHA*╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭
 > Comandos de gacha para reclamar y recolectar personajes.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#vender Nombre de la waifu y tu precio
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#vender Nombre de la waifu y tu precio
 > vender los waifu de tu harem
 
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#rollwaifu #rw #roll
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#rollwaifu #rw #roll
 > Envía  Waifu o husbando aleatorio 
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#claim #c #reclamar 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#claim #c #reclamar 
 > Reclama tu personaje.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#harem #waifus #claims 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#harem #waifus #claims 
 > Ver tus personajes e waifus reclamados.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#charimage #waifuimage #wimage
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#charimage #waifuimage #wimage
 > Ver una imagen aleatoria de un personaje.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#givechar #givewaifu #reglar 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#givechar #givewaifu #reglar 
 > Regala tus personajes.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#vote #votar 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#vote #votar 
 > Votar tus personajes por un mayor valor.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#waifuboard #waifutop #topwaifus
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#waifuboard #waifutop #topwaifus
 > Ver el top de personajes.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ STICKERS╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭
 > Comandos para crear stickers con el bot.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#s #sticker 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#s #sticker 
 > Crea stickers de imagen o videos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#setmeta 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setmeta 
 > Establece un pack y autor para los stickers.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#delmeta 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#delmeta 
 > Elimina tu pack de stickers.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#qc 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#qc 
 > Crea stickers con textos de usuarios.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#toimg #img
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#toimg #img
 > Convierte stickers en imagen.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#brat #ttp #attp
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#brat #ttp #attp
 > Crea stickers con textos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#emojimix
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#emojimix
 > Funciona 2 emojis para crear stickers.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#wm
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#wm
 > Cambia el nombre de los stickers.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ *HERRAMIENTAS*╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭
 > Comandos de herramientas con muchas funciones.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#calcular #cal
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#calcular #cal
 > Calcular todo tipo de ecuaciones.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#tiempo #clima
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#tiempo #clima
 > Ver el clima de un país.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#horario
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#horario
 > Ver el horario global de los países.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#fake #fakeply
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#fake #fakeply
 > Crea un mensaje falso de un usuario.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#letra 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#letra 
 > Cambia las fuentes de las letras.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#read #readviwonce #ver
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#read #readviwonce #ver
 > Ver imágenes de una sola vista.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#whatmusic #shazam
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#whatmusic #shazam
 > Descubre el nombre de canciones o vídeos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#ss #ssweb
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ss #ssweb
 > Ver el estado de una página.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#length #tamaño.
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#length #tamaño.
 > Cambia el tamaño de una imagenes o videos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#say #decir [texto]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#say #decir [texto]
 > Repetir un mensaje.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#todoc #document
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#todoc #document
 > Crea documentos de audio imágenes y vídeos.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#translate #traducir #trad
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#translate #traducir #trad
 > Traduce palabras en otros idiomas.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *PERFIL*︹
 > Comandos para ver contratar y configurar estados de tu perfil.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#reg #verificar #register
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#reg #verificar #register
 > Regístrate en la base de datos del bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#unreg 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#unreg 
 > Elimina tu registro de la base de datos del bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#profile 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#profile 
 > Mira tu perfil.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#marry [tag / responder]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#marry [tag / responder]
 > Casate con una persona en juegos del bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#divorce 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#divorce 
 > Divórciate con la persona que te casate.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#setgenre #setgenero
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setgenre #setgenero
 > Edita tu género en el perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#delgenre #delgenero
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#delgenre #delgenero
 > Elimina tu género del perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setbirth #setnacimiento
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setbirth #setnacimiento
 > Edita tu nacimiento en el perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#delbirth #delnacimiento 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#delbirth #delnacimiento 
 > Elimina tu nacimiento del perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setdescripcion #setdesc
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setdescripcion #setdesc
 > Edita una descripción para ver en el perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#deldescripcion #deldesc
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#deldescripcion #deldesc
 > Elimina tu descripción del perfil del bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#lb #lboard [página]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#lb #lboard [página]
 > Top de usuarios con más experiencia o nivel.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#level #lvl
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#level #lvl
 > Ver tu nivel y experiecia actual.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#comprarpremium #premium 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#comprarpremium #premium 
 > Comprar un pase premium para usar el bot sin límites.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#confesiones #confesar
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#confesiones #confesar
 > Confiesa tus sentimientos a alguien de manera anónima.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *JUEGOS*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
 > Comandos de juegos para jugar con tus amigos.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#amistaf #amigorandom
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#amistaf #amigorandom
 > Hacer amigos con un juego.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#chaqueta
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#chaqueta
 > Hacerte una chaqueta.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#chiste
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#chiste
 > El bot te cuenta un chiste.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#consejo 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#consejo 
 > El bot te da un consejo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#dexeo #dexear [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#dexeo #dexear [mensionar]
 > Simular un deseo falso.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#facto
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#facto
 > Tirar un facto.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#formaroareja
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#formaroareja
 > Forma una pareja.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#formarpareja5
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#formarpareja5
 > Forma 5 parejas diferentes.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#frase
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#frase
 > El bot da una frase.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#huevo
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#huevo
 > Agarrarle el huevo a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#chupalo [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#chupalo [mensionar]
 > Hacer que un usuario te la chupe
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#aplauso
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#aplauso
 > Aplaudirle a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#marron [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#marron [mensionar]
 > Burlarte del color de piel de alguien.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#suicidar 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#suicidar 
 > Suicidate.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#iq #iqtest
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#iq #iqtest
 > Calcular el IQ de una persona.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#meme
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#meme
 > El bot envía un meme.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#morse
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#morse
 > Convierte un texto en código morse.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#nombreninja
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#nombreninja
 > Busca un nombre ninja aleatorio.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#paja #pajeame
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#paja #pajeame
 > El bot te hace una paja.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#personalidad [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#personalidad [mensionar]
 > El bot busca tu personalidad.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#piropo 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#piropo 
 > Lanza un piropo.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#pregunta
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#pregunta
 > Hazle una pregunta al bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ship #pareja 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ship #pareja 
 > El bot te da la probabilidad de enamorarte de alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sorteo
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#sorteo
 > Empieza un sorteo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#top
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#top
 > Empieza un top de personas 
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#formartrio [mension]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#formartrio [mension]
 > Forma un trio.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ahorcado 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ahorcado 
 > Diviertete con el bot jugando el juego ahorcado.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#mates #matematicas 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#mates #matematicas 
 > Responde las preguntas de matemáticas para ganar recompensas
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ppt 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ppt 
 > Juego piedra papel l tijeras con el bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sopa #buscarpalabra
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#sopa #buscarpalabra
 > Juega el famoso juego de sopas de letras.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#pvp #suit [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#pvp #suit [mensionar]
 > Juega un PvP contra otro usuario.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ttt
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#ttt
 > Crea una sala de juego.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *NSFW*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
 > Comandos de NSFW (Contenido para adultos)
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#anal [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#anal [mensionar]
 > Hacer un anal.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#waifu
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#waifu
 > Busca una waifu.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bath [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bath [mensionar]
 > Bañarse.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#blowjob #mamada #bj [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#blowjob #mamada #bj [MENSIONAR]
 > Dar una mamada.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#boobjob [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#boobjob [mensionar]
 > Hacer una rusa.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#cum [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cum [MENSIONAR]
 > Venirse en alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#fap [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#fap [mensionar]
 > Hacerte una paja.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#footjob [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#footjob [mensionar]
 > Hacerte una paja con los pies.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#fuck #coger #fuck2 [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#fuck #coger #fuck2 [MENSIONAR]
 > Follarte a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#cafe #coffe
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cafe #coffe
 > Tomarte un cafesito.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#violar #perra [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#violar #perra [mensionar]
 > Viola a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#grabboobs [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#grabboobs [mensionar]
 > Agarrar tetas.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#grop [mensionar]
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#lickpussy [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#grop [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#lickpussy [MENSIONAR]
 > Lamer un toto 
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#rule34 #r34 [tag]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#rule34 #r34 [tag]
 > Buscar imágenes en Rule34
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sixnine #69 [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#sixnine #69 [mensionar]
 > Haz un 69 con alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#spank #nalgada [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#spank #nalgada [mensionar]
 > Dar una nalgada.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#suckboobs [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#suckboobs [mensionar]
 > Chupar tetas.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#undress #encuerar [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#undress #encuerar [mensionar]
 > Desnudar a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#yuri #tijeras [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#yuri #tijeras [mensionar]
 > Hacer tijeras.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *ANIME*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
 > Comandos de reacciones de anime.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#angry #enojado [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#angry #enojado [MENSIONAR]
 > Estar enojado gay si lo lees.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bite [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bite [mensionar]
 > Muerde a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bleh [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bleh [mensionar]
 > Sacar lengua.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#blush [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#blush [mensionar]
 > Sonrojarse.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bored #aburrido [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bored #aburrido [mensionar]
 > Estar aburrido.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#cry [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cry [mensionar]
 > Llorar por alguien o algo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#cuddle [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#cuddle [mensionar]
 > Acurrucarse en alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#dance [MENSIONAR]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#dance [MENSIONAR]
 > Sacar los pasos prohibidos de gays.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#drunk [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#drunk [mensionar]
 > Estar borracho.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#eat #comer [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#eat #comer [mensionar]
 > Comer algo delicioso.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#facepalm [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#facepalm [mensionar]
 > Darte una palmada en la cara.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#happy #feliz [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#happy #feliz [mensionar]
 > Salta de felicidad.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#hug [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#hug [mensionar]
 > Dar un abrazo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#impregnate #preg #embarazar [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#impregnate #preg #embarazar [mensionar]
 > Embarazar a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#kill [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#kill [mensionar]
 > Toma tu arma y mata a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#kiss #besar #kiss2 [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#kiss #besar #kiss2 [mensionar]
 > Besar a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#laugh [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#laugh [mensionar]
 > Reírte de algo o alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#lick [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#lick [mensionar]
 > Lamer q alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#love #amor [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#love #amor [mensionar]
 > Sentirse enamorado.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#pat #acariciar [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#pat #acariciar [mensionar]
 > Acaricia a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#poke [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#poke [mensionar]
 > Picar a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#pout [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#pout [mensionar]
 > Hacer pucheros.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#punch #golpear [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#punch #golpear [mensionar]
 > Dar puñetazo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#run [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#run [mensionar]
 > Correr de alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sad #triste [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#sad #triste [mensionar]
 > Estar triste por alguien o que alguien está triste .
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#scared [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#scared [mensionar]
 > Estar asustado (solo los gays se asustan, el susto es para mujeres, si te asustas eres gay .
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#seduce [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#seduce [mensionar]
 > Seducir a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#shy #timido
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#shy #timido
 > Estar tímido.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#slap [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#slap [mensionar]
 > Dar una bofetada.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#dias days 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#dias days 
 > Darle los buenos días a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ✿𝆬﹕#noches #nights
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#noches #nights
 > Darle las buenas noches a alguien.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sleep [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#sleep [mensionar]
 > Hechar una fiesta y cuidado si te roban por gay XD.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#smoke [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#smoke [mensionar]
 > Fumar.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#think [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#think [mensionar]
 > Pensar en algo o alguien.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *𝐆𝐑𝐔𝐏𝐎𝐒*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
 > 𝐂𝚘𝚖𝚊𝚗𝚍𝚘𝚜 𝚙𝚊𝚛𝚊 𝚚𝚞𝚎 𝚜𝚎𝚊 𝚖𝚎𝚓𝚘𝚛 𝚎𝚕 𝚖𝚊𝚗𝚎𝚓𝚘 𝚢 𝚊𝚍𝚖𝚒𝚗𝚒𝚜𝚝𝚛𝚊𝚌𝚒𝚘́𝚗 𝚎𝚗 𝚝𝚞𝚜 𝚐𝚛𝚞𝚙𝚘𝚜.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#hidetag #tag #notify
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#hidetag #tag #notify
 > Envia un mensaje mensionando a todos los usuarios del grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#gp #infogrupo
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#gp #infogrupo
 > Ver toda la información del grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#lenea #listonline
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#lenea #listonline
 > Ver una lista de todas las personas que están en linea y no quieren hablar en el grupo por gays.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setwelcome 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setwelcome 
 > Personaliza el mensaje de bienvenida para el bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setbye
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setbye
 > Personaliza un mensaje de despedida para el bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#link
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#link
 > El bot envía el enlace del grupo [el bot tiene que ser admin para poder ejecutar el comando]
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#restablecer #revoke
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#restablecer #revoke
 > El bot restablece el mensaje del grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#grupo #group [abrir o cerrar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#grupo #group [abrir o cerrar]
 > Cambia ajustes del grupo para que hablen solo admins o todos los usuarios. 
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕#kick [número o mensionar]
+ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#kick [número o mensionar]
 > Elimina a una persona de tu grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#add #añadir #agregar [número]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#add #añadir #agregar [número]
 > El bot envía el enlace del grupo al usuauario para que se una.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#promote 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#promote 
 > El bot promueve a u a persona para que sea admin de tu grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#demote 
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#demote 
 > El bot promueve a una persona para que deje de ser admin de tu grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#gpbanner #groupimg
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#gpbanner #groupimg
 > Cambia la foto del perfil del grupo [el bot debe ser admin para ejecutar ese comando]
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#gpdesc #groupdesc [texto]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#gpdesc #groupdesc [texto]
 > El bot cambia la descripción del grupo [el bot debe ser admin para ejecutar ese comando]
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#gpname #groupname [texto]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#gpname #groupname [texto]
 > El bot cambia el nombre del grupo [el bot debe ser admin para ejecutar ese comando]
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#advertir #warn #warning [tag]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#advertir #warn #warning [tag]
 > Darle una advertencia a un usuario.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#delwarn #unwarn [tag]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#delwarn #unwarn [tag]
 > El bot le quita la advertencia al usuario.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#listadv #advlist
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#listadv #advlist
 > Ver la lista de los usuarios advertidos.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#mute [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#mute [mensionar]
 > El bot elimina los mensajes del usuario.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#unmute [mensionar]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#unmute [mensionar]
 > El bot le quita el mute a las personas.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#encuesta #poll [texto]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#encuesta #poll [texto]
 > El bot hace una encuesta.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#del #delete
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#del #delete
 > El bot elimina mensajes.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#fantasmas
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#fantasmas
 > Ver la lista de inactivos en el grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#kickfantasmas
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#kickfantasmas
 > El bot elimina a todos los que no están activos en el grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#invocar #tagall #todos [texto]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#invocar #tagall #todos [texto]
 > El bot envía un mensaje donde están los tags de todos los usuarios para que se conecten.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setemoji #setemo
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#setemoji #setemo
 > Cambia el emoji que se usa en la invocación del grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#kicknum #listnum
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#kicknum #listnum
 > Elimina un usuario por el prefijo del país.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *CONFIGURACIÓN*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
 > Opciones de configuración del grupo.
 ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bot [on/off]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#bot [on/off]
 > Activa o desactiva al bot en tu grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#antilink [on/off]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#antilink [on/off]
 > Activa o desactiva el anti enlaces en tu grupo.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#antibot [on/off]
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#antibot [on/off]
 > Si el bot detecta otro bot que no sea admin lo elimina automáticamente si está opción está activa.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#antisubbots
+ ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#antisubbots
 > Si hay algún SubBot de M500 ULTRA BOT, sale del grupo automáticamente para evitar el spam.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#antitraba [on/off]
-> Si el bot detecta mensaje demaciado largo elimina al usuario automáticamente.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯
-
-╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇ *I - A*︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇⊹۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭︹ׅ̟ׄ̇
-> Comandos de configuración virtual, no puse algunos porque se me olvidaron pero ustedes saben más que yo XD.
-╚━━━━━━━━━━━━╝
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #dalle [texto]
-> ┈➤El bot crea imágenes de ɪᴀ con el texto que le pongas.
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #ia
-> ┈➤Habla con el bot [comando en proceso]
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #chatgpt
-> ┈➤Habla con chatgpt [comando en proceso]
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #autoresponder
-> ┈➤Interactúa con el bot respondiendo a sus mensajes.
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #hd [imagen]
-> ┈➤Mejora la calidad de la imagen que envíes.
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #geminis 
-> ┈➤No se qué hace pero es un comando XD.
-├ׁ̟̇⁖ฺ۟̇࣪·֗٬̤⃟❦︎ #remini 
-> ┈➤No se que hace,.solo se que es parte de ChatGpT.
-╰━─━─━─ϱ✰
-
-╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ *OWNER*╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ̟ׄ̇︹ׅ۪ׄ̇߭
-> Comandos exclusivos para el creador del bot
- ╚━━━━━━━━━━━━╝
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#banchat
-> Banea a cualquier usuario para que no pueda usar el bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#unbanchat
-> Desbanea a cualquier usuario que no podía usar al bot.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#ds #fixmsgespera
-> Elimina datos de subbots.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#autoadmin
-> Se hace admin de cualquier grupo mientras algún bot sea admin.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#block #blockuser
-> Bloquea a cualquier persona entre los bots.
- ᳯ⃞ 𑪏𑪋❀﹕#banuser
-> Banea directamente al usuario.
- ᳯ⃞ 𑪏𑪋ᩧ❀﹕#listban
-> Ver la lista de usuarios e grupos basados.
- ᳯ⃞ 𑪏𑪋ᩧ❀ *#setname*
-> Cambiar el nombre del bot.
- ᳯ⃞ 𑪏𑪋ᩧ   *#setbanner [foto*
-> Cambiar el banner del bot en la lista de comandos y más.
- ᳯ⃞ 𑪏𑪋ᩧ❀  *#editautoresponder*
-> Editar la primera respuesta en el mensaje del autoresponder.
- ᳯ⃞ 𑪏𑪋ᩧ❀: :*#update*
-> Elimina las sesiones de subbots.
-╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
-
-    // Función para generar una sección del menú (mantenida para compatibilidad)
-    function generateSection(title, commands) {
-      let section = `
-
-»  ⊹˚୨ •(=^●ω●^=)• *${title}*  ❀
-
-ᥫ᭡ Comandos para ${getDescriptionForSection(title)}.
-─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─`
-
-      commands.forEach((cmd) => {
-        section += `
-ᰔᩚ *${cmd.cmd}*
-> ${cmd.desc}`
-      })
-
-      return section
-    }
-
-    function getDescriptionForSection(title) {
-      const descriptions = {
-        SETLOGO: "cambiar logos y nombres",
-        ANIME: "interacciones de anime",
-        DOWNLOAD: "descargar contenido de varias plataformas",
-        GACHA: "coleccionar y gestionar waifus",
-        GRUPO: "administrar grupos",
-        IA: "interactuar con inteligencia artificial",
-        INFO: "obtener información del bot",
-        NSFW: "contenido para adultos",
-        PROFILE: "gestionar tu perfil",
-        RPG: "jugar y ganar monedas",
-        UTILS: "herramientas útiles",
-      }
-
-      return descriptions[title] || "usar comandos diversos"
-    }
-
-    function getCountryFromNumber(phoneNumber) {
-      try {
-        const cleanNumber = phoneNumber.replace(/[^\d]/g, "")
-
-        const countryCodes = {
-          1: "Estados Unidos",
-          52: "México",
-          51: "Perú",
-          57: "Colombia",
-          56: "Chile",
-          54: "Argentina",
-          591: "Bolivia",
-          593: "Ecuador",
-          595: "Paraguay",
-          598: "Uruguay",
-          58: "Venezuela",
-          34: "España",
-          55: "Brasil",
-          502: "Guatemala",
-          503: "El Salvador",
-          504: "Honduras",
-          505: "Nicaragua",
-          506: "Costa Rica",
-          507: "Panamá",
-          809: "República Dominicana",
-          1787: "Puerto Rico",
-          53: "Cuba",
-        }
-
-        for (const [code, country] of Object.entries(countryCodes)) {
-          if (code.length === 3 && cleanNumber.startsWith(code)) {
-            return country
-          }
-        }
-
-        for (const [code, country] of Object.entries(countryCodes)) {
-          if (code.length === 2 && cleanNumber.startsWith(code)) {
-            return country
-          }
-        }
-
-        for (const [code, country] of Object.entries(countryCodes)) {
-          if (code.length === 1 && cleanNumber.startsWith(code)) {
-            return country
-          }
-        }
-
-        return "Desconocido"
-      } catch (error) {
-        return "Desconocido"
-      }
-    }
-
-    function clockString(ms) {
-      const seconds = Math.floor((ms / 1000) % 60)
-      const minutes = Math.floor((ms / (1000 * 60)) % 60)
-      const hours = Math.floor((ms / (1000 * 60 * 60)) % 24)
-      return `${hours}h ${minutes}m ${seconds}s`
-    }
-
-    const channelId = "120363324350463849@newsletter"
-    const channelName = "❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─"
-    await conn.sendMessage(
-      m.chat,
-      {
-        text: menu,
-        contextInfo: {
-          mentionedJid: [m.sender, userId],
-          isForwarded: true,
-          forwardingScore: 999,
-          forwardedFromChannel: true,
-          channelId: channelId,
-          channelName: channelName,
-          viewOnceMessage: true,
-          viewOnce: true,
-          externalAdReply: {
-            title: displayBotName,
-            body: "Menú general",
-            thumbnailUrl: bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg",
-            sourceUrl: `https://bit.ly/sumioficial`,
-            mediaType: 1,
-            showAdAttribution: true,
-            renderLargerThumbnail: true,
-          },
-        },
+`
+    const channelForwardedMessage = {
+      key: {
+        remoteJid: "120363324350463849@newsletter",
+        fromMe: false,
+        id: "1234567890",
       },
-      { quoted: m },
-    )
-  } catch (error) {
-    console.error("Error en el comando menu:", error)
-    m.reply("❌ Ocurrió un error al procesar el comando")
+      message: {
+        conversation: menu,
+      },
+      messageTimestamp: Date.now(),
+      isForwarded: true,
+      forwardingScore: 999,
+      forwardedFromChannel: true,
+    }
+
+    await conn.sendMessage(m.chat, channelForwardedMessage, { quoted: m })
+  } catch (e) {
+    console.error(e)
+    await conn.sendMessage(m.chat, { text: "Error al generar el menú." }, { quoted: m })
   }
 }
 
-handler.help = ["menu", "help", "comandos"]
-handler.tags = ["main"]
-handler.command = /^(menu|help|comandos|cmd)$/i
+// Function declarations for undeclared variables
+function clockString(ms) {
+  const h = Math.floor(ms / (3600 * 1000))
+  const m = Math.floor((ms % (3600 * 1000)) / (60 * 1000))
+  const s = Math.floor((ms % (60 * 1000)) / 1000)
+  return `${h}h ${m}m ${s}s`
+}
+
+function getCountryFromNumber(number) {
+  // Implement country detection logic here
+  return "Unknown"
+}
 
 export default handler
