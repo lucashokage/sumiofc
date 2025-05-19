@@ -1,7 +1,6 @@
 const handler = async (m, { conn, usedPrefix, command }) => {
   try {
-    // Función para obtener el país a partir del número de teléfono
-    function getCountryFromNumber(phoneNumber) {
+    function getCountryFromNumber(phoneNumber) { 
       try {
         if (!phoneNumber || typeof phoneNumber !== "string") return "Desconocido"
 
@@ -64,7 +63,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     if (botType === "official") {
       displayBotName = "✦⏤͟͟͞͞ sumi sakurasawa ⏤͟͟͞͞✦"
     } else {
-      // Para subbots, usar el nombre personalizado con .setname o el nombre de WhatsApp
       displayBotName = user.namebebot || conn.getName(conn.user.jid) || "Bot"
     }
 
@@ -80,11 +78,14 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       hour12: true,
     }
     const currentDate = date.toLocaleDateString("es-ES", options)
+
+    // Obtener el país a partir del número de teléfono
+    // Asegurarse de que m.sender sea una cadena antes de dividirla
     const senderNumber = typeof m.sender === "string" ? m.sender.split("@")[0] : ""
     const country = getCountryFromNumber(senderNumber)
 
     // Construir el menú
-    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ🍁ᩧ᳞ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
+    let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
 > _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
 
@@ -107,35 +108,35 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 ᥫ᭡ 𝐍𝐮𝐞𝐯𝐨𝐬 𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬
 > Comandos para Cambiar logos e imformacion del perfil de los subbots
 ─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─
-ᳯ⃞ 𑪏𑪋ᩧ❀ *#setlogo banner*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setlogo banner
 > cambia tu foto de menú
-ᳯ⃞ 𑪏𑪋ᩧ❀ *#setlogo welcome*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setlogo welcome
 > Cambia tu imagen de bienvenida
-ᳯ⃞ 𑪏𑪋ᩧ❀ *#setname texto>*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setname texto>*
 > cambia el nombre de tu subbot
-ᳯ⃞ 𑪏𑪋ᩧ❀ *#setprofile*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setprofile
 > Cambia la imagen de tu perfil de whatsapp.
 ╰━━━━━━━━━━━━━
 
 ╭ׅׄ̇─ׅ̻ׄ╮۪̇߭︹ׅ *PRINCIPALES*╭ׅׄ̇─ׅ̻ׄ
 > Comandos para ver estado e información del bot.
 ╚━━━━━━━━━━━
-*#help #menu*
+#help #menu
 > Ver la lista de comandos del bot.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#uptime* *#runtime*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#uptime #runtime
 > Ver el tiempo activo de ese bot.
 
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#bots #sockets*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#bots #sockets
 > Ver la lista de los Subbots conectados.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#owner #creador*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#owner #creador
 > Envia el número de teléfono del creador del bot.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#status #estado*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#status #estado
 > Ver el estado actual del bot.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#sug* #newcomand
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sug #newcomand
 > Suguierenos un comando para añadirlo al bot.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕ *#sitema #system*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#sitema #system
 > Ver el estado del sistema del bot
-ᳯ⃞ 𑪏𑪋ᩧ❀  *#funciones#totalfunciones*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#funciones#totalfunciones
 > Ver cuanto comandos ne el bot.
 ᳯ⃞ 𑪏𑪋ᩧ❀﹕#p           #ping
 > Ver cuantos mini segundos tarda el bot en responder a los comandos.
@@ -675,27 +676,45 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Banea directamente al usuario.
 ᳯ⃞ 𑪏𑪋ᩧ❀﹕#listban
 > Ver la lista de usuarios e grupos basados.
-ᳯ⃞ 𑪏𑪋ᩧ❀ *#setname*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setname
 > Cambiar el nombre del bot.
-ᳯ⃞ 𑪏𑪋ᩧ   *#setbanner [foto*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setbanner [foto
 > Cambiar el banner del bot en la lista de comandos y más.
-ᳯ⃞ 𑪏𑪋ᩧ❀  *#editautoresponder*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#editautoresponder
 > Editar la primera respuesta en el mensaje del autoresponder.
-ᳯ⃞ 𑪏𑪋ᩧ❀: :*#update*
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#update
 > Elimina las sesiones de subbots.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
-    const imageUrl = bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg"
 
-    await conn.reply(m.chat, imageUrl, "menu.jpg", menu, m, false, { mentions: [userId] })
-  } catch (error) {
-    console.error("Error en el comando menu:", error)
-    m.reply("❌ Ocurrió un error al procesar el comando")
-  }
+    let thumbnailUrl = bot.logo?.banner || "https://i.imgur.com/8fK4h6F.jpg"
+    
+    await conn.reply(
+      m.chat,
+      menu,
+      m,
+      {
+        contextInfo: {
+          mentionedJid: [userId],
+          externalAdReply: {
+            showAdAttribution: true,
+            mediaType: 1,
+            title: `🍁 MENÚ DE $displayBotName🍁`,
+            thumbnail: await (await fetch(thumbnailUrl)).buffer(),
+            sourceUrl: 'https://bit.ly/sumioficial'
+          }
+}
+}
+    )
+  } catch (error)
+{
+  console.error(error)
+  await conn.reply(m.chat, "Error al mostrar el menú. Inténtalo de nuevo más tarde.", m)
+}
 }
 
-handler.help = ["menu", "help", "comandos"]
-handler.tags = ["main"]
-handler.command = /^(menu|help|comandos|cmd)$/i
+handler.command = /^(menu|menú|help|comandos|commands|cmd|cmds)$/i
+handler.exp = 50
+handler.fail = null
 
 export default handler
