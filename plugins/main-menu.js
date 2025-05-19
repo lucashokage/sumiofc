@@ -687,7 +687,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
     const imageUrl = bot.logo?.banner || "https://files.catbox.moe/k2hyt1.jpg"
 
-    await conn.sendFile(m.chat, imageUrl, "menu.jpg", menu, m, false, { mentions: [userId] })
+    await conn.reply(m.chat, imageUrl, "menu.jpg", menu, m, false, { mentions: [userId] })
   } catch (error) {
     console.error("Error en el comando menu:", error)
     m.reply("❌ Ocurrió un error al procesar el comando")
