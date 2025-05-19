@@ -1,6 +1,6 @@
 const handler = async (m, { conn, usedPrefix, command }) => {
   try {
-    function getCountryFromNumber(phoneNumber) { 
+    function getCountryFromNumber(phoneNumber) {
       try {
         if (!phoneNumber || typeof phoneNumber !== "string") return "Desconocido"
 
@@ -79,12 +79,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     }
     const currentDate = date.toLocaleDateString("es-ES", options)
 
-    // Obtener el país a partir del número de teléfono
-    // Asegurarse de que m.sender sea una cadena antes de dividirla
     const senderNumber = typeof m.sender === "string" ? m.sender.split("@")[0] : ""
     const country = getCountryFromNumber(senderNumber)
 
-    // Construir el menú
     let menu = `ׄ  ᷼ᮬ︵۪۪۪۪۪᷼⏜ᩘ۪۪۪᷼⏜  ׅ   ׄ ׄ   ׅ  ⏜᷼ᩘ۪۪۪۪⏜۪۪۪۪۪᷼︵᷼  
 
 > _Hola @${userId.split("@")[0]}, bienvenido/a al menú de ${displayBotName}_
@@ -277,7 +274,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Comandos de gacha para reclamar y recolectar personajes.
 ╚━━━━━━━━━━━━╝
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#vender Nombre de la waifu y tu precio
-> vender los waifu de tu harem
+> vender los waifu de tu harem;
 
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#rollwaifu #rw #roll
 > Envía  Waifu o husbando aleatorio 
@@ -686,7 +683,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Elimina las sesiones de subbots.
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
-
     let thumbnailUrl = bot.logo?.banner || "https://i.imgur.com/8fK4h6F.jpg"
     
     await conn.reply(
@@ -699,22 +695,21 @@ const handler = async (m, { conn, usedPrefix, command }) => {
           externalAdReply: {
             showAdAttribution: true,
             mediaType: 1,
-            title: `🍁 MENÚ DE $displayBotName🍁`,
-            thumbnail: await (await fetch(thumbnailUrl)).buffer(),
+            title: `MENÚ DE $displayBotName`,
+            thumbnail: await fetch(thumbnailUrl).then(res => res.buffer()),
             sourceUrl: 'https://bit.ly/sumioficial'
           }
-}
-}
+        }
+      }
     )
-  } catch (error)
-{
-  console.error(error)
-  await conn.reply(m.chat, "Error al mostrar el menú. Inténtalo de nuevo más tarde.", m)
-}
+  } catch (error) {
+    console.error(error)
+    await conn.reply(m.chat, "Error al mostrar el menú. Inténtalo de nuevo más tarde.", m)
+  }
 }
 
 handler.command = /^(menu|menú|help|comandos|commands|cmd|cmds)$/i
 handler.exp = 50
 handler.fail = null
-
+\
 export default handler
