@@ -1,3 +1,6 @@
+const jadi = "sumibots"
+global.jadi = "sumibots"
+
 const { fetchLatestBaileysVersion, useMultiFileAuthState, DisconnectReason } = await import('@whiskeysockets/baileys')
 import qrcode from 'qrcode'
 import fs from 'fs'
@@ -10,7 +13,6 @@ if (global.conns instanceof Array) {
   global.conns = []
 }
 
-// Función para cargar todos los subbots al iniciar el servidor
 async function loadSubbots() {
   const serbotFolders = fs.readdirSync('./' + jadi) 
   for (const folder of serbotFolders) {
@@ -32,7 +34,7 @@ async function loadSubbots() {
       conn.isInit = false
       let isInit = true
 
-      let reconnectionAttempts = 0 // Contador de intentos de reconexión
+      let reconnectionAttempts = 0
 
       async function connectionUpdate(update) {
         const { connection, lastDisconnect, isNewLogin } = update
@@ -116,7 +118,6 @@ async function loadSubbots() {
   }
 }
 
-// Cargar subbots al iniciar el servidor
 loadSubbots().catch(console.error)
 
 let handler = async (m, { conn, args, usedPrefix, command, isOwner, isPrems}) => {
@@ -149,7 +150,7 @@ async function serbot() {
     conn.isInit = false
     let isInit = true
 
-    let reconnectionAttempts = 0; 
+    let reconnectionAttempts = 0;
 
     async function connectionUpdate(update) {
       const { connection, lastDisconnect, isNewLogin, qr } = update
@@ -278,4 +279,4 @@ export default handler
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
-        }
+}
