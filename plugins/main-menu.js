@@ -274,10 +274,10 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Comandos de gacha para reclamar y recolectar personajes.
 ╚━━━━━━━━━━━━╝
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#vender Nombre de la waifu y tu precio
-> vender los waifu de tu harem;
+> vender los waifu de tu harem
 
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#rollwaifu #rw #roll
-> Envía  Waifu o husbando aleatorio 
+> Envía Waifu o husbando aleatorio
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#claim #c #reclamar 
 > Reclama tu personaje.
 ᳯ⃞ 𑪏𑪋ᩧ✿monic﹕#harem #waifus #claims 
@@ -675,7 +675,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 > Ver la lista de usuarios e grupos basados.
 ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setname
 > Cambiar el nombre del bot.
-ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setbanner [foto
+ᳯ⃞ 𑪏𑪋ᩧ❀﹕#setbanner [foto]
 > Cambiar el banner del bot en la lista de comandos y más.
 ᳯ⃞ 𑪏𑪋ᩧ❀﹕#editautoresponder
 > Editar la primera respuesta en el mensaje del autoresponder.
@@ -684,6 +684,21 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 ╰━─━─━─☞︎︎︎✰☜︎︎︎─━─━─━╯`
 
     let thumbnailUrl = bot.logo?.banner || "https://i.imgur.com/8fK4h6F.jpg"
+    
+    // Función para obtener buffer de imagen de manera segura
+    const getBuffer = async (url) => {
+      try {
+        const res = await fetch(url)
+        const arrayBuffer = await res.arrayBuffer()
+        return Buffer.from(arrayBuffer)
+      } catch (error) {
+        console.error("Error al obtener imagen:", error)
+        return Buffer.alloc(1) // Buffer vacío como fallback
+      }
+    }
+    
+    // Obtener el buffer de la imagen
+    const thumbnailBuffer = await getBuffer(thumbnailUrl)
     
     await conn.reply(
       m.chat,
@@ -696,7 +711,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
             showAdAttribution: true,
             mediaType: 1,
             title: `MENÚ DE $displayBotName`,
-            thumbnail: await fetch(thumbnailUrl).then(res => res.buffer()),
+            thumbnail: thumbnailBuffer,
             sourceUrl: 'https://bit.ly/sumioficial'
           }
         }
@@ -708,9 +723,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
   }
 }
 
-handler.help = ["menu", "help", "comandos"]
-handler.tags = ["main"]
 handler.command = /^(menu|menú|help|comandos|commands|cmd|cmds)$/i
 handler.exp = 50
-
 export default handler
