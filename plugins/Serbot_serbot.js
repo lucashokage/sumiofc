@@ -1,3 +1,6 @@
+const jadi = "sumibots"
+global.jadi = "sumibots"
+
 const {
   useMultiFileAuthState,
   DisconnectReason,
@@ -30,17 +33,14 @@ let drm2 = "";
 let rtx = "*Convertirse en sub bot / JadiBot*\n\n*🌼 Utilice otro celular para escanear este codigo QR o escanea el codigo mediante una PC para convertirte en Sub Bot*\n\n`1` » Haga clic en los tres puntos en la esquina superior derecha\n\n`2` » Toca dispositivos vinculados\n\n`3` » Escanee este codigo QR para iniciar sesión\n\n🌼 *Este código QR expira en 45 segundos*";
 let rtx2 = "*Convertirse en sub bot / JadiBot*\n\n*🌼 Usa este Código para convertirte en un Sub Bot*\n\n`1` » Haga clic en los tres puntos en la esquina superior derecha\n\n`2` » Toca dispositivos vinculados\n\n`3` » Selecciona Vincular con el número de teléfono\n\n`4` » Escriba el Código\n\n🌼 *Este código solo funciona en en el número que lo solicitó*";
 
-// Inicialización de conexiones globales
 if (global.conns instanceof Array) {
   console.log();
 } else {
   global.conns = [];
 }
 
-// Límite de subbots
 const MAX_SUBBOTS = 99999999;
 
-// Función para cargar todos los subbots al iniciar el servidor
 async function loadSubbots() {
   const serbotFolders = fs.readdirSync('./' + jadi);
   for (const folder of serbotFolders) {
@@ -66,7 +66,7 @@ async function loadSubbots() {
       conn.isInit = false;
       let isInit = true;
 
-      let reconnectionAttempts = 0; // Contador de intentos de reconexión
+      let reconnectionAttempts = 0;
 
       async function connectionUpdate(update) {
         const { connection, lastDisconnect, isNewLogin } = update;
@@ -113,7 +113,6 @@ async function loadSubbots() {
           }, waitTime);
         }
 
-        // Eliminar carpeta si el usuario cierra la sesión manualmente
         if (code === DisconnectReason.loggedOut) {
           fs.rmdirSync(folderPath, { recursive: true });
           console.log(`Carpeta de credenciales eliminada para el subbot ${folder}.`);
@@ -156,16 +155,13 @@ async function loadSubbots() {
   }
 }
 
-// Cargar subbots al iniciar el servidor
 loadSubbots().catch(console.error);
 
-// Handler principal
 let handler = async (msg, { conn, args, usedPrefix, command, isOwner }) => {
   if (!global.db.data.settings[conn.user.jid].jadibotmd) {
     return conn.reply(msg.chat, "*🌼 Este Comando está deshabilitado por mi creador.*", msg, rcanal);
   }
 
-  // Verificar límite de subbots
   if (global.conns.length >= MAX_SUBBOTS) {
     return conn.reply(msg.chat, `*❀ Lo siento, se ha alcanzado el límite de ${MAX_SUBBOTS} subbots. Por favor, intenta más tarde.*`, msg, rcanal);
   }
@@ -453,4 +449,4 @@ export default handler;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-            }
+}
