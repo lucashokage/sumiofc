@@ -59,7 +59,7 @@ async function loadSubbots() {
         printQRInTerminal: false,
         logger: pino({ level: "fatal" }),
         auth: state,
-        browser: [`Dylux`, "IOS", "4.1.0"],
+        browser: [`sumi`, "IOS", "4.1.0"],
       };
 
       let conn = makeWASocket(connectionOptions);
@@ -262,8 +262,8 @@ let handler = async (msg, { conn, args, usedPrefix, command, isOwner }) => {
               forwardingScore: 999,
               isForwarded: true,
               forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363344288629189@newsletter', 
-                newsletterName: 'MULTI-BOT OCF', 
+                newsletterJid: '120363324350463849@newsletter', 
+                newsletterName: '❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─', 
                 serverMessageId: -1
               }
             }
@@ -278,8 +278,8 @@ let handler = async (msg, { conn, args, usedPrefix, command, isOwner }) => {
               forwardingScore: 999,
               isForwarded: true,
               forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363344288629189@newsletter', 
-                newsletterName: 'MULTI-BOT OCF',
+                newsletterJid: '120363324350463849@newsletter', 
+                newsletterName: '❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─',
                 serverMessageId: -1
               }
             }
@@ -296,8 +296,8 @@ let handler = async (msg, { conn, args, usedPrefix, command, isOwner }) => {
               forwardingScore: 999,
               isForwarded: true,
               forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363344288629189@newsletter', 
-                newsletterName: 'MULTI-BOT OCF', 
+                newsletterJid: '120363324350463849@newsletter', 
+                newsletterName: '❤️̶۫̄͟Ⓢ︎𓏲S͟u͟m͟m͟i͟𓍲̈͜𝗨̴ᥣ̥𝗍̈rᥲ̄𓊓̵̬𝐁o̸t̸❤️̶۫̄͟─', 
                 serverMessageId: -1
               }
             }
