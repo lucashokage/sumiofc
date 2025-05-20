@@ -11,6 +11,7 @@ import {readdirSync, statSync, unlinkSync, existsSync, readFileSync, rmSync, wat
 import yargs from 'yargs';
 import {spawn} from 'child_process'
 import lodash from 'lodash'
+import fs from 'fs';
 import chalk from 'chalk'
 import syntaxerror from 'syntax-error'
 import {tmpdir} from 'os'
@@ -28,6 +29,7 @@ const {proto} = (await import('@whiskeysockets/baileys')).default
 const {DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, PHONENUMBER_MCC} = await import('@whiskeysockets/baileys')
 import readline from 'readline'
 import NodeCache from 'node-cache'
+global.sessions = 'sessions';
 const {CONNECTING} = ws
 const {chain} = lodash
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
