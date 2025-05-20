@@ -1,3 +1,5 @@
+const jadi = "sumibots"
+global.jadi = "sumibots"
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 import './settings.js'
 import {createRequire} from 'module'
@@ -10,7 +12,6 @@ import yargs from 'yargs';
 import {spawn} from 'child_process'
 import lodash from 'lodash'
 import chalk from 'chalk'
-import fs from 'fs';
 import syntaxerror from 'syntax-error'
 import {tmpdir} from 'os'
 import {format} from 'util'
@@ -27,7 +28,6 @@ const {proto} = (await import('@whiskeysockets/baileys')).default
 const {DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, PHONENUMBER_MCC} = await import('@whiskeysockets/baileys')
 import readline from 'readline'
 import NodeCache from 'node-cache'
-global.sessions = 'sessions';
 const {CONNECTING} = ws
 const {chain} = lodash
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
